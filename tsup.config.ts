@@ -5,6 +5,4 @@ export default defineConfig({
   format: ["esm"],
   target: "esnext",
   dts: true,
-  sourcemap: true,
-  treeshake: true,
 });

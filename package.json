@@ -2,8 +2,12 @@
   "name": "isolate-package",
   "version": "0.0.0",
   "description": "Coming soon",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup-node",
     "test": "vitest"
