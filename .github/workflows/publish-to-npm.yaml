@@ -1,4 +1,4 @@
-name: pnpm Example Workflow
+name: Publish to NPM
 on:
   push:
 jobs:
