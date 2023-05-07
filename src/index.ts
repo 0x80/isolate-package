@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
