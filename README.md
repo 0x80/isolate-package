@@ -1,7 +1,8 @@
 # Isolate Package
 
 Isolate a monorepo workspace package so that it can be deployed as a completely
-self-contained directory with the sources of all local dependencies included.
+self-contained directory with the sources of all its local dependencies
+included.
 
 **NOTE**: This package has only been tested with [PNPM](https://pnpm.io/) but it
 was designed to be compatible with NPM and Yarn. That being said, I am
@@ -150,14 +151,6 @@ build output files are located.
 - [ ] Alter the pnpm lockfile
 - [ ] Add support for Yarn and NPM lock files
 
-## Used Terminology
-
-The various package managers, while being very similar, seem to use a different
-definition for the term "workspace". If you want to read the code it might be
-good to know that I consider the workspace to be the monorepo itself. The
-overall structure that holds all the packages. Also, in the code you see the
-word manifest a lot. It refers to the contents of a package.json file.
-
 ## The problem with Firebase in monorepos
 
 When deploying to Firebase it expects a folder with source files together with a
@@ -194,3 +187,13 @@ to come down to this:
 
 The `isolate` process from this solution takes a similar approach but is more
 sophisticated and hides all complexity from the user.
+
+## Used Terminology
+
+The various package managers, while being very similar, seem to use a different
+definition for the term "workspace". If you want to read the code it might be
+good to know that I consider the workspace to be the monorepo itself, in other
+words, the overall structure that holds all the packages.
+
+Also, in the code you see the word manifest a lot. It refers to the contents of
+a package.json file.
