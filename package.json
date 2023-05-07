@@ -17,12 +17,12 @@
     "npm"
   ],
   "type": "module",
-  "module": "dist/index.js",
+  "module": "dist/index.mjs",
   "files": [
     "dist"
   ],
   "bin": {
-    "isolate": "dist/index.js"
+    "isolate": "dist/index.mjs"
   },
   "scripts": {
     "build": "tsup-node",
@@ -45,6 +45,7 @@
     "@types/tar-fs": "^2.0.1",
     "tsup": "^6.7.0",
     "type-fest": "^3.9.0",
+    "typescript": "^5.0.4",
     "vitest": "^0.30.1"
   }
 }
