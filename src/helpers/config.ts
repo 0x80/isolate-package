@@ -1,3 +1,4 @@
+import fs from "fs-extra";
 import { isEmpty } from "lodash-es";
 import path from "node:path";
 import { createLogger, inspectValue, readTypedJsonSync } from "~/utils";
@@ -48,19 +49,19 @@ export function getConfig(): IsolateConfigResolved {
    * output.
    */
   const log = createLogger(
-    (process.env.ISOLATE_CONFIG_LOG_LEVEL as LogLevel) ?? "warn",
+    (process.env.ISOLATE_CONFIG_LOG_LEVEL as LogLevel) ?? "warn"
   );
 
   const configFilePath = path.join(process.cwd(), CONFIG_FILE_NAME);
 
   log.debug(`Attempting to load config from ${configFilePath}`);
 
-  const configFromFile = readTypedJsonSync<IsolateConfig>(
-    path.join(process.cwd(), CONFIG_FILE_NAME),
-  );
+  const configFromFile = fs.existsSync(configFilePath)
+    ? readTypedJsonSync<IsolateConfig>(configFilePath)
+    : {};
 
   const foreignKeys = Object.keys(configFromFile).filter(
-    (key) => !validConfigKeys.includes(key),
+    (key) => !validConfigKeys.includes(key)
   );
 
   if (!isEmpty(foreignKeys)) {
@@ -70,7 +71,7 @@ export function getConfig(): IsolateConfigResolved {
   const config = Object.assign(
     {},
     configDefaults,
-    configFromFile,
+    configFromFile
   ) satisfies IsolateConfigResolved;
 
   log.debug("Using configuration:", inspectValue(config));

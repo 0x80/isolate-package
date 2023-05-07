@@ -200,3 +200,6 @@ The `isolate` binary is an ES module. It is required to have the `.mjs` file
 extension, otherwise a non-ESM workspace will try to execute it as commonJS. For
 details on this read [this article from Alex
 Rauschmayer](https://exploringjs.com/nodejs-shell-scripting/ch_creating-shell-scripts.html#node.js-esm-modules-as-standalone-shell-scripts-on-unix)
+
+Also, I found that for PNPM the hashbang at the top of the script was not required, but Yarn
+3 didn't want to execute without it.
