@@ -13,8 +13,8 @@ a try.
 
 This solution was developed out of a desire to deploy to
 [Firebase](https://firebase.google.com/) from a monorepo without resorting to
-hacks, shell scripts and manual tasks. You can read more about this issue
-[here](#the-problem-with-firebase-in-monorepos).
+hacks, shell scripts and manual tasks. I have written an article explaining the
+issue [here](https://medium.com/p/e685de39025e).
 
 There is nothing Firebase specific to this solution but I am currently not aware
 of other reasons to isolate a workspace package. If you find a different
@@ -22,12 +22,12 @@ use-case, I would love to hear about it.
 
 ## Features
 
-- Zero-config for the majority of use-cases, with no manual steps involved.
+- Zero-config for the vast majority of use-cases, with no manual steps involved.
 - Designed to support NPM, Yarn and PNPM workspaces.
-- Compatible with the Firebase CLI.
-- Uses a pack/unpack approach to only isolate files that would have been part of
-  the published package, so the resulting output contains a minimal amount of
-  files.
+- Compatible with the Firebase tools CLI.
+- Uses a pack/unpack approach to isolate only those files that would have been
+  part of a published package, so the resulting output contains a minimal amount
+  of files.
 - Isolates dependencies recursively. If package A depends on local package B
   which depends on local package C, all of them will be isolated.
 - Include and (in the case of PNPM) update the lockfile so the isolated
@@ -36,19 +36,20 @@ use-case, I would love to hear about it.
 
 ## Usage
 
-Run `pnpm add isolate-package -D` or do the equivalent for `yarn` or `npm`.
+Run `npm install isolate-package --dev` or do the equivalent for `yarn` or
+`pnpm`.
 
 This package exposes the `isolate` executable. Once installed you can run `npx
-isolate` in any package directory _after_ you have build the source files, and
-by default this will produce a directory at `./isolate`.
+isolate` in any package directory _after_ you have build the source files. By
+default this will produce a directory at `./isolate` but this can be configured.
 
 You will probably want to add the output directory to your `.gitignore` file.
 
-### Deploy to Firebase
+### Deploying to Firebase
 
-This solution allows you to deploy to Firebase from multiple packages in your
-monorepo, so I advise you to co-locate your `firebase.json` file with the
-package, and not place it in the root of the monorepo.
+You can deploy to Firebase from multiple packages in your monorepo, so I advise
+you to co-locate your `firebase.json` file with the source code, and not place
+it in the root of the monorepo.
 
 In order to deploy to Firebase, the `functions.source` setting in
 `firebase.json` needs to point to the isolated output folder, which would be
@@ -56,9 +57,10 @@ In order to deploy to Firebase, the `functions.source` setting in
 
 The `predeploy` phase should first build and then isolate the output.
 
-Here's an example using [Turborepo](https://turbo.build/) for the build process:
+Here's an example using [Turborepo](https://turbo.build/):
 
 ```json
+// firebase.json
 {
   "functions": {
     "source": "./isolate",
@@ -67,8 +69,8 @@ Here's an example using [Turborepo](https://turbo.build/) for the build process:
 }
 ```
 
-With this configuration you can run `firebase deploy --only functions` from the
-package you isolated.
+With this configuration you can then run `firebase deploy --only functions` from
+the package.
 
 If you like to deploy to Firebase Functions from multiple packages you will also
 need to configure a unique `codebase` identifier for each of them. For more
@@ -160,54 +162,17 @@ build output files are located.
 
 ## Lockfiles
 
-The PNPM lockfile (v6.0) has a clear structure describing the different packages
-by their paths. To make the lockfile correct it is therefore adapted before
-being copied to the isolate directory.
+I inspected the NPM lockfiles as well as the Yarn v1 and v3 lockfiles and they
+seem to have a flat structure unrelated to the workspace packages structure, so
+I made the assumption that they can be copied as-is.
+
+The PNPM lockfile clearly has a structure describing the different packages by
+their relative paths, and so to correct the lockfile it is adapted before being
+copied to the isolate directory.
 
 I am not sure the Firebase deploy pipeline is actually detecting a
 pnpm-lock.yaml file and using PNPM to install packages. This needs to be
-verified.
-
-I looked at the NPM lockfiles as well as the Yarn v1 and v3 lockfiles and they
-do not seem to have a flat structure unrelated to the workspace packages, so I
-have assumed it is ok to just copy them as-is.
-
-## The problem with Firebase in monorepos
-
-When deploying to Firebase it expects a folder with source files together with a
-package.json file. This folder will be zipped and uploaded after which Firebase
-will run an npm or yarn install in the cloud as part of the deployment pipeline.
-
-In a private monorepo your Firebase package(s) typically have one or more shared
-local dependencies that are never published to NPM. When Firebase tries to look
-up those dependencies from the package.json they can not be found and deployment
-fails.
-
-In order to solve this you could try to use a bundler like Webpack to include
-dependencies code in the bundle and then strip those packages from the list in
-the package.json that is sent to Firebase, so doesn't know about them, but this
-strategy quickly falls apart. If the shared packages themselves do not bundle
-all of their dependencies in their build output, then those dependencies will
-still need to be installed, and Firebase wouldn't know about it.
-
-Without Firebase natively supporting monorepos, the only solution seems to be to
-bundle each shared workspace dependency in a way that its build output, together
-with its package.json file, becomes part of the overall bundle that is uploaded
-in the Firebase deployment. This way, Firebase can find each shared package
-source code, and also know what dependencies need to be installed to make that
-source code work.
-
-There are many different hacks that people have come up with [discussing this
-issue](https://github.com/firebase/firebase-tools/issues/653) but they all seem
-to come down to this:
-
-- Copy the shared packages to some deployment folder
-- Create a modified package.json file for the deployment that points all local
-  dependencies to the copied files for each shared dependency.
-- Point the Firebase deploy process to that folder
-
-The `isolate` process from this solution takes a similar approach but is more
-sophisticated and hides all complexity from the user.
+verified...
 
 ## Used Terminology
 
