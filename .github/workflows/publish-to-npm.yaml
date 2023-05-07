@@ -1,6 +1,8 @@
 name: Publish to NPM
 on:
   push:
+    branches:
+      - main
 jobs:
   build:
     runs-on: ubuntu-20.04
