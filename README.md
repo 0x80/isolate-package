@@ -160,6 +160,16 @@ Type: `string | undefined`, default: `undefined`
 When you are not using Typescript you can use this setting to specify where the
 build output files are located.
 
+## Troubleshooting
+
+If something is not working the first thing to do is add a `isolate.config.json`
+file in the package you are trying to isolate, and set `"logLevel"` to
+`"debug"`. This should give you detailed feedback.
+
+In addition you can trigger the isolate manually with `npx isolate` and possibly
+use debug the configuration by setting the env variable before running isolate:
+`ISOLATE_CONFIG_LOG_LEVEL=debug npx isolate`
+
 ## Lockfiles
 
 I inspected the NPM lockfiles as well as the Yarn v1 and v3 lockfiles and they
