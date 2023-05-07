@@ -11,5 +11,5 @@ export * from "./manifest";
 export * from "./pack-dependencies";
 export * from "./patch-workspace-entries";
 export * from "./process-build-output-files";
-export * from "./process-lock-file";
+export * from "./process-lockfile";
 export * from "./unpack-dependencies";

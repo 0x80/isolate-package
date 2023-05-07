@@ -30,7 +30,7 @@ async function start() {
 
   assert(
     fs.existsSync(buildOutputDir),
-    `Failed to find build output path at ${buildOutputDir}. Please make sure you built the source before isolating it.`,
+    `Failed to find build output path at ${buildOutputDir}. Please make sure you built the source before isolating it.`
   );
 
   /**
@@ -40,13 +40,13 @@ async function start() {
   const workspaceRootDir = path.join(
     targetPackageDir,
     config.workspaceRoot,
-    "/",
+    "/"
   );
 
   log.debug("Workspace root", workspaceRootDir);
   log.debug(
     "Isolate target package",
-    getRelativePath(targetPackageDir, workspaceRootDir),
+    getRelativePath(targetPackageDir, workspaceRootDir)
   );
 
   const packageManager = detectPackageManager(workspaceRootDir);
@@ -55,7 +55,7 @@ async function start() {
 
   log.debug(
     "Isolate output dir",
-    getRelativePath(isolateDir, workspaceRootDir),
+    getRelativePath(isolateDir, workspaceRootDir)
   );
 
   /**
@@ -69,7 +69,7 @@ async function start() {
    */
   const packagesRegistry = await createPackagesRegistry(
     workspaceRootDir,
-    config.workspacePackages,
+    config.workspacePackages
   );
 
   const tmpDir = path.join(isolateDir, "__tmp");
@@ -87,7 +87,7 @@ async function start() {
   }
 
   const manifest = await readTypedJson<PackageManifestMinimum>(
-    path.join(targetPackageDir, "package.json"),
+    path.join(targetPackageDir, "package.json")
   );
 
   const localDependencies = listLocalDependencies(manifest, packagesRegistry, {
@@ -105,7 +105,7 @@ async function start() {
     packedFilesByName,
     packagesRegistry,
     tmpDir,
-    isolateDir,
+    isolateDir
   );
 
   /**
@@ -132,20 +132,26 @@ async function start() {
   /**
    * Copy and adapt the lockfile
    */
-  await processLockfile(workspaceRootDir, isolateDir, packageManager);
+  await processLockfile({
+    workspaceRootDir,
+    targetPackageName: manifest.name,
+    isolateDir,
+    packagesRegistry,
+    packageManager,
+  });
 
   /**
    * Clean up
    */
   log.debug(
     "Deleting temporary directory",
-    getRelativePath(tmpDir, workspaceRootDir),
+    getRelativePath(tmpDir, workspaceRootDir)
   );
   await fs.remove(tmpDir);
 
   log.info(
     "Isolate completed at",
-    path.join("./", getRelativePath(isolateDir, targetPackageDir)),
+    path.join("./", getRelativePath(isolateDir, targetPackageDir))
   );
 }
 

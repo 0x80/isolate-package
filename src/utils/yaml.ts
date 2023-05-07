@@ -9,3 +9,10 @@ export function readTypedYamlSync<T>(filePath: string) {
    */
   return data as T;
 }
+
+export function writeTypedYamlSync<T>(filePath: string, content: T) {
+  /**
+   * @TODO add some zod validation maybe
+   */
+  fs.writeFileSync(filePath, yaml.stringify(content), "utf-8");
+}

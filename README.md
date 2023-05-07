@@ -17,24 +17,22 @@ hacks, shell scripts and manual tasks. You can read more about this issue
 [here](#the-problem-with-firebase-in-monorepos).
 
 There is nothing Firebase specific to this solution but I am currently not aware
-of any other reason to isolate a workspace package. If you find a different
+of other reasons to isolate a workspace package. If you find a different
 use-case, I would love to hear about it.
 
 ## Features
 
-These are the key aspects that set this approach apart from other solutions:
-
-- Zero-config for the majority of use-cases. No manual steps involved.
+- Zero-config for the majority of use-cases, with no manual steps involved.
 - Designed to support NPM, Yarn and PNPM workspaces.
-- Compatible with the firebase CLI.
+- Compatible with the Firebase CLI.
 - Uses a pack/unpack approach to only isolate files that would have been part of
-  the published package, so the resulting output only contains the necessary
+  the published package, so the resulting output contains a minimal amount of
   files.
 - Isolates dependencies recursively. If package A depends on local package B
   which depends on local package C, all of them will be isolated.
-- Include and adjust the lockfile so you can be sure the isolated deployment is
-  using the exact same versions.
-- Optionally include dev dependencies in the isolated output.
+- Include and (in the case of PNPM) update the lockfile so the isolated
+  deployment should be deterministic.
+- Optionally choose to include dev dependencies in the isolated output.
 
 ## Usage
 
@@ -97,12 +95,26 @@ affected by this setting. If you want to debug the configuration set
 
 Type: `string`, default: `"../.."`
 
-The relative path, from the package you want to isolate to the root of the
-workspace / monorepo.
+The relative path to the root of the workspace / monorepo. In a typical
+repository you will have a `packages` and possibly an `apps` directory, and both
+contain packages, so any package you would want to isolate is located 2 levels
+up from the root.
 
-In a typical monorepo you will have a `packages` and possibly an `apps`
-directory in the root of the workspace, so any package you want to isolate would
-be 2 levels up from the root.
+For example
+
+```
+apps
+├─ api
+│  ├─ package.json
+│  └─ .eslintrc.js
+└─ web
+   ├─ package.json
+   └─ .eslintrc.js
+packages
+└─ eslint-config-custom
+   ├─ index.js
+   └─ package.json
+```
 
 ### workspacePackages
 
@@ -146,10 +158,19 @@ Type: `string | undefined`, default: `undefined`
 When you are not using Typescript you can use this setting to specify where the
 build output files are located.
 
-## TODO
+## Lockfiles
 
-- [ ] Alter the pnpm lockfile
-- [ ] Add support for Yarn and NPM lock files
+The PNPM lockfile (v6.0) has a clear structure describing the different packages
+by their paths. To make the lockfile correct it is therefore adapted before
+being copied to the isolate directory.
+
+I am not sure the Firebase deploy pipeline is actually detecting a
+pnpm-lock.yaml file and using PNPM to install packages. This needs to be
+verified.
+
+I looked at the NPM lockfiles as well as the Yarn v1 and v3 lockfiles and they
+do not seem to have a flat structure unrelated to the workspace packages, so I
+have assumed it is ok to just copy them as-is.
 
 ## The problem with Firebase in monorepos
 
