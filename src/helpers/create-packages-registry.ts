@@ -1,3 +1,4 @@
+import fs from "fs-extra";
 import { globSync } from "glob";
 import { set } from "lodash-es";
 import path from "node:path";
@@ -40,13 +41,13 @@ export type PackagesRegistry = Record<string, WorkspacePackageInfo>;
  */
 export async function createPackagesRegistry(
   workspaceRootDir: string,
-  workspacePackagesOverride: string[] | undefined,
+  workspacePackagesOverride: string[] | undefined
 ): Promise<PackagesRegistry> {
   const log = createLogger(getConfig().logLevel);
 
   if (workspacePackagesOverride) {
     log.debug(
-      `Override workspace packages via config: ${workspacePackagesOverride}`,
+      `Override workspace packages via config: ${workspacePackagesOverride}`
     );
   }
 
@@ -56,26 +57,41 @@ export async function createPackagesRegistry(
   const cwd = process.cwd();
   process.chdir(workspaceRootDir);
 
-  const allPackages = packagesGlobs.flatMap((glob) => globSync(glob));
+  const allPackages = packagesGlobs
+    .flatMap((glob) => globSync(glob))
+    /**
+     * Make sure to filter any loose files that might hang around.
+     */
+    .filter((dir) => fs.lstatSync(dir).isDirectory());
 
   const registry: PackagesRegistry = (
     await Promise.all(
       allPackages.map(async (rootRelativeDir) => {
-        log.debug(`Registering package ${rootRelativeDir}`);
-        const manifest = await readTypedJson<PackageManifestMinimum>(
-          path.join(rootRelativeDir, "package.json"),
-        );
+        const manifestPath = path.join(rootRelativeDir, "package.json");
 
-        return {
-          manifest,
-          rootRelativeDir,
-          absoluteDir: path.join(workspaceRootDir, rootRelativeDir),
-        };
-      }),
+        if (!fs.existsSync(manifestPath)) {
+          log.warn(
+            `Ignoring directory ${rootRelativeDir} because it does not contain a package.json file`
+          );
+          return;
+        } else {
+          log.debug(`Registering package ${rootRelativeDir}`);
+
+          const manifest = await readTypedJson<PackageManifestMinimum>(
+            path.join(rootRelativeDir, "package.json")
+          );
+
+          return {
+            manifest,
+            rootRelativeDir,
+            absoluteDir: path.join(workspaceRootDir, rootRelativeDir),
+          };
+        }
+      })
     )
   ).reduce<PackagesRegistry>(
-    (acc, info) => set(acc, info.manifest.name, info),
-    {},
+    (acc, info) => (info ? set(acc, info.manifest.name, info) : acc),
+    {}
   );
 
   process.chdir(cwd);
