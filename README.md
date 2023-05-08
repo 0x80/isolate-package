@@ -4,11 +4,6 @@ Isolate a monorepo workspace package so that it can be deployed as a completely
 self-contained directory with the sources of all its local dependencies
 included.
 
-**NOTE**: This package has only been tested with [PNPM](https://pnpm.io/) but it
-was designed to be compatible with NPM and Yarn. That being said, I am
-personally very happy with the switch to PNPM and I encourage anyone to give it
-a try.
-
 ## Motivation
 
 This solution was developed out of a desire to deploy to
