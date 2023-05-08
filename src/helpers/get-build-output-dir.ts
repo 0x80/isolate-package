@@ -15,6 +15,8 @@ export async function getBuildOutputDir(targetPackageDir: string) {
 
   const tsconfigPath = path.join(targetPackageDir, config.tsconfigPath);
 
+  log.debug("Looking for tsconfig at:", tsconfigPath);
+
   if (fs.existsSync(tsconfigPath)) {
     const tsconfig = await readTypedJson<{
       compilerOptions?: { outDir?: string };
@@ -24,10 +26,14 @@ export async function getBuildOutputDir(targetPackageDir: string) {
 
     if (outDir) {
       return path.join(targetPackageDir, outDir);
+    } else {
+      throw new Error(outdent`
+        Failed to find outDir in tsconfig. If you are executing isolate from the root of a monorepo you should specify the buildDirName in isolate.config.json.
+      `);
     }
+  } else {
+    throw new Error(outdent`
+      Failed to infer the build output directory from either the isolate config buildDirName or a Typescript config file. See the documentation on how to configure one of these options.
+    `);
   }
-
-  throw new Error(outdent`
-    Failed to find outDir in tsconfig at ${tsconfigPath}. Without an isolate.config.json file specifying the buildDirName, or an outDir setting provided by tsconfig, we don't know where the build output directory is located. Please configure one of these options.
-  `);
 }
