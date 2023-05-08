@@ -1,19 +1,52 @@
 {
   "name": "isolate-package",
-  "version": "0.0.0",
-  "description": "Coming soon",
-  "main": "index.js",
+  "version": "1.0.0-beta.15",
+  "description": "Isolate a monorepo package by bundling the build output with its shared workspace packages and lock file to form a self-contained directory.",
+  "author": "Thijs Koerselman",
+  "license": "MIT",
+  "keywords": [
+    "monorepo",
+    "workspace",
+    "isolate",
+    "package",
+    "deploy",
+    "firebase",
+    "ci",
+    "pnpm",
+    "yarn",
+    "npm"
+  ],
   "type": "module",
+  "module": "dist/index.mjs",
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "isolate": "dist/index.mjs"
+  },
   "scripts": {
     "build": "tsup-node",
     "test": "vitest"
   },
-  "author": "Thijs Koerselman",
-  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.2.0",
+    "fs-extra": "^11.1.1",
+    "glob": "^10.2.2",
+    "lodash-es": "^4.17.21",
+    "outdent": "^0.8.0",
+    "source-map-support": "^0.5.21",
+    "tar-fs": "^2.1.1",
+    "yaml": "^2.2.2"
+  },
   "devDependencies": {
-    "@types/node": "^20.1.0",
+    "@types/fs-extra": "^11.0.1",
+    "@types/lodash-es": "^4.17.7",
+    "@types/node": "^18.16.2",
+    "@types/source-map-support": "^0.5.6",
+    "@types/tar-fs": "^2.0.1",
     "tsup": "^6.7.0",
+    "type-fest": "^3.9.0",
     "typescript": "^5.0.4",
-    "vitest": "^0.31.0"
+    "vitest": "^0.30.1"
   }
 }
