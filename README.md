@@ -34,6 +34,60 @@ use-case, I would love to hear about it.
   deployment should be deterministic.
 - Optionally choose to include dev dependencies in the isolated output.
 
+## Prerequisites
+
+Because historically different approaches to monorepos exist, we need to
+establish some basic rules for the isolate process to work.
+
+### Define shared package dependencies in the manifest
+
+This one might sound obvious, but if the `package.json` from the package you are
+targeting does not list the other monorepo packages it depends on, in either the
+`dependencies` or `devDependencies` list, then the isolate process will not
+include them in the output.
+
+How dependencies are listed with regards to versioning is not important, because
+packages are matched based on their name. For example the following flavors all
+work:
+
+```json
+// package.json
+{
+  "dependencies": {
+    "shared-package": "workspace:*",
+    "shared-package": "*",
+    "shared-package": "../shared-package",
+    "shared-package": "^1.0.0
+  }
+}
+```
+
+So basically, version information is ignored, and if the package name can be
+found in the list of local monorepo packages, it will be processed regardless of
+its version specifier.
+
+### Define "files" in each manifest
+
+The isolate process uses (p)npm `pack` to extract files from package
+directories, just like publishing a package would.
+
+So for this to work it is required that you define the `files` property in each
+`package.json` manifest, as it declares what files should be included in the
+published output.
+
+Typically the value contains an array with just the name of the build output
+directory, for example:
+
+```json
+// package.json
+{
+  "files": ["dist"]
+}
+```
+
+A few additional files will be included by `pack` automatically, like the
+`package.json` and `README.md` files.
+
 ## Usage
 
 Run `npm install isolate-package --dev` or do the equivalent for `yarn` or
@@ -78,6 +132,11 @@ need to configure a unique `codebase` identifier for each of them. For more
 information, [read
 this](https://firebase.google.com/docs/functions/beta/organize-functions).
 
+Make sure your Firebase package adheres to the things mentioned in
+[prerequisites](#prerequisites) and its manifest file contains the field
+`"main"`, or `"module"` if you set `"type": "module"`, so Firebase knows the
+entry point to your source code.
+
 ### Deploying to Firebase from the root
 
 If, for some reason, you choose to keep the `firebase.json` file in the root of
@@ -87,8 +146,7 @@ the monorepo you will have to place a configuration file called
 ```json
 // isolate.config.json
 {
-  "workspaceRoot": ".",
-  "targetPackageName": "your-firebase-package"
+  "targetPackagePath": "./packages/your-firebase-package"
 }
 ```
 
@@ -233,8 +291,8 @@ definition for the term "workspace". If you want to read the code it might be
 good to know that I consider the workspace to be the monorepo itself, in other
 words, the overall structure that holds all the packages.
 
-Also, in the code you see the word manifest a lot. It refers to the contents of
-a package.json file.
+Also, in the code you see the word manifest a lot, and it simply means to the
+contents of a `package.json` file.
 
 ## Binary as ESM module
 
