@@ -41,7 +41,7 @@ async function start() {
    */
   const workspaceRootDir = config.targetPackagePath
     ? process.cwd()
-    : path.join(targetPackageDir, config.workspaceRoot, "/");
+    : path.join(targetPackageDir, config.workspaceRoot);
 
   const buildOutputDir = await getBuildOutputDir(targetPackageDir);
 
@@ -69,6 +69,9 @@ async function start() {
    * Make sure the isolate dir exists so we can write to it
    */
   await fs.ensureDir(isolateDir);
+
+  await fs.remove(`${isolateDir}/**/*`);
+  log.debug("Cleaned the isolate output directory");
 
   /**
    * Build a packages registry so we can find the workspace packages by name and
@@ -156,10 +159,9 @@ async function start() {
   );
   await fs.remove(tmpDir);
 
-  log.info(
-    "Isolate completed at",
-    path.join("./", getRelativePath(isolateDir, targetPackageDir))
-  );
+  log.debug("Stored isolate output at", path.join("./", isolateDir));
+
+  log.info("Isolate completed");
 }
 
 start().catch((err) => {
