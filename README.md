@@ -83,9 +83,21 @@ directory, for example:
 A few additional files will be included by `pack` automatically, like the
 `package.json` and `README.md` files.
 
+### Use a flat structure inside your packages folders
+
+At the moment, nesting packages inside packages is not supported.
+
+When building the registry of all local packages, `isolate` doesn't drill down
+into the folders. So if you declare your packages to live in `packages/*` it
+will only find the packages directly in that folder and not at
+`packages/nested/more-packages`.
+
+You can, however, declare multiple packages folders like `["packages/*",
+"apps/*"]`. It's just that the structure inside them should be flat.
+
 ## Usage
 
-Run `npm install isolate-package --dev` or do the equivalent for `yarn` or
+Run `npm install isolate-package --dev` or the equivalent for `yarn` or
 `pnpm`.
 
 This package exposes the `isolate` executable. Once installed you can run `npx
@@ -302,5 +314,5 @@ extension, otherwise a non-ESM workspace will try to execute it as commonJS. For
 details on this read [this article from Alex
 Rauschmayer](https://exploringjs.com/nodejs-shell-scripting/ch_creating-shell-scripts.html#node.js-esm-modules-as-standalone-shell-scripts-on-unix)
 
-For PNPM the hashbang at the top of the script was not required, but Yarn 3
-did not seem to execute without it.
+For PNPM the hashbang at the top of the script was not required, but Yarn 3 did
+not seem to execute without it.
