@@ -21,7 +21,7 @@ export function findPackagesGlobs(workspaceRootDir: string) {
   switch (packageManager) {
     case "pnpm": {
       const { packages: globs } = readTypedYamlSync<{ packages: string[] }>(
-        path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+        path.join(workspaceRootDir, "pnpm-workspace.yaml")
       );
 
       log.debug("Detected pnpm packages globs:", inspectValue(globs));
@@ -31,16 +31,16 @@ export function findPackagesGlobs(workspaceRootDir: string) {
     case "npm": {
       const workspaceRootManifestPath = path.join(
         workspaceRootDir,
-        "package.json",
+        "package.json"
       );
 
       const { workspaces } = readTypedJsonSync<{ workspaces: string[] }>(
-        workspaceRootManifestPath,
+        workspaceRootManifestPath
       );
 
       if (!workspaces) {
         throw new Error(
-          `No workspaces field found in ${workspaceRootManifestPath}`,
+          `No workspaces field found in ${workspaceRootManifestPath}`
         );
       }
 
