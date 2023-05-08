@@ -4,25 +4,27 @@ import path from "node:path";
 import { createLogger, inspectValue, readTypedJsonSync } from "~/utils";
 
 export type IsolateConfigResolved = {
-  logLevel: "info" | "debug" | "warn" | "error";
-  workspaceRoot: string;
-  workspacePackages?: string[];
-  isolateOutDir: string;
+  buildDirName?: string;
   includeDevDependencies: boolean;
+  isolateDirName: string;
+  logLevel: "info" | "debug" | "warn" | "error";
+  targetPackagePath?: string;
   tsconfigPath: string;
-  buildOutputDir?: string;
+  workspacePackages?: string[];
+  workspaceRoot: string;
 };
 
 export type IsolateConfig = Partial<IsolateConfigResolved>;
 
 const configDefaults: IsolateConfigResolved = {
-  logLevel: "info",
-  workspaceRoot: "../..",
-  isolateOutDir: "./isolate",
+  buildDirName: undefined,
   includeDevDependencies: false,
+  isolateDirName: "isolate",
+  logLevel: "info",
+  targetPackagePath: undefined,
   tsconfigPath: "./tsconfig.json",
   workspacePackages: undefined,
-  buildOutputDir: undefined,
+  workspaceRoot: "../..",
 };
 
 /**

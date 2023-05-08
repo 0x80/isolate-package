@@ -10,7 +10,7 @@ import {
   adaptTargetPackageManifest,
   createPackagesRegistry,
   detectPackageManager,
-  findBuildOutputDir,
+  getBuildOutputDir,
   getConfig,
   listLocalDependencies,
   packDependencies,
@@ -26,23 +26,28 @@ const log = createLogger(config.logLevel);
 sourceMaps.install();
 
 async function start() {
-  const targetPackageDir = process.cwd();
+  /**
+   * If a targetPackagePath is set, we assume the configuration lives in the
+   * root of the workspace. If targetPackagePath is undefined (the default), we
+   * assume that the configuration lives in the target package directory.
+   */
+  const targetPackageDir = config.targetPackagePath
+    ? path.join(process.cwd(), config.targetPackagePath)
+    : process.cwd();
 
-  const buildOutputDir = await findBuildOutputDir(targetPackageDir);
+  /**
+   * We want a trailing slash here. Functionally it doesn't matter, but it makes
+   * the relative paths more correct in the debug output.
+   */
+  const workspaceRootDir = config.targetPackagePath
+    ? process.cwd()
+    : path.join(targetPackageDir, config.workspaceRoot, "/");
+
+  const buildOutputDir = await getBuildOutputDir(targetPackageDir);
 
   assert(
     fs.existsSync(buildOutputDir),
     `Failed to find build output path at ${buildOutputDir}. Please make sure you build the source before isolating it.`
-  );
-
-  /**
-   * We want a trailing slash here. Functionally it doesn't matter, but it makes
-   * the relative paths print correctly in the cli output.
-   */
-  const workspaceRootDir = path.join(
-    targetPackageDir,
-    config.workspaceRoot,
-    "/"
   );
 
   log.debug("Workspace root", workspaceRootDir);
@@ -53,7 +58,7 @@ async function start() {
 
   const packageManager = detectPackageManager(workspaceRootDir);
 
-  const isolateDir = path.join(targetPackageDir, config.isolateOutDir);
+  const isolateDir = path.join(targetPackageDir, config.isolateDirName);
 
   log.debug(
     "Isolate output dir",

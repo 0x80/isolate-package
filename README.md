@@ -49,7 +49,8 @@ You will probably want to add the output directory to your `.gitignore` file.
 
 You can deploy to Firebase from multiple packages in your monorepo, so I advise
 you to co-locate your `firebase.json` file with the source code, and not place
-it in the root of the monorepo.
+it in the root of the monorepo. If you do want to keep the firebase config in
+the root, some additional configuration is required, so read on.
 
 In order to deploy to Firebase, the `functions.source` setting in
 `firebase.json` needs to point to the isolated output folder, which would be
@@ -77,13 +78,62 @@ need to configure a unique `codebase` identifier for each of them. For more
 information, [read
 this](https://firebase.google.com/docs/functions/beta/organize-functions).
 
-## Configuration
+### Deploying to Firebase from the root
 
-For most users the defaults are fine and no configuration is needed. Otherwise,
-you can configure the isolate process by placing a `isolate.config.json` file in
-the root of the package that you want to isolate.
+If, for some reason, you choose to keep the `firebase.json` file in the root of
+the monorepo you will have to place a configuration file called
+`isolate.config.json` in the root with the following content:
 
-Below you find a description of every available config option.
+```json
+// isolate.config.json
+{
+  "workspaceRoot": ".",
+  "targetPackageName": "your-firebase-package"
+}
+```
+
+The Firebase configuration should then look something like this:
+
+```json
+// firebase.json
+{
+  "functions": {
+    "source": "./packages/your-firebase-package/isolate",
+    "predeploy": ["turbo build", "isolate"]
+  }
+}
+```
+
+## Configuration Options
+
+For most users no configuration should be required. You can configure the
+isolate process by placing a `isolate.config.json` file in the package that you
+want to isolate, except when you're [deploying to Firebase from the root of the
+workspace](#deploying-firebase-from-the-root).
+
+Below you will find a description of every available option.
+
+### buildDirName
+
+Type: `string | undefined`, default: `undefined`
+
+The name of the build output directory name. When undefined it is automatically
+detected via `tsconfig.json`. When you are not using Typescript you can use this
+setting to specify where the build output files are located.
+
+### includeDevDependencies
+
+Type: `boolean`, default: `false`
+
+By default devDependencies are ignored and stripped from the isolated output
+`package.json` files. If you enable this the devDependencies will be included
+and isolated just like the production dependencies.
+
+### isolateDirName
+
+Type: `string`, default: `"isolate"`
+
+The name of the isolate output directory.
 
 ### logLevel
 
@@ -92,6 +142,38 @@ Type: `"info" | "debug" | "warn" | "error"`, default: `"info"`.
 Because the configuration loader depends on this setting, its output is not
 affected by this setting. If you want to debug the configuration set
 `ISOLATE_CONFIG_LOG_LEVEL=debug` before you run `isolate`
+
+### targetPackagePath
+
+Type: `string`, default: `undefined`
+
+Only when you decide to place the isolate configuration in the root of the
+monorepo, you use this setting to point it to the target you want to isolate,
+e.g. `./packages/my-firebase-package`.
+
+If this option is used the `workspaceRoot` setting will be ignored and assumed
+to be the current working directory.
+
+### tsconfigPath
+
+Type: `string`, default: `"./tsconfig.json"`
+
+The path to the `tsconfig.json` file relative to the package you want to
+isolate. The tsconfig is only used for reading the `compilerOptions.outDir`
+setting. If no tsconfig is found, possibly because you are not using Typescript
+in your project, the process will fall back to the `buildDirName` setting.
+
+### workspacePackages
+
+Type: `string[] | undefined`, default: `undefined`
+
+When workspacePackages is not defined, `isolate` will try to find the packages
+in the workspace by looking up the settings in `pnpm-workspace.yaml` or
+`package.json` files depending on the detected package manager.
+
+In case this fails, you can override this process by specifying globs manually.
+For example `"workspacePackages": ["packages/*", "apps/*"]`. Paths are relative
+from the root of the workspace.
 
 ### workspaceRoot
 
@@ -118,47 +200,7 @@ packages
    └─ package.json
 ```
 
-### workspacePackages
-
-Type: `string[] | undefined`, default: `undefined`
-
-When workspacePackages is not defined, `isolate` will try to find the packages
-in the workspace by looking up the settings in `pnpm-workspace.yaml` or
-`package.json` files depending on the detected package manager.
-
-In case this fails, you can override this process by specifying globs manually.
-For example `"workspacePackages": ["packages/*", "apps/*"]`. Paths are relative
-from the root of the workspace.
-
-### isolateOutDir
-
-Type: `string`, default: `"isolate"`
-
-The name of the isolate output directory.
-
-### includeDevDependencies
-
-Type: `boolean`, default: `false`
-
-By default devDependencies are ignored and stripped from the isolated output
-`package.json` files. If you enable this the devDependencies will be included
-and isolated just like the production dependencies.
-
-### tsconfigPath
-
-Type: `string`, default: `"./tsconfig.json"`
-
-The path to the `tsconfig.json` file relative to the package you want to
-isolate. The tsconfig is only used for reading the `compilerOptions.outDir`
-setting. If no tsconfig is found, possibly because you are not using Typescript
-in your project, the process will fall back to the `buildOutputDir` setting.
-
-### buildOutputDir
-
-Type: `string | undefined`, default: `undefined`
-
-When you are not using Typescript you can use this setting to specify where the
-build output files are located.
+When you use the `targetPackagePath` option, this setting will be ignored.
 
 ## Troubleshooting
 
@@ -201,5 +243,5 @@ extension, otherwise a non-ESM workspace will try to execute it as commonJS. For
 details on this read [this article from Alex
 Rauschmayer](https://exploringjs.com/nodejs-shell-scripting/ch_creating-shell-scripts.html#node.js-esm-modules-as-standalone-shell-scripts-on-unix)
 
-Also, I found that for PNPM the hashbang at the top of the script was not required, but Yarn
-3 didn't want to execute without it.
+Also, I found that for PNPM the hashbang at the top of the script was not
+required, but Yarn 3 didn't want to execute without it.

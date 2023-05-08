@@ -4,17 +4,13 @@ import outdent from "outdent";
 import { getConfig } from "~/helpers";
 import { createLogger, readTypedJson } from "~/utils";
 
-/**
- * Find the build output dir by reading the tsconfig.json file or if that
- * doesn't exist by looking for a dist, build, or output directory.
- */
-export async function findBuildOutputDir(targetPackageDir: string) {
+export async function getBuildOutputDir(targetPackageDir: string) {
   const config = getConfig();
   const log = createLogger(getConfig().logLevel);
 
-  if (config.buildOutputDir) {
-    log.debug("Using buildOutputDir from config:", config.buildOutputDir);
-    return path.join(targetPackageDir, config.buildOutputDir);
+  if (config.buildDirName) {
+    log.debug("Using buildDirName from config:", config.buildDirName);
+    return path.join(targetPackageDir, config.buildDirName);
   }
 
   const tsconfigPath = path.join(targetPackageDir, config.tsconfigPath);
@@ -32,6 +28,6 @@ export async function findBuildOutputDir(targetPackageDir: string) {
   }
 
   throw new Error(outdent`
-    Failed to find outDir in tsconfig at ${tsconfigPath}. Without an isolate.config.json file specifying the buildOutputDir, or outDir provided by tsconfig, we can't know where the build output directory is located. Please configure one of these options.
+    Failed to find outDir in tsconfig at ${tsconfigPath}. Without an isolate.config.json file specifying the buildDirName, or an outDir setting provided by tsconfig, we don't know where the build output directory is located. Please configure one of these options.
   `);
 }
