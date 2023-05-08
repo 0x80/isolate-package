@@ -169,6 +169,9 @@ isolate process by placing a `isolate.config.json` file in the package that you
 want to isolate, except when you're [deploying to Firebase from the root of the
 workspace](#deploying-firebase-from-the-root).
 
+For the config file to be picked up, you will have to execute `isolate` from the
+same location, as it uses the current working directory.
+
 Below you will find a description of every available option.
 
 ### buildDirName
@@ -262,26 +265,29 @@ When you use the `targetPackagePath` option, this setting will be ignored.
 
 ## Troubleshooting
 
-If something is not working the first thing to do is add a `isolate.config.json`
-file in the package you are trying to isolate, and set `"logLevel"` to
-`"debug"`. This should give you detailed feedback.
+If something is not working, I advise you to add a `isolate.config.json` file,
+and set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
+console.
 
-In addition you can trigger the isolate manually with `npx isolate` and possibly
-use debug the configuration by setting the env variable before running isolate:
+In addition define an environment variable to debug the configuration being used
+by setting `ISOLATE_CONFIG_LOG_LEVEL=debug` before you execute `isolate`
+
+When debugging Firebase deployment issues it might be convenient to trigger the
+isolate process manually with `npx isolate` and possibly
 `ISOLATE_CONFIG_LOG_LEVEL=debug npx isolate`
 
 ## Lockfiles
 
-I inspected the NPM lockfiles as well as the Yarn v1 and v3 lockfiles and they
+I inspected the NPM lockfile as well as the Yarn v1 and v3 lockfiles and they
 seem to have a flat structure unrelated to the workspace packages structure, so
-I made the assumption that they can be copied as-is.
+I have made the assumption that they can be copied to the isolate output as-is.
 
 The PNPM lockfile clearly has a structure describing the different packages by
 their relative paths, and so to correct the lockfile it is adapted before being
-copied to the isolate directory.
+stored to the isolate directory.
 
 I am not sure the Firebase deploy pipeline is actually detecting a
-pnpm-lock.yaml file and using PNPM to install packages. This needs to be
+`pnpm-lock.yaml` file and using PNPM to install its packages. This needs to be
 verified...
 
 ## Used Terminology
@@ -301,5 +307,5 @@ extension, otherwise a non-ESM workspace will try to execute it as commonJS. For
 details on this read [this article from Alex
 Rauschmayer](https://exploringjs.com/nodejs-shell-scripting/ch_creating-shell-scripts.html#node.js-esm-modules-as-standalone-shell-scripts-on-unix)
 
-Also, I found that for PNPM the hashbang at the top of the script was not
-required, but Yarn 3 didn't want to execute without it.
+For PNPM the hashbang at the top of the script was not required, but Yarn 3
+did not seem to execute without it.
