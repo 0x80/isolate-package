@@ -159,7 +159,7 @@ async function start() {
   );
   await fs.remove(tmpDir);
 
-  log.debug("Stored isolate output at", path.join("./", isolateDir));
+  log.debug("Stored isolate output at", isolateDir);
 
   log.info("Isolate completed");
 }
