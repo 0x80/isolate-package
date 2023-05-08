@@ -1,5 +1,7 @@
+import fs from "fs-extra";
 import path from "node:path";
-import { config } from "node:process";
+import process from "node:process";
+import { an } from "vitest/dist/types-e3c9754d";
 import { getConfig } from "~/helpers";
 import { createLogger, readTypedJson } from "~/utils";
 
@@ -17,15 +19,24 @@ export async function findBuildOutputDir(targetPackageDir: string) {
   }
 
   const tsconfigPath = path.join(targetPackageDir, config.tsconfigPath);
-  try {
+
+  if (fs.existsSync(tsconfigPath)) {
     const tsconfig = await readTypedJson<{
-      compilerOptions: { outDir: string };
+      compilerOptions?: { outDir?: string };
     }>(tsconfigPath);
 
-    return path.join(targetPackageDir, tsconfig.compilerOptions.outDir);
-  } catch (err) {
-    throw new Error(
-      `Failed to find tsconfig at ${tsconfigPath}. Without a buildOutputDir config setting a tsconfig file is required to know where the build output directory is located.If your tsconfig is located elsewhere you can configure it using the tsconfigPath setting.`,
-    );
+    const outDir = tsconfig.compilerOptions?.outDir;
+
+    if (outDir) {
+      return path.join(targetPackageDir, outDir);
+    }
   }
+
+  log.error(`Failed to find outDir in tsconfig at ${tsconfigPath}
+Without an isolate.config.json file specifying the buildOutputDir, or outDir provided by tsconfig, we can't know where the build output directory is located. Please configure one of these options.`);
+
+  process.exit(1);
+
+  //   throw new Error(`Failed to find outDir in tsconfig at ${tsconfigPath}
+  // Without an isolate.config.json file specifying the buildOutputDir, or outDir provided by tsconfig, we can't know where the build output directory is located. Please configure one of these options.`);
 }

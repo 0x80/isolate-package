@@ -32,7 +32,7 @@ async function start() {
 
   assert(
     fs.existsSync(buildOutputDir),
-    `Failed to find build output path at ${buildOutputDir}. Please make sure you built the source before isolating it.`
+    `Failed to find build output path at ${buildOutputDir}. Please make sure you build the source before isolating it.`
   );
 
   /**
