@@ -13,6 +13,9 @@ dependencies:
   lodash-es:
     specifier: ^4.17.21
     version: 4.17.21
+  outdent:
+    specifier: ^0.8.0
+    version: 0.8.0
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -1103,6 +1106,10 @@ packages:
     dependencies:
       mimic-fn: 2.1.0
     dev: true
+
+  /outdent@0.8.0:
+    resolution: {integrity: sha512-KiOAIsdpUTcAXuykya5fnVVT+/5uS0Q1mrkRHcF89tpieSmY33O/tmc54CqwA+bfhbtEfZUNLHaPUiB9X3jt1A==}
+    dev: false
 
   /p-limit@4.0.0:
     resolution: {integrity: sha512-5b0R4txpzjPWVw/cXXUResoD4hb6U/x9BH08L7nw+GN1sezDzPdxeRvpc9c433fZhBan/wusjbCsqwqm4EIBIQ==}
