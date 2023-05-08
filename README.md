@@ -45,14 +45,14 @@ How dependencies are listed with regards to versioning is not important, because
 packages are matched based on their name. For example the following flavors all
 work:
 
-```json
+```cjson
 // package.json
 {
   "dependencies": {
     "shared-package": "workspace:*",
     "shared-package": "*",
     "shared-package": "../shared-package",
-    "shared-package": "^1.0.0
+    "shared-package": "^1.0.0"
   }
 }
 ```
@@ -73,7 +73,7 @@ published output.
 Typically the value contains an array with just the name of the build output
 directory, for example:
 
-```json
+```cjson
 // package.json
 {
   "files": ["dist"]
@@ -109,7 +109,7 @@ The `predeploy` phase should first build and then isolate the output.
 
 Here's an example using [Turborepo](https://turbo.build/):
 
-```json
+```cjson
 // firebase.json
 {
   "functions": {
@@ -138,7 +138,7 @@ If, for some reason, you choose to keep the `firebase.json` file in the root of
 the monorepo you will have to place a configuration file called
 `isolate.config.json` in the root with the following content:
 
-```json
+```cjson
 // isolate.config.json
 {
   "targetPackagePath": "./packages/your-firebase-package"
@@ -147,7 +147,7 @@ the monorepo you will have to place a configuration file called
 
 The Firebase configuration should then look something like this:
 
-```json
+```cjson
 // firebase.json
 {
   "functions": {
