@@ -18,7 +18,7 @@ import {
   processLockfile,
   unpackDependencies,
 } from "~/helpers";
-import { createLogger, getRelativePath, readTypedJson } from "~/utils";
+import { createLogger, getRootRelativePath, readTypedJson } from "~/utils";
 
 const config = getConfig();
 const log = createLogger(config.logLevel);
@@ -53,7 +53,7 @@ async function start() {
   log.debug("Workspace root", workspaceRootDir);
   log.debug(
     "Isolate target package",
-    getRelativePath(targetPackageDir, workspaceRootDir)
+    getRootRelativePath(targetPackageDir, workspaceRootDir)
   );
 
   const packageManager = detectPackageManager(workspaceRootDir);
@@ -62,7 +62,7 @@ async function start() {
 
   log.debug(
     "Isolate output dir",
-    getRelativePath(isolateDir, workspaceRootDir)
+    getRootRelativePath(isolateDir, workspaceRootDir)
   );
 
   /**
@@ -156,7 +156,7 @@ async function start() {
    */
   log.debug(
     "Deleting temporary directory",
-    getRelativePath(tmpDir, workspaceRootDir)
+    getRootRelativePath(tmpDir, workspaceRootDir)
   );
   await fs.remove(tmpDir);
 

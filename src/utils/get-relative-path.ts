@@ -1,7 +1,15 @@
-export function getRelativePath(path: string, relativeTo: string) {
-  const strippedPath = path.replace(relativeTo, "");
+export function getRootRelativePath(path: string, rootPath: string) {
+  const strippedPath = path.replace(rootPath, "");
 
   return strippedPath.startsWith("/")
-    ? `.${strippedPath}`
-    : `./${strippedPath}`;
+    ? `(root)${strippedPath}`
+    : `(root)/${strippedPath}`;
+}
+
+export function getIsolateRelativePath(path: string, isolatePath: string) {
+  const strippedPath = path.replace(isolatePath, "");
+
+  return strippedPath.startsWith("/")
+    ? `(isolate)${strippedPath}`
+    : `(isolate)/${strippedPath}`;
 }

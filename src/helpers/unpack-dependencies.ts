@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import { dir } from "node:console";
 import path, { join } from "node:path";
-import { getRelativePath } from "~/utils";
+import { getIsolateRelativePath, getRootRelativePath } from "~/utils";
 import { createLogger } from "~/utils/logger";
 import { PackagesRegistry, getConfig } from ".";
 import { unpack } from "../utils/unpack";
@@ -33,7 +33,7 @@ export async function unpackDependencies(
       });
 
       log.debug(
-        `Moved package files to isolate ${getRelativePath(
+        `Moved package files to isolate ${getIsolateRelativePath(
           destinationDir,
           isolateDir
         )}`
