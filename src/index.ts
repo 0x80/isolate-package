@@ -151,7 +151,8 @@ async function start() {
   });
 
   /**
-   * Clean up
+   * Clean up. Only so this in the happy path, so we can look at the temp folder
+   * when thing go wrong.
    */
   log.debug(
     "Deleting temporary directory",

@@ -9,7 +9,7 @@ export async function unpackDependencies(
   packedFilesByName: Record<string, string>,
   packagesRegistry: PackagesRegistry,
   tmpDir: string,
-  isolateDir: string,
+  isolateDir: string
 ) {
   const log = createLogger(getConfig().logLevel);
   await Promise.all(
@@ -18,9 +18,9 @@ export async function unpackDependencies(
 
       const unpackDir = join(tmpDir, dir);
 
-      await unpack(filePath, unpackDir);
+      log.debug("Unpacking", path.basename(filePath));
 
-      log.debug("Unpacked", path.basename(filePath));
+      await unpack(filePath, unpackDir);
 
       const destinationDir = join(isolateDir, dir);
 
@@ -33,9 +33,9 @@ export async function unpackDependencies(
       log.debug(
         `Moved package files to isolate ${getRelativePath(
           destinationDir,
-          isolateDir,
-        )}`,
+          isolateDir
+        )}`
       );
-    }),
+    })
   );
 }
