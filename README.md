@@ -61,12 +61,12 @@ So basically, version information is ignored, and if the package name can be
 found in the list of local monorepo packages, it will be processed regardless of
 its version specifier.
 
-### Define "files" in each manifest
+### Define "files" and "version" in each manifest
 
 The isolate process uses (p)npm `pack` to extract files from package
 directories, just like publishing a package would.
 
-So for this to work it is required that you define the `files` property in each
+For this to work it is required that you define the `files` property in each
 `package.json` manifest, as it declares what files should be included in the
 published output.
 
@@ -79,6 +79,9 @@ directory, for example:
   "files": ["dist"]
 }
 ```
+
+Also `version` seems to be required by pack. I like setting it to `"0.0.0"` to make it
+clear that the version is not really being used.
 
 A few additional files will be included by `pack` automatically, like the
 `package.json` and `README.md` files.
