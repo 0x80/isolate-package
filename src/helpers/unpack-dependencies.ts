@@ -1,4 +1,5 @@
 import fs from "fs-extra";
+import { dir } from "node:console";
 import path, { join } from "node:path";
 import { getRelativePath } from "~/utils";
 import { createLogger } from "~/utils/logger";
@@ -18,7 +19,8 @@ export async function unpackDependencies(
 
       const unpackDir = join(tmpDir, dir);
 
-      log.debug("Unpacking", path.basename(filePath));
+      // log.debug("Unpacking", path.basename(filePath));
+      log.debug("Unpacking", filePath);
 
       await unpack(filePath, unpackDir);
 

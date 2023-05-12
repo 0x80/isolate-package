@@ -6,7 +6,7 @@ import { createLogger } from "./logger";
 export async function pack(
   srcDir: string,
   destDir: string,
-  packageManager: PackageManager,
+  packageManager: PackageManager
 ) {
   const log = createLogger(getConfig().logLevel);
   const cwd = process.cwd();
@@ -33,7 +33,8 @@ export async function pack(
        */
       const packedFilePath = stdout.trim();
 
-      log.debug("Packed", path.basename(packedFilePath));
+      // log.debug("Packed", path.basename(packedFilePath));
+      log.debug("Packed", packedFilePath);
 
       process.chdir(cwd);
       return packedFilePath;
