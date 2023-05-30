@@ -61,17 +61,16 @@ async function start() {
   const isolateDir = path.join(targetPackageDir, config.isolateDirName);
 
   log.debug(
-    "Isolate output dir",
+    "Isolate output directory",
     getRootRelativePath(isolateDir, workspaceRootDir)
   );
 
-  /**
-   * Make sure the isolate dir exists so we can write to it
-   */
-  await fs.ensureDir(isolateDir);
+  if (fs.existsSync(isolateDir)) {
+    await fs.remove(isolateDir);
+    log.debug("Cleaned the existing isolate output directory");
+  }
 
-  await fs.remove(`${isolateDir}/**/*`);
-  log.debug("Cleaned the isolate output directory");
+  await fs.ensureDir(isolateDir);
 
   /**
    * Build a packages registry so we can find the workspace packages by name and
