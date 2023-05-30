@@ -13,20 +13,30 @@ export async function pack(
   process.chdir(srcDir);
 
   /**
-   * PNPM pack seems to be a lot faster than NPM pack, so when PNPM is detected we
-   * use that instead.
+   * PNPM pack seems to be a lot faster than NPM pack, so when PNPM is detected
+   * we use that instead.
    */
   switch (packageManager) {
     case "pnpm": {
       const stdout = await new Promise<string>((resolve, reject) => {
-        exec(`pnpm pack --pack-destination ${destDir}`, (err, stdout) => {
-          if (err) {
-            return reject(err);
-          }
+        exec(
+          `pnpm pack --pack-destination ${destDir}`,
+          (err, stdout, stderr) => {
+            if (err) {
+              log.error(stderr);
+              return reject(err);
+            }
 
-          resolve(stdout);
-        });
+            resolve(stdout);
+          }
+        );
       });
+
+      /**
+       * @TODO use a regex to see if the result from stdout is a valid file
+       * path. It could be that other output like warnings are printed. In that
+       * case we can to log the stdout.
+       */
 
       /**
        * Trim newlines and whitespace

@@ -33,7 +33,7 @@ export async function unpackDependencies(
       });
 
       log.debug(
-        `Moved package files to isolate ${getIsolateRelativePath(
+        `Moved package files to ${getIsolateRelativePath(
           destinationDir,
           isolateDir
         )}`

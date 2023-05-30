@@ -26,7 +26,7 @@ use-case, I would love to hear about it.
 - Isolates dependencies recursively. If package A depends on local package B
   which depends on local package C, all of them will be isolated.
 - Include and (in the case of PNPM) update the lockfile so the isolated
-  deployment should be deterministic.
+  deployment should be deterministic. For PNPM see [lockfiles](#lockfiles)
 - Optionally choose to include dev dependencies in the isolated output.
 
 ## Prerequisites
@@ -80,8 +80,8 @@ directory, for example:
 }
 ```
 
-Also `version` seems to be required by pack. I like setting it to `"0.0.0"` to make it
-clear that the version is not really being used.
+Also `version` seems to be required by pack. I like setting it to `"0.0.0"` to
+make it clear that the version is not really being used.
 
 A few additional files will be included by `pack` automatically, like the
 `package.json` and `README.md` files.
@@ -100,8 +100,7 @@ You can, however, declare multiple packages folders like `["packages/*",
 
 ## Usage
 
-Run `npm install isolate-package --dev` or the equivalent for `yarn` or
-`pnpm`.
+Run `npm install isolate-package --dev` or the equivalent for `yarn` or `pnpm`.
 
 This package exposes the `isolate` executable. Once installed you can run `npx
 isolate` in any package directory _after_ you have build the source files. By
@@ -288,17 +287,18 @@ isolate process manually with `npx isolate` and possibly
 
 ## Lockfiles
 
-I inspected the NPM lockfile as well as the Yarn v1 and v3 lockfiles and they
-seem to have a flat structure unrelated to the workspace packages structure, so
-I have made the assumption that they can be copied to the isolate output as-is.
+The lockfiles for NPM as well as the Yarn v1 and v3 seem to have a flat
+structure unrelated to the workspace packages structure, so they are copied to
+the isolate output as-is.
 
 The PNPM lockfile clearly has a structure describing the different packages by
 their relative paths, and so to correct the lockfile it is adapted before being
 stored to the isolate directory.
 
-I am not sure the Firebase deploy pipeline is actually detecting a
-`pnpm-lock.yaml` file and using PNPM to install its packages. This needs to be
-verified...
+There is still [an issue with the PNPM lockfile
+conversion](https://github.com/0x80/isolate-package/issues/5). Until that is
+resolved, you can choose to exclude the lockfile by setting the configuration
+`"excludeLockfile": true`.
 
 ## Used Terminology
 

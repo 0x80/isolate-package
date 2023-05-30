@@ -139,16 +139,20 @@ async function start() {
    */
   await adaptTargetPackageManifest(manifest, packagesRegistry, isolateDir);
 
-  /**
-   * Copy and adapt the lockfile
-   */
-  await processLockfile({
-    workspaceRootDir,
-    targetPackageName: manifest.name,
-    isolateDir,
-    packagesRegistry,
-    packageManager,
-  });
+  if (config.excludeLockfile) {
+    log.warn("Excluding the lockfile from the isolate output");
+  } else {
+    /**
+     * Copy and adapt the lockfile
+     */
+    await processLockfile({
+      workspaceRootDir,
+      targetPackageName: manifest.name,
+      isolateDir,
+      packagesRegistry,
+      packageManager,
+    });
+  }
 
   /**
    * Clean up. Only so this in the happy path, so we can look at the temp folder

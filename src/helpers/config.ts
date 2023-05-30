@@ -12,6 +12,7 @@ export type IsolateConfigResolved = {
   tsconfigPath: string;
   workspacePackages?: string[];
   workspaceRoot: string;
+  excludeLockfile: boolean;
 };
 
 export type IsolateConfig = Partial<IsolateConfigResolved>;
@@ -25,6 +26,7 @@ const configDefaults: IsolateConfigResolved = {
   tsconfigPath: "./tsconfig.json",
   workspacePackages: undefined,
   workspaceRoot: "../..",
+  excludeLockfile: false,
 };
 
 /**
