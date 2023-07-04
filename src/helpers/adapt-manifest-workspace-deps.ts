@@ -8,9 +8,11 @@ import {
 
 export function adaptManifestWorkspaceDeps(
   {
+	isFunctionsRoot,
     manifest,
     packagesRegistry,
   }: {
+	isFunctionsRoot: boolean,
     manifest: PackageManifestMinimum;
     packagesRegistry: PackagesRegistry;
   },
@@ -20,11 +22,11 @@ export function adaptManifestWorkspaceDeps(
     omit(manifest, ["scripts", "devDependencies"]),
     filterObjectUndefined({
       dependencies: manifest.dependencies
-        ? patchWorkspaceEntries(manifest.dependencies, packagesRegistry)
+        ? patchWorkspaceEntries(isFunctionsRoot, manifest.name, manifest.dependencies, packagesRegistry)
         : undefined,
       devDependencies:
         opts.includeDevDependencies && manifest.devDependencies
-          ? patchWorkspaceEntries(manifest.devDependencies, packagesRegistry)
+          ? patchWorkspaceEntries(isFunctionsRoot, manifest.name, manifest.devDependencies, packagesRegistry)
           : undefined,
     }),
   );

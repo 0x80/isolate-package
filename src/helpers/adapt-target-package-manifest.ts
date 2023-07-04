@@ -14,6 +14,7 @@ export async function adaptTargetPackageManifest(
 ) {
   const outputManifest = adaptManifestWorkspaceDeps(
     {
+	  isFunctionsRoot: true,
       manifest,
       packagesRegistry,
     },

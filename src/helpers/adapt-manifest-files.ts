@@ -16,7 +16,7 @@ export async function adaptManifestFiles(
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
       const outputManifest = adaptManifestWorkspaceDeps(
-        { manifest, packagesRegistry },
+        { isFunctionsRoot: false, manifest, packagesRegistry },
         { includeDevDependencies: getConfig().includeDevDependencies },
       );
 
