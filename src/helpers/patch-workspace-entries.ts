@@ -2,12 +2,14 @@ import { createLogger } from "~/utils";
 import { getConfig } from "./config";
 import { PackagesRegistry } from "./create-packages-registry";
 import path from "node:path";
+import { PackageManager } from "./detect-package-manager";
 
 export function patchWorkspaceEntries(
-  isFunctionsRoot: boolean,
+  isPackageToIsolate: boolean,
   packageName: string,
   dependencies: Record<string, string>,
   packagesRegistry: PackagesRegistry,
+  packageManager: PackageManager
 ) {
   const log = createLogger(getConfig().logLevel);
   const allWorkspacePackageNames = Object.keys(packagesRegistry);
@@ -24,9 +26,9 @@ export function patchWorkspaceEntries(
 		 * expects the "file:" directive to be relative to the current package.json, we need to 
 		 * "subtract" the relative path of the shared dependecy from the path of the current dir.
          */
-		const linkedPath = `file:${isFunctionsRoot ? def.rootRelativeDir : relativePath}`
+		const linkedPath = `file:${isPackageToIsolate || packageManager === 'npm' ? def.rootRelativeDir : relativePath}`
 
-        log.debug(`Patching package ${packageName} ${isFunctionsRoot ? 'which is the cloud function root' : ''}. Linking dependency ${key} to ${linkedPath}`);
+        log.debug(`Patching package ${packageName} ${isPackageToIsolate ? 'which is the package to isolate' : ''}. Linking dependency ${key} to ${linkedPath}`);
 
         return [key, linkedPath];
       } else {

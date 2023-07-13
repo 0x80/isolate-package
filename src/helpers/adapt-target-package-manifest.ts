@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import path from "node:path";
 import {
+	PackageManager,
   PackageManifestMinimum,
   PackagesRegistry,
   adaptManifestWorkspaceDeps,
@@ -11,12 +12,14 @@ export async function adaptTargetPackageManifest(
   manifest: PackageManifestMinimum,
   packagesRegistry: PackagesRegistry,
   isolateDir: string,
+  packageManager: PackageManager
 ) {
   const outputManifest = adaptManifestWorkspaceDeps(
     {
-	  isFunctionsRoot: true,
+	  isPackageToIsolate: true,
       manifest,
       packagesRegistry,
+	  packageManager
     },
     { includeDevDependencies: getConfig().includeDevDependencies },
   );
