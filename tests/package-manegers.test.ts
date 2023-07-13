@@ -8,14 +8,26 @@ const execPromise = promisify(exec)
 // cant change dirs because we are in a worker with vitest. prepend everything with this testDir path instead.
 const testDir = 'tests/test-package'
 
+const cleanup = async () => {
+	// clean up node modules in current install.
+
+	// recursively delete all node_modules
+	await execPromise(`find ./${testDir} -type d -name "node_modules" -exec rm -rf {} +`)
+
+	// delete the isolate folder
+	await execPromise(`rm -rf ./${testDir}/packages/package-to-isolate/isolate`)
+
+	// delete lock files
+	await execPromise(`rm -f ./${testDir}/package-lock.json ./${testDir}/yarn.lock ./${testDir}/pnpm-lock.yaml`)
+}
+
 describe('Testing if all package managers work', () => {
 	beforeEach(async () => {
-		// clean up node modules in current install.
-		await execPromise(`rm -rf ./${testDir}/node_modules ./${testDir}/packages/package-to-isolate/isolate ./${testDir}/packages/package-to-isolate/node_modules ./${testDir}/package-lock.json ./${testDir}/yarn.lock ./${testDir}/pnpm-lock.yaml`)
+		await cleanup()
 	})
 	
 	afterAll(async () => {
-		await execPromise(`rm -rf ./${testDir}/node_modules ./${testDir}/packages/package-to-isolate/isolate ./${testDir}/packages/package-to-isolate/node_modules ./${testDir}/package-lock.json ./${testDir}/yarn.lock ./${testDir}/pnpm-lock.yaml`)
+		await cleanup()
 	})
 
 	it('Should isolate using npm', async () => {
