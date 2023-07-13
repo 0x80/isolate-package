@@ -1,0 +1,13 @@
+{
+	"name": "package-to-isolate",
+	"version": "0.0.0",
+	"private": true,
+	"files": ["index.js"],
+	"dependencies": {
+		"package-b": "*",
+		"package-a": "*"
+	},
+	"devDependencies": {
+		"isolate-package": "file:../../../../"
+	}
+}

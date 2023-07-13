@@ -120,7 +120,7 @@ async function start() {
   /**
    * Adapt the manifest files for all the unpacked local dependencies
    */
-  await adaptManifestFiles(localDependencies, packagesRegistry, isolateDir);
+  await adaptManifestFiles(localDependencies, packagesRegistry, isolateDir, packageManager);
 
   /**
    * Pack the target package directory, and unpack it in the isolate location
@@ -136,7 +136,7 @@ async function start() {
    * Copy the target manifest file to the isolate location and adapt its
    * workspace dependencies to point to the isolated packages.
    */
-  await adaptTargetPackageManifest(manifest, packagesRegistry, isolateDir);
+  await adaptTargetPackageManifest(manifest, packagesRegistry, isolateDir, packageManager);
 
   if (config.excludeLockfile) {
     log.warn("Excluding the lockfile from the isolate output");

@@ -1,6 +1,7 @@
 import { omit } from "lodash-es";
 import { filterObjectUndefined } from "~/utils";
 import {
+	PackageManager,
   PackageManifestMinimum,
   PackagesRegistry,
   patchWorkspaceEntries,
@@ -8,11 +9,15 @@ import {
 
 export function adaptManifestWorkspaceDeps(
   {
+	isPackageToIsolate,
     manifest,
     packagesRegistry,
+	packageManager
   }: {
-    manifest: PackageManifestMinimum;
-    packagesRegistry: PackagesRegistry;
+	isPackageToIsolate: boolean,
+    manifest: PackageManifestMinimum,
+    packagesRegistry: PackagesRegistry,
+	packageManager: PackageManager,
   },
   opts: { includeDevDependencies?: boolean } = {},
 ): PackageManifestMinimum {
@@ -20,11 +25,11 @@ export function adaptManifestWorkspaceDeps(
     omit(manifest, ["scripts", "devDependencies"]),
     filterObjectUndefined({
       dependencies: manifest.dependencies
-        ? patchWorkspaceEntries(manifest.dependencies, packagesRegistry)
+        ? patchWorkspaceEntries(isPackageToIsolate, manifest.name, manifest.dependencies, packagesRegistry, packageManager)
         : undefined,
       devDependencies:
         opts.includeDevDependencies && manifest.devDependencies
-          ? patchWorkspaceEntries(manifest.devDependencies, packagesRegistry)
+          ? patchWorkspaceEntries(isPackageToIsolate, manifest.name, manifest.devDependencies, packagesRegistry, packageManager)
           : undefined,
     }),
   );
