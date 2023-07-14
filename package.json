@@ -27,7 +27,8 @@
   "scripts": {
     "build": "tsup-node",
     "test": "vitest",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "lint:format": "prettier --check ."
   },
   "dependencies": {
     "chalk": "^5.2.0",
