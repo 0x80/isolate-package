@@ -29,6 +29,28 @@ use-case, I would love to hear about it.
   deployment should be deterministic. For PNPM see [lockfiles](#lockfiles)
 - Optionally choose to include dev dependencies in the isolated output.
 
+## Quickstart
+
+This describes the steps required for the most common use-cases, assuming your
+are using a typical monorepo setup, and your `firebase.json` config lives in the
+package where you deploy from. If this doesn't work, continue reading the
+[Prerequisites](#prerequisites) section, as you might have to tweak your
+package.json files a bit.
+
+1. Install isolate-package by running `pnpm add isolate-package -D` (or the Yarn
+   / NPM equivalent) from the root of the package you would like to deploy to
+   Firebase.
+2. In the `firebase.json` config (assuming it lives in the package you deploy
+   from) set `"source"` to `"./isolate"` and `"predeploy"` to `["turbo build",
+"isolate"]` or whatever fits your build command.
+3. That's it! You should now be able to deploy with `npx firebase deploy` or
+   `npx firebase deploy --only functions` if your package only contains code for
+   functions.
+
+Keeping your `firebase.json` file inside the package (as opposed to the monorepo
+root) is recommended, because it keeps things clean and allows you to deploy to
+firebase from multiple independent packages.
+
 ## Prerequisites
 
 Because historically different approaches to monorepos exist, we need to
