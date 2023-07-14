@@ -10,18 +10,18 @@ import {
 export async function adaptTargetPackageManifest(
   manifest: PackageManifestMinimum,
   packagesRegistry: PackagesRegistry,
-  isolateDir: string,
+  isolateDir: string
 ) {
   const outputManifest = adaptManifestWorkspaceDeps(
     {
       manifest,
       packagesRegistry,
     },
-    { includeDevDependencies: getConfig().includeDevDependencies },
+    { includeDevDependencies: getConfig().includeDevDependencies }
   );
 
   await fs.writeFile(
     path.join(isolateDir, "package.json"),
-    JSON.stringify(outputManifest, null, 2),
+    JSON.stringify(outputManifest, null, 2)
   );
 }

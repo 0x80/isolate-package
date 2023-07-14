@@ -14,7 +14,7 @@ import {
 export function listLocalDependencies(
   manifest: PackageManifestMinimum,
   packagesRegistry: PackagesRegistry,
-  { includeDevDependencies = false } = {},
+  { includeDevDependencies = false } = {}
 ): string[] {
   const allWorkspacePackageNames = Object.keys(packagesRegistry);
 
@@ -32,8 +32,8 @@ export function listLocalDependencies(
       listLocalDependencies(
         packagesRegistry[packageName].manifest,
         packagesRegistry,
-        { includeDevDependencies },
-      ),
+        { includeDevDependencies }
+      )
   );
 
   return localDependencyPackageNames.concat(nestedLocalDependencies);

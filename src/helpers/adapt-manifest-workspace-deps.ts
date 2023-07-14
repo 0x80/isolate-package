@@ -14,7 +14,7 @@ export function adaptManifestWorkspaceDeps(
     manifest: PackageManifestMinimum;
     packagesRegistry: PackagesRegistry;
   },
-  opts: { includeDevDependencies?: boolean } = {},
+  opts: { includeDevDependencies?: boolean } = {}
 ): PackageManifestMinimum {
   return Object.assign(
     omit(manifest, ["scripts", "devDependencies"]),
@@ -26,6 +26,6 @@ export function adaptManifestWorkspaceDeps(
         opts.includeDevDependencies && manifest.devDependencies
           ? patchWorkspaceEntries(manifest.devDependencies, packagesRegistry)
           : undefined,
-    }),
+    })
   );
 }

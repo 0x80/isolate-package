@@ -4,7 +4,7 @@ import { PackagesRegistry } from "./create-packages-registry";
 
 export function patchWorkspaceEntries(
   dependencies: Record<string, string>,
-  packagesRegistry: PackagesRegistry,
+  packagesRegistry: PackagesRegistry
 ) {
   const log = createLogger(getConfig().logLevel);
   const allWorkspacePackageNames = Object.keys(packagesRegistry);
@@ -25,6 +25,6 @@ export function patchWorkspaceEntries(
       } else {
         return [key, value];
       }
-    }),
+    })
   );
 }

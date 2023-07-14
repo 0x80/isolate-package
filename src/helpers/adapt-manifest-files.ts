@@ -9,7 +9,7 @@ import {
 export async function adaptManifestFiles(
   localDependencies: string[],
   packagesRegistry: PackagesRegistry,
-  isolateDir: string,
+  isolateDir: string
 ) {
   await Promise.all(
     localDependencies.map(async (packageName) => {
@@ -17,13 +17,13 @@ export async function adaptManifestFiles(
 
       const outputManifest = adaptManifestWorkspaceDeps(
         { manifest, packagesRegistry },
-        { includeDevDependencies: getConfig().includeDevDependencies },
+        { includeDevDependencies: getConfig().includeDevDependencies }
       );
 
       await fs.writeFile(
         path.join(isolateDir, rootRelativeDir, "package.json"),
-        JSON.stringify(outputManifest, null, 2),
+        JSON.stringify(outputManifest, null, 2)
       );
-    }),
+    })
   );
 }

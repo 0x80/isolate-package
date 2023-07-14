@@ -58,7 +58,7 @@ export async function packDependencies({
     packedFileByName[name] = await pack(
       def.absoluteDir,
       packDestinationDir,
-      packageManager,
+      packageManager
     );
 
     /**
