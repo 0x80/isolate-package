@@ -2,7 +2,8 @@ import fs from "fs-extra";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
 import path from "node:path";
-import { pack } from "tar-fs";
+import { createLogger, readTypedJsonSync } from "~/utils";
+import { getConfig } from "./config";
 import { PackageManifest } from "./create-packages-registry";
 import { getLockfileFileName } from "./process-lockfile";
 
@@ -22,22 +23,26 @@ let packageManager: PackageManager | undefined;
  * we get the name and version from there. Otherwise we'll search for the
  * different lockfiles and ask the OS to report the installed version.
  */
-export function detectPackageManager(
-  workspaceRoot: string,
-  manifest: PackageManifest
-): PackageManager {
+export function detectPackageManager(workspaceRoot: string): PackageManager {
   packageManager =
-    inferFromManifest(manifest, workspaceRoot) ?? inferFromFiles(workspaceRoot);
+    inferFromManifest(workspaceRoot) ?? inferFromFiles(workspaceRoot);
 
   return packageManager;
 }
 
-function inferFromManifest(manifest: PackageManifest, workspaceRoot: string) {
-  if (!manifest.packageManager) {
+function inferFromManifest(workspaceRoot: string) {
+  const log = createLogger(getConfig().logLevel);
+
+  const rootManifest = readTypedJsonSync<PackageManifest>(
+    path.join(workspaceRoot, "package.json")
+  );
+
+  if (!rootManifest.packageManager) {
+    log.debug("No packageManager field found in root manifest");
     return;
   }
 
-  const [name, version = "*"] = manifest.packageManager.split("@") as [
+  const [name, version = "*"] = rootManifest.packageManager.split("@") as [
     PackageManagerName,
     string,
   ];
