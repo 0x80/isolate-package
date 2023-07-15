@@ -17,26 +17,18 @@ export function patchWorkspaceEntries(
         const def = packagesRegistry[key];
 
         /**
-         * Some package managers seem to want a relative file:// link path when
-         * referring to own dependencies. Others want the absolute path (?).
+         * When nested shared dependencies are used (local deps linking to other
+         * local deps), the parentRootRelativeDir will be passed in, and we
+         * store the relative path to the isolate/packages directory, as is
+         * required by some package managers.
          */
         const relativePath = parentRootRelativeDir
-          ? path.relative(parentRootRelativeDir, def.rootRelativeDir)
-          : def.rootRelativeDir;
+          ? path.relative(parentRootRelativeDir, `./${def.rootRelativeDir}`)
+          : `./${def.rootRelativeDir}`;
 
-        // const linkedPath = `file:${
-        //   isPackageToIsolate || packageManager === "npm"
-        //     ? def.rootRelativeDir
-        //     : relativePath
-        // }`;
-
-        // const linkPath = `file:${def.rootRelativeDir}`;
         const linkPath = `file:${relativePath}`;
-        /**
-         * The rootRelativeDir is the package location in the monorepo. In the
-         * isolate folder we keep the same structure so we can use the same
-         * relative path.
-         */
+        // const linkPath = `file:${def.rootRelativeDir}`;
+
         log.debug(`Linking dependency ${key} to ${linkPath}`);
 
         return [key, linkPath];
