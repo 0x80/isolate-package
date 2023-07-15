@@ -12,13 +12,9 @@ export async function adaptManifestFiles(
   packagesRegistry: PackagesRegistry,
   isolateDir: string
 ) {
-  const log = createLogger(getConfig().logLevel);
-
   await Promise.all(
     localDependencies.map(async (packageName) => {
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
-
-      log.debug("Adapting manifest file:", packageName);
 
       const outputManifest = adaptManifestWorkspaceDeps(
         { manifest, packagesRegistry, parentRootRelativeDir: rootRelativeDir },

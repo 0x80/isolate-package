@@ -21,13 +21,15 @@ export function patchWorkspaceEntries(
          * local deps), the parentRootRelativeDir will be passed in, and we
          * store the relative path to the isolate/packages directory, as is
          * required by some package managers.
+         *
+         * For consistency we also write the other file paths starting with
+         * ./, but it doesn't seem to be necessary for any package manager.
          */
         const relativePath = parentRootRelativeDir
           ? path.relative(parentRootRelativeDir, `./${def.rootRelativeDir}`)
           : `./${def.rootRelativeDir}`;
 
         const linkPath = `file:${relativePath}`;
-        // const linkPath = `file:${def.rootRelativeDir}`;
 
         log.debug(`Linking dependency ${key} to ${linkPath}`);
 

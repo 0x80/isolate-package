@@ -25,7 +25,8 @@ let packageManager: PackageManager | undefined;
  */
 export function detectPackageManager(workspaceRoot: string): PackageManager {
   /**
-   * Disable infer from manifest. I doubt it is useful after all
+   * Disable infer from manifest for now. I doubt it is useful after all but
+   * I'll keep the code as a reminder.
    */
   // packageManager =
   //   inferFromManifest(workspaceRoot) ?? inferFromFiles(workspaceRoot);
