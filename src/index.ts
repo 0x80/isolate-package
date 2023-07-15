@@ -89,7 +89,7 @@ async function start() {
    * detected. We log it here because the pack function will be called
    * recursively.
    */
-  if (packageManager === "pnpm") {
+  if (packageManager.name === "pnpm") {
     log.debug("Using pnpm to pack dependencies");
   } else {
     log.debug("Using npm to pack dependencies");

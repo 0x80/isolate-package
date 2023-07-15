@@ -6,7 +6,7 @@ import {
   readTypedYamlSync,
 } from "~/utils";
 import { getConfig } from "./config";
-import { detectPackageManager } from "./detect-package-manager";
+import { usePackageManager } from "./detect-package-manager";
 
 /**
  * Find the globs that define where the packages are located within the
@@ -16,9 +16,9 @@ import { detectPackageManager } from "./detect-package-manager";
 export function findPackagesGlobs(workspaceRootDir: string) {
   const log = createLogger(getConfig().logLevel);
 
-  const packageManager = detectPackageManager(workspaceRootDir);
+  const packageManager = usePackageManager();
 
-  switch (packageManager) {
+  switch (packageManager.name) {
     case "pnpm": {
       const { packages: globs } = readTypedYamlSync<{ packages: string[] }>(
         path.join(workspaceRootDir, "pnpm-workspace.yaml")
