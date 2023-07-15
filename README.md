@@ -102,11 +102,16 @@ directory, for example:
 }
 ```
 
-Also `version` seems to be required by pack. I like setting it to `"0.0.0"` to
-make it clear that the version is not really being used.
+The `version` field is also required for `pack` to execute. I personally always
+set it to `"0.0.0"` to indicate that the version does not have a practical
+function.
 
 A few additional files will be included by `pack` automatically, like the
 `package.json` and `README.md` files.
+
+**Tip** If you deploy to Firebase gen2 functions, you might want to include some
+.env files in the "files" list, so they are packaged and deployed together with
+your build output.
 
 ### Use a flat structure inside your packages folders
 
@@ -212,6 +217,15 @@ Type: `string | undefined`, default: `undefined`
 The name of the build output directory name. When undefined it is automatically
 detected via `tsconfig.json`. When you are not using Typescript you can use this
 setting to specify where the build output files are located.
+
+### excludeLockfile
+
+Type: `boolean`, default: Depends on package manager.
+
+Sets the inclusion or exclusion of the lockfile as part of the deployment. For
+Yarn and NPM the lockfiles are included by default, but for PNPM they are
+excluded by default because they are not supported yet. For more information see
+[lockfiles](#lockfiles).
 
 ### includeDevDependencies
 
@@ -319,8 +333,7 @@ stored to the isolate directory.
 
 There is still [an issue with the PNPM lockfile
 conversion](https://github.com/0x80/isolate-package/issues/5). Until that is
-resolved, you can choose to exclude the lockfile by setting the configuration
-`"excludeLockfile": true`.
+resolved, the `excludeLockfile` setting for PNPM defaults to `true`.
 
 ## Used Terminology
 

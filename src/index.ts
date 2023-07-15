@@ -82,6 +82,13 @@ async function start() {
   log.debug("Detected package manager", name, version);
 
   /**
+   * Disable lock files for PNPM because they are not yet supported.
+   */
+  if (name === "pnpm") {
+    config.excludeLockfile = true;
+  }
+
+  /**
    * Build a packages registry so we can find the workspace packages by name and
    * have access to their manifest files and relative paths.
    */
