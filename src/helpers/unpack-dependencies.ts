@@ -13,17 +13,11 @@ export async function unpackDependencies(
 ) {
   const log = createLogger(getConfig().logLevel);
 
-  // log.warn("packagesRegistry", JSON.stringify(packagesRegistry, null, 2));
-
   await Promise.all(
     Object.entries(packedFilesByName).map(async ([packageName, filePath]) => {
       const dir = packagesRegistry[packageName].rootRelativeDir;
-
-      log.warn("tmpDir, dir, filePath", tmpDir, dir, filePath);
-
       const unpackDir = join(tmpDir, dir);
 
-      // log.debug("Unpacking", path.basename(filePath));
       log.debug("Unpacking", filePath);
 
       await unpack(filePath, unpackDir);

@@ -5,7 +5,7 @@ import assert from "node:assert";
 import path from "node:path";
 import sourceMaps from "source-map-support";
 import {
-  PackageManifestMinimum,
+  PackageManifest,
   adaptManifestFiles,
   adaptTargetPackageManifest,
   createPackagesRegistry,
@@ -56,8 +56,6 @@ async function start() {
     getRootRelativePath(targetPackageDir, workspaceRootDir)
   );
 
-  const packageManager = detectPackageManager(workspaceRootDir);
-
   const isolateDir = path.join(targetPackageDir, config.isolateDirName);
 
   log.debug(
@@ -72,6 +70,17 @@ async function start() {
 
   await fs.ensureDir(isolateDir);
 
+  const tmpDir = path.join(isolateDir, "__tmp");
+  await fs.ensureDir(tmpDir);
+
+  const manifest = await readTypedJson<PackageManifest>(
+    path.join(targetPackageDir, "package.json")
+  );
+
+  const { name, version } = detectPackageManager(workspaceRootDir, manifest);
+
+  log.debug("Detected package manager", name, version);
+
   /**
    * Build a packages registry so we can find the workspace packages by name and
    * have access to their manifest files and relative paths.
@@ -79,24 +88,6 @@ async function start() {
   const packagesRegistry = await createPackagesRegistry(
     workspaceRootDir,
     config.workspacePackages
-  );
-
-  const tmpDir = path.join(isolateDir, "__tmp");
-  await fs.ensureDir(tmpDir);
-
-  /**
-   * PNPM pack seems to be much faster than NPM pack so we use that when PNPM is
-   * detected. We log it here because the pack function will be called
-   * recursively.
-   */
-  if (packageManager.name === "pnpm") {
-    log.debug("Using pnpm to pack dependencies");
-  } else {
-    log.debug("Using npm to pack dependencies");
-  }
-
-  const manifest = await readTypedJson<PackageManifestMinimum>(
-    path.join(targetPackageDir, "package.json")
   );
 
   const localDependencies = listLocalDependencies(manifest, packagesRegistry, {
@@ -107,7 +98,6 @@ async function start() {
     localDependencies,
     packagesRegistry,
     packDestinationDir: tmpDir,
-    packageManager,
   });
 
   await unpackDependencies(
@@ -128,7 +118,6 @@ async function start() {
   await processBuildOutputFiles({
     targetPackageDir,
     tmpDir,
-    packageManager,
     isolateDir,
   });
 
@@ -149,7 +138,6 @@ async function start() {
       targetPackageName: manifest.name,
       isolateDir,
       packagesRegistry,
-      packageManager,
     });
   }
 

@@ -2,7 +2,6 @@ import assert from "node:assert";
 import { createLogger, pack } from "~/utils";
 import { getConfig } from "./config";
 import { PackagesRegistry } from "./create-packages-registry";
-import { PackageManager } from "./detect-package-manager";
 
 /**
  * Pack dependencies so that we extract only the files that are supposed to be
@@ -26,13 +25,10 @@ export async function packDependencies({
    * configure it.
    */
   packDestinationDir,
-
-  packageManager,
 }: {
   packagesRegistry: PackagesRegistry;
   localDependencies: string[];
   packDestinationDir: string;
-  packageManager: PackageManager;
 }) {
   const config = getConfig();
   const log = createLogger(config.logLevel);
@@ -55,11 +51,7 @@ export async function packDependencies({
       continue;
     }
 
-    packedFileByName[name] = await pack(
-      def.absoluteDir,
-      packDestinationDir,
-      packageManager
-    );
+    packedFileByName[name] = await pack(def.absoluteDir, packDestinationDir);
 
     /**
      * @TODO call recursively

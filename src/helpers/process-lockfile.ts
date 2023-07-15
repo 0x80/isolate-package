@@ -4,7 +4,10 @@ import path from "node:path";
 import { createLogger, readTypedYamlSync, writeTypedYamlSync } from "~/utils";
 import { getConfig } from "./config";
 import { PackagesRegistry } from "./create-packages-registry";
-import { PackageManager } from "./detect-package-manager";
+import {
+  PackageManagerName,
+  usePackageManager,
+} from "./detect-package-manager";
 
 type PackagePath = string;
 
@@ -19,8 +22,8 @@ type PnpmLockfile = {
   >;
 };
 
-export function getLockfileFileName(packageManager: PackageManager) {
-  switch (packageManager.name) {
+export function getLockfileFileName(name: PackageManagerName) {
+  switch (name) {
     case "pnpm":
       return "pnpm-lock.yaml";
     case "yarn":
@@ -42,27 +45,27 @@ export function processLockfile({
   targetPackageName,
   packagesRegistry,
   isolateDir,
-  packageManager,
 }: {
   workspaceRootDir: string;
   targetPackageName: string;
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
-  packageManager: PackageManager;
 }) {
   const log = createLogger(getConfig().logLevel);
 
   const targetPackageRelativeDir =
     packagesRegistry[targetPackageName].rootRelativeDir;
 
-  const fileName = getLockfileFileName(packageManager);
+  const { name } = usePackageManager();
+
+  const fileName = getLockfileFileName(name);
 
   const lockfileSrcPath = path.join(workspaceRootDir, fileName);
   const lockfileDstPath = path.join(isolateDir, fileName);
 
-  switch (packageManager.name) {
+  switch (name) {
     /**
-     * It seems that for Yarn v1 and NPM v3 lockfile the content is not
+     * It seems that at least for Yarn v1 and NPM v3 lockfile the content is not
      * dependent on the workspace packages structure, so I am assuming we can
      * just copy it over.
      */
@@ -102,39 +105,5 @@ export function processLockfile({
 
       return;
     }
-
-    // case "npm": {
-    //   /**
-    //    * Assuming a v3 lockfile.
-    //    */
-    //   const origLockfile = readTypedJsonSync<NpmLockfile_v3>(lockfileSrcPath);
-
-    //   /**
-    //    * Overwrite the root importer with the target package importer contents
-    //    */
-    //   const adaptedLockfile = structuredClone(origLockfile);
-
-    //   const targetPackageDef =
-    //     adaptedLockfile.packages[targetPackageRelativeDir];
-
-    //   assert(
-    //     targetPackageDef,
-    //     `Failed to find target package in lockfile at packages[${targetPackageRelativeDir}]`
-    //   );
-
-    //   /**
-    //    * The root in the NPM lockfile seems to be marked by an empty string
-    //    */
-    //   adaptedLockfile.packages[""] = targetPackageDef;
-
-    //   /**
-    //    * Delete the target package original importer. Not really necessary.
-    //    */
-    //   delete adaptedLockfile.packages[targetPackageRelativeDir];
-
-    //   writeTypedYamlSync(lockfileDstPath, adaptedLockfile);
-
-    //   log.debug("Stored adapted lockfile at", lockfileDstPath);
-    // }
   }
 }

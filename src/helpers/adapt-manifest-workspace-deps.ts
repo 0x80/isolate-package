@@ -1,10 +1,6 @@
 import { omit } from "lodash-es";
 import { filterObjectUndefined } from "~/utils";
-import {
-  PackageManifestMinimum,
-  PackagesRegistry,
-  patchWorkspaceEntries,
-} from ".";
+import { PackageManifest, PackagesRegistry, patchWorkspaceEntries } from ".";
 
 export function adaptManifestWorkspaceDeps(
   {
@@ -12,12 +8,12 @@ export function adaptManifestWorkspaceDeps(
     packagesRegistry,
     parentRootRelativeDir,
   }: {
-    manifest: PackageManifestMinimum;
+    manifest: PackageManifest;
     packagesRegistry: PackagesRegistry;
     parentRootRelativeDir?: string;
   },
   opts: { includeDevDependencies?: boolean } = {}
-): PackageManifestMinimum {
+): PackageManifest {
   return Object.assign(
     omit(manifest, ["scripts", "devDependencies"]),
     filterObjectUndefined({

@@ -24,9 +24,6 @@ export function patchWorkspaceEntries(
           ? path.relative(parentRootRelativeDir, def.rootRelativeDir)
           : def.rootRelativeDir;
 
-        log.warn("parentRootRelativeDir", parentRootRelativeDir);
-        log.warn("def.rootRelativeDir", def.rootRelativeDir);
-
         // const linkedPath = `file:${
         //   isPackageToIsolate || packageManager === "npm"
         //     ? def.rootRelativeDir

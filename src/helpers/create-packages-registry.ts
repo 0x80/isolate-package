@@ -6,8 +6,9 @@ import { createLogger, readTypedJson } from "~/utils";
 import { getConfig } from "./config";
 import { findPackagesGlobs } from "./find-packages-globs";
 
-export type PackageManifestMinimum = {
+export type PackageManifest = {
   name: string;
+  packageManager?: string;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
   main: string;
@@ -29,7 +30,7 @@ export type WorkspacePackageInfo = {
   /**
    * The package.json file contents
    */
-  manifest: PackageManifestMinimum;
+  manifest: PackageManifest;
 };
 
 export type PackagesRegistry = Record<string, WorkspacePackageInfo>;
@@ -77,7 +78,7 @@ export async function createPackagesRegistry(
         } else {
           log.debug(`Registering package ./${rootRelativeDir}`);
 
-          const manifest = await readTypedJson<PackageManifestMinimum>(
+          const manifest = await readTypedJson<PackageManifest>(
             path.join(rootRelativeDir, "package.json")
           );
 

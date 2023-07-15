@@ -1,7 +1,4 @@
-import {
-  PackageManifestMinimum,
-  PackagesRegistry,
-} from "./create-packages-registry";
+import { PackageManifest, PackagesRegistry } from "./create-packages-registry";
 
 /**
  * Recursively list the packages from dependencies (and optionally
@@ -12,7 +9,7 @@ import {
  * that were found via the workspace glob patterns and added to the registry.
  */
 export function listLocalDependencies(
-  manifest: PackageManifestMinimum,
+  manifest: PackageManifest,
   packagesRegistry: PackagesRegistry,
   { includeDevDependencies = false } = {}
 ): string[] {
