@@ -20,7 +20,7 @@ type PnpmLockfile = {
 };
 
 export function getLockfileFileName(packageManager: PackageManager) {
-  switch (packageManager) {
+  switch (packageManager.name) {
     case "pnpm":
       return "pnpm-lock.yaml";
     case "yarn":
@@ -60,7 +60,7 @@ export function processLockfile({
   const lockfileSrcPath = path.join(workspaceRootDir, fileName);
   const lockfileDstPath = path.join(isolateDir, fileName);
 
-  switch (packageManager) {
+  switch (packageManager.name) {
     /**
      * It seems that for Yarn v1 and NPM v3 lockfile the content is not
      * dependent on the workspace packages structure, so I am assuming we can

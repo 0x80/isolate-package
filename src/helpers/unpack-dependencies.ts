@@ -1,7 +1,6 @@
 import fs from "fs-extra";
-import { dir } from "node:console";
-import path, { join } from "node:path";
-import { getIsolateRelativePath, getRootRelativePath } from "~/utils";
+import { join } from "node:path";
+import { getIsolateRelativePath } from "~/utils";
 import { createLogger } from "~/utils/logger";
 import { PackagesRegistry, getConfig } from ".";
 import { unpack } from "../utils/unpack";
@@ -13,9 +12,14 @@ export async function unpackDependencies(
   isolateDir: string
 ) {
   const log = createLogger(getConfig().logLevel);
+
+  // log.warn("packagesRegistry", JSON.stringify(packagesRegistry, null, 2));
+
   await Promise.all(
     Object.entries(packedFilesByName).map(async ([packageName, filePath]) => {
       const dir = packagesRegistry[packageName].rootRelativeDir;
+
+      log.warn("tmpDir, dir, filePath", tmpDir, dir, filePath);
 
       const unpackDir = join(tmpDir, dir);
 

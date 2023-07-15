@@ -1,9 +1,8 @@
 import { omit } from "lodash-es";
-import { createLogger, filterObjectUndefined } from "~/utils";
+import { filterObjectUndefined } from "~/utils";
 import {
   PackageManifestMinimum,
   PackagesRegistry,
-  getConfig,
   patchWorkspaceEntries,
 } from ".";
 
@@ -15,12 +14,10 @@ export function adaptManifestWorkspaceDeps(
   }: {
     manifest: PackageManifestMinimum;
     packagesRegistry: PackagesRegistry;
-    parentRootRelativeDir: string;
+    parentRootRelativeDir?: string;
   },
   opts: { includeDevDependencies?: boolean } = {}
 ): PackageManifestMinimum {
-  const log = createLogger(getConfig().logLevel);
-
   return Object.assign(
     omit(manifest, ["scripts", "devDependencies"]),
     filterObjectUndefined({

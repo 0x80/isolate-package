@@ -6,7 +6,7 @@ import { PackagesRegistry } from "./create-packages-registry";
 export function patchWorkspaceEntries(
   dependencies: Record<string, string>,
   packagesRegistry: PackagesRegistry,
-  parentRootRelativeDir: string
+  parentRootRelativeDir?: string
 ) {
   const log = createLogger(getConfig().logLevel);
   const allWorkspacePackageNames = Object.keys(packagesRegistry);
@@ -20,10 +20,12 @@ export function patchWorkspaceEntries(
          * Some package managers seem to want a relative file:// link path when
          * referring to own dependencies. Others want the absolute path (?).
          */
-        const parentRelativePath = path.relative(
-          parentRootRelativeDir,
-          def.rootRelativeDir
-        );
+        const relativePath = parentRootRelativeDir
+          ? path.relative(parentRootRelativeDir, def.rootRelativeDir)
+          : def.rootRelativeDir;
+
+        log.warn("parentRootRelativeDir", parentRootRelativeDir);
+        log.warn("def.rootRelativeDir", def.rootRelativeDir);
 
         // const linkedPath = `file:${
         //   isPackageToIsolate || packageManager === "npm"
@@ -32,7 +34,7 @@ export function patchWorkspaceEntries(
         // }`;
 
         // const linkPath = `file:${def.rootRelativeDir}`;
-        const linkPath = `file:${parentRelativePath}`;
+        const linkPath = `file:${relativePath}`;
         /**
          * The rootRelativeDir is the package location in the monorepo. In the
          * isolate folder we keep the same structure so we can use the same

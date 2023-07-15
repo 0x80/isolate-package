@@ -16,7 +16,7 @@ export async function pack(
    * PNPM pack seems to be a lot faster than NPM pack, so when PNPM is detected
    * we use that instead.
    */
-  switch (packageManager) {
+  switch (packageManager.name) {
     case "pnpm": {
       const stdout = await new Promise<string>((resolve, reject) => {
         exec(
