@@ -1,4 +1,5 @@
 import fs from "fs-extra";
+import stripJsonComments from "strip-json-comments";
 import { getErrorMessage } from "./get-error-message";
 
 /**
@@ -7,7 +8,7 @@ import { getErrorMessage } from "./get-error-message";
 export function readTypedJsonSync<T>(filePath: string) {
   try {
     const rawContent = fs.readFileSync(filePath, "utf-8");
-    const data = JSON.parse(rawContent) as T;
+    const data = JSON.parse(stripJsonComments(rawContent)) as T;
     return data;
   } catch (err) {
     throw new Error(
