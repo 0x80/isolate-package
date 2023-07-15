@@ -1,5 +1,14 @@
 #!/usr/bin/env node
 
+/**
+ * A word about used terminology:
+ *
+ * The various package managers, while being very similar, seem to use a
+ * different definition for the term "workspace". If you want to read the code it
+ * might be good to know that I consider the workspace to be the monorepo itself,
+ * in other words, the overall structure that holds all the packages.
+ */
+
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
@@ -73,11 +82,11 @@ async function start() {
   const tmpDir = path.join(isolateDir, "__tmp");
   await fs.ensureDir(tmpDir);
 
-  const manifest = await readTypedJson<PackageManifest>(
+  const targetPackageManifest = await readTypedJson<PackageManifest>(
     path.join(targetPackageDir, "package.json")
   );
 
-  const { name, version } = detectPackageManager(workspaceRootDir, manifest);
+  const { name, version } = detectPackageManager(workspaceRootDir);
 
   log.debug("Detected package manager", name, version);
 
@@ -97,9 +106,13 @@ async function start() {
     config.workspacePackages
   );
 
-  const localDependencies = listLocalDependencies(manifest, packagesRegistry, {
-    includeDevDependencies: config.includeDevDependencies,
-  });
+  const localDependencies = listLocalDependencies(
+    targetPackageManifest,
+    packagesRegistry,
+    {
+      includeDevDependencies: config.includeDevDependencies,
+    }
+  );
 
   const packedFilesByName = await packDependencies({
     localDependencies,
@@ -132,7 +145,11 @@ async function start() {
    * Copy the target manifest file to the isolate location and adapt its
    * workspace dependencies to point to the isolated packages.
    */
-  await adaptTargetPackageManifest(manifest, packagesRegistry, isolateDir);
+  await adaptTargetPackageManifest(
+    targetPackageManifest,
+    packagesRegistry,
+    isolateDir
+  );
 
   if (config.excludeLockfile) {
     log.warn("Excluding the lockfile from the isolate output");
@@ -142,7 +159,7 @@ async function start() {
      */
     await processLockfile({
       workspaceRootDir,
-      targetPackageName: manifest.name,
+      targetPackageName: targetPackageManifest.name,
       isolateDir,
       packagesRegistry,
     });

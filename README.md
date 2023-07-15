@@ -15,45 +15,47 @@ There is nothing Firebase specific to this solution but I am currently not aware
 of other reasons to isolate a workspace package. If you find a different
 use-case, I would love to hear about it.
 
+In the code and text you see the word manifest a lot, and it simply means to the
+contents of a `package.json` file.
+
 ## Features
 
 - Zero-config for the vast majority of use-cases, with no manual steps involved.
-- Designed to support NPM, Yarn and PNPM workspaces.
+- Support NPM, Yarn classic (v1) and current (v3) and PNPM.
 - Compatible with the Firebase tools CLI.
-- Uses a pack/unpack approach to isolate only those files that would have been
-  part of a published package, so the resulting output contains a minimal amount
-  of files.
-- Isolates dependencies recursively. If package A depends on local package B
-  which depends on local package C, all of them will be isolated.
+- Uses a pack/unpack approach to isolate only the files that would have been
+  part of a published package, so the output contains a minimal set of files.
+- Isolates shared dependencies recursively. If package A depends on local
+  package B which depends on local package C, all of them will be isolated.
 - Include and (in the case of PNPM) update the lockfile so the isolated
   deployment should be deterministic. For PNPM see [lockfiles](#lockfiles)
-- Optionally choose to include dev dependencies in the isolated output.
+- Optionally include devDependencies in the isolated output.
 
 ## Quickstart
 
-This describes the steps required for the most common use-cases, assuming your
-are using a typical monorepo setup, and your `firebase.json` config lives in the
-package where you deploy from. If this doesn't work, continue reading the
-[Prerequisites](#prerequisites) section, as you might have to tweak your
-package.json files a bit.
+This describes the steps required for Firebase deployment in the most common
+use-cases, assuming your are using a fairly typical monorepo setup, and your
+`firebase.json` config lives in the package where you deploy from. If this
+doesn't work for you, continue reading the [Prerequisites](#prerequisites)
+section, as you might have to tweak your package.json files a bit.
 
 1. Install isolate-package by running `pnpm add isolate-package -D` (or the Yarn
-   / NPM equivalent) from the root of the package you would like to deploy to
-   Firebase.
+   / NPM equivalent) _from the root of the package you would like to deploy to
+   Firebase_.
 2. In the `firebase.json` config (assuming it lives in the package you deploy
    from) set `"source"` to `"./isolate"` and `"predeploy"` to `["turbo build",
-"isolate"]` or whatever fits your build command.
+"isolate"]` or whatever fits your build tool.
 3. That's it! You should now be able to deploy with `npx firebase deploy` or
    `npx firebase deploy --only functions` if your package only contains code for
    functions.
 
-Keeping your `firebase.json` file inside the package (as opposed to the monorepo
-root) is recommended, because it keeps things clean and allows you to deploy to
+I recommend keeping your `firebase.json` file inside the package (as opposed to
+the monorepo root), because it keeps things clean and allows you to deploy to
 firebase from multiple independent packages.
 
 ## Prerequisites
 
-Because historically different approaches to monorepos exist, we need to
+Because historically many different approaches to monorepos exist, we need to
 establish some basic rules for the isolate process to work.
 
 ### Define shared package dependencies in the manifest
@@ -109,9 +111,11 @@ function.
 A few additional files will be included by `pack` automatically, like the
 `package.json` and `README.md` files.
 
-**Tip** If you deploy to Firebase gen2 functions, you might want to include some
-.env files in the "files" list, so they are packaged and deployed together with
-your build output.
+**Tip** If you deploy to Firebase [2nd
+generation](https://firebase.google.com/docs/firestore/extend-with-functions-2nd-gen)
+functions, you might want to include some .env files in the "files" list, so
+they are packaged and deployed together with your build output (as 1st gen
+functions config is no longer supported).
 
 ### Use a flat structure inside your packages folders
 
@@ -331,24 +335,47 @@ The PNPM lockfile clearly has a structure describing the different packages by
 their relative paths, and so to correct the lockfile it is adapted before being
 stored to the isolate directory.
 
-There is still [an issue with the PNPM lockfile
-conversion](https://github.com/0x80/isolate-package/issues/5). Until that is
-resolved, the `excludeLockfile` setting for PNPM defaults to `true`.
+However, there is still [an issue with the PNPM lockfile
+conversion](https://github.com/0x80/isolate-package/issues/5) and it is unusable
+at the moment. Until that is resolved, the lockfile is automatically excluded
+for PNPM.
 
-## Used Terminology
+Personally, I don't see this as a big problem. I am declaring versions with `^`
+in my manifest, which means that a missing lockfile can only ever result in
+unexpected patch versions, and I am not using dependencies that are likely to
+break on patch version changes.
 
-The various package managers, while being very similar, seem to use a different
-definition for the term "workspace". If you want to read the code it might be
-good to know that I consider the workspace to be the monorepo itself, in other
-words, the overall structure that holds all the packages.
+## Different Package Managers
 
-Also, in the code you see the word manifest a lot, and it simply means to the
-contents of a `package.json` file.
+Isolate package has been designed to work with all package managers. Personally
+I have been testing it with NPM 9, Yarn 1.22, Yarn 3.6 and PNPM 8 on a fairly
+complex real-life project.
+
+The isolate process will infer the package manager name and version from the
+"packageManager" field in the manifest located in root of your monorepo. If the
+field is empty it will then infer it from the type of lockfile found and the
+version that the OS reports for the installed executable. This is just so we can
+make some distinction in the code where needed, but until now it is hardly
+necessary.
+
+For example, the PNPM `pack` process is preferred over the default NPM `pack` if
+PNPM in used, simply because it seems to be much faster.
+
+The Firebase cloud deploy pipeline will use the package manager that matches
+lockfile that was found in the deployed package.
+
+### Yarn v1 and v3
+
+If you are using Yarn 3 with zero-installs, the deployed package is not aware of
+that, because the `.yarnrc` file and `.yarn` folder are located in the root of
+your monorepo, and the version is not recorded as part of the lockfile. Therefor
+the Firebase deploy could pipeline will likely use Yarn 1 to install your
+dependencies. I don't think that is an issue but it might be good to know.
 
 ## Binary as ESM module
 
 The `isolate` binary is an ES module. It is required to have the `.mjs` file
-extension, otherwise a non-ESM workspace will try to execute it as commonJS. For
+extension, otherwise a non-ESM workspace will try to load it as commonJS. For
 details on this read [this article from Alex
 Rauschmayer](https://exploringjs.com/nodejs-shell-scripting/ch_creating-shell-scripts.html#node.js-esm-modules-as-standalone-shell-scripts-on-unix)
 
