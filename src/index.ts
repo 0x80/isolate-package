@@ -11,6 +11,7 @@
 
 import fs from "fs-extra";
 import assert from "node:assert";
+import { exec } from "node:child_process";
 import path from "node:path";
 import sourceMaps from "source-map-support";
 import {
@@ -86,14 +87,18 @@ async function start() {
     path.join(targetPackageDir, "package.json")
   );
 
-  const { name, version } = detectPackageManager(workspaceRootDir);
+  const packageManager = detectPackageManager(workspaceRootDir);
 
-  log.debug("Detected package manager", name, version);
+  log.debug(
+    "Detected package manager",
+    packageManager.name,
+    packageManager.version
+  );
 
   /**
    * Disable lock files for PNPM because they are not yet supported.
    */
-  if (name === "pnpm") {
+  if (packageManager.name === "pnpm") {
     config.excludeLockfile = true;
   }
 
@@ -163,6 +168,29 @@ async function start() {
       isolateDir,
       packagesRegistry,
     });
+
+    // if (packageManager.name === "npm") {
+    //   /**
+    //    * Shrinkwrap the package-lock.json file
+    //    */
+    //   log.debug("Running npm shrinkwrap");
+    //   const oldCwd = process.cwd();
+    //   process.chdir(isolateDir);
+
+    //   const stdout = await new Promise<string>((resolve, reject) => {
+    //     exec(`npm shrinkwrap`, (err, stdout) => {
+    //       if (err) {
+    //         return reject(err);
+    //       }
+
+    //       resolve(stdout);
+    //     });
+    //   });
+
+    //   log.debug(stdout);
+
+    //   process.chdir(oldCwd);
+    // }
   }
 
   /**
