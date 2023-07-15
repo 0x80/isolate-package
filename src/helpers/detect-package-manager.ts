@@ -24,9 +24,13 @@ let packageManager: PackageManager | undefined;
  * different lockfiles and ask the OS to report the installed version.
  */
 export function detectPackageManager(workspaceRoot: string): PackageManager {
-  packageManager =
-    inferFromManifest(workspaceRoot) ?? inferFromFiles(workspaceRoot);
+  /**
+   * Disable infer from manifest. I doubt it is useful after all
+   */
+  // packageManager =
+  //   inferFromManifest(workspaceRoot) ?? inferFromFiles(workspaceRoot);
 
+  packageManager = inferFromFiles(workspaceRoot);
   return packageManager;
 }
 
