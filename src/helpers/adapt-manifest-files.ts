@@ -5,6 +5,7 @@ import {
   adaptManifestWorkspaceDeps,
   getConfig,
 } from "~/helpers";
+import { createLogger } from "~/utils";
 
 export async function adaptManifestFiles(
   localDependencies: string[],
@@ -16,7 +17,7 @@ export async function adaptManifestFiles(
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
       const outputManifest = adaptManifestWorkspaceDeps(
-        { manifest, packagesRegistry },
+        { manifest, packagesRegistry, parentRootRelativeDir: rootRelativeDir },
         { includeDevDependencies: getConfig().includeDevDependencies }
       );
 

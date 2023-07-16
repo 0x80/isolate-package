@@ -1,11 +1,23 @@
 #!/usr/bin/env node
+/**
+ * For PNPM the hashbang at the top of the script was not required, but Yarn 3
+ * did not seem to execute without it.
+ */
 
+/**
+ * A word about used terminology:
+ *
+ * The various package managers, while being very similar, seem to use a
+ * different definition for the term "workspace". If you want to read the code
+ * it might be good to know that I consider the workspace to be the monorepo
+ * itself, in other words, the overall structure that holds all the packages.
+ */
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
 import sourceMaps from "source-map-support";
 import {
-  PackageManifestMinimum,
+  PackageManifest,
   adaptManifestFiles,
   adaptTargetPackageManifest,
   createPackagesRegistry,
@@ -56,8 +68,6 @@ async function start() {
     getRootRelativePath(targetPackageDir, workspaceRootDir)
   );
 
-  const packageManager = detectPackageManager(workspaceRootDir);
-
   const isolateDir = path.join(targetPackageDir, config.isolateDirName);
 
   log.debug(
@@ -72,6 +82,28 @@ async function start() {
 
   await fs.ensureDir(isolateDir);
 
+  const tmpDir = path.join(isolateDir, "__tmp");
+  await fs.ensureDir(tmpDir);
+
+  const targetPackageManifest = await readTypedJson<PackageManifest>(
+    path.join(targetPackageDir, "package.json")
+  );
+
+  const packageManager = detectPackageManager(workspaceRootDir);
+
+  log.debug(
+    "Detected package manager",
+    packageManager.name,
+    packageManager.version
+  );
+
+  /**
+   * Disable lock files for PNPM because they are not yet supported.
+   */
+  if (packageManager.name === "pnpm") {
+    config.excludeLockfile = true;
+  }
+
   /**
    * Build a packages registry so we can find the workspace packages by name and
    * have access to their manifest files and relative paths.
@@ -81,33 +113,18 @@ async function start() {
     config.workspacePackages
   );
 
-  const tmpDir = path.join(isolateDir, "__tmp");
-  await fs.ensureDir(tmpDir);
-
-  /**
-   * PNPM pack seems to be much faster than NPM pack so we use that when PNPM is
-   * detected. We log it here because the pack function will be called
-   * recursively.
-   */
-  if (packageManager === "pnpm") {
-    log.debug("Using pnpm to pack dependencies");
-  } else {
-    log.debug("Using npm to pack dependencies");
-  }
-
-  const manifest = await readTypedJson<PackageManifestMinimum>(
-    path.join(targetPackageDir, "package.json")
+  const localDependencies = listLocalDependencies(
+    targetPackageManifest,
+    packagesRegistry,
+    {
+      includeDevDependencies: config.includeDevDependencies,
+    }
   );
-
-  const localDependencies = listLocalDependencies(manifest, packagesRegistry, {
-    includeDevDependencies: config.includeDevDependencies,
-  });
 
   const packedFilesByName = await packDependencies({
     localDependencies,
     packagesRegistry,
     packDestinationDir: tmpDir,
-    packageManager,
   });
 
   await unpackDependencies(
@@ -128,7 +145,6 @@ async function start() {
   await processBuildOutputFiles({
     targetPackageDir,
     tmpDir,
-    packageManager,
     isolateDir,
   });
 
@@ -136,7 +152,11 @@ async function start() {
    * Copy the target manifest file to the isolate location and adapt its
    * workspace dependencies to point to the isolated packages.
    */
-  await adaptTargetPackageManifest(manifest, packagesRegistry, isolateDir);
+  await adaptTargetPackageManifest(
+    targetPackageManifest,
+    packagesRegistry,
+    isolateDir
+  );
 
   if (config.excludeLockfile) {
     log.warn("Excluding the lockfile from the isolate output");
@@ -146,10 +166,9 @@ async function start() {
      */
     await processLockfile({
       workspaceRootDir,
-      targetPackageName: manifest.name,
+      targetPackageName: targetPackageManifest.name,
       isolateDir,
       packagesRegistry,
-      packageManager,
     });
   }
 
@@ -163,9 +182,7 @@ async function start() {
   );
   await fs.remove(tmpDir);
 
-  log.debug("Stored isolate output at", isolateDir);
-
-  log.info("Isolate completed");
+  log.info("Isolate completed at %s", isolateDir);
 }
 
 start().catch((err) => {

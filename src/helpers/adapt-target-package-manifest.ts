@@ -1,14 +1,14 @@
 import fs from "fs-extra";
 import path from "node:path";
 import {
-  PackageManifestMinimum,
+  PackageManifest,
   PackagesRegistry,
   adaptManifestWorkspaceDeps,
   getConfig,
 } from "~/helpers";
 
 export async function adaptTargetPackageManifest(
-  manifest: PackageManifestMinimum,
+  manifest: PackageManifest,
   packagesRegistry: PackagesRegistry,
   isolateDir: string
 ) {

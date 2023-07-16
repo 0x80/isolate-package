@@ -1,22 +1,20 @@
 import { exec } from "node:child_process";
 import path from "node:path";
-import { PackageManager, getConfig } from "~/helpers";
+import { getConfig, usePackageManager } from "~/helpers";
 import { createLogger } from "./logger";
 
-export async function pack(
-  srcDir: string,
-  destDir: string,
-  packageManager: PackageManager
-) {
+export async function pack(srcDir: string, destDir: string) {
   const log = createLogger(getConfig().logLevel);
   const cwd = process.cwd();
   process.chdir(srcDir);
+
+  const { name } = usePackageManager();
 
   /**
    * PNPM pack seems to be a lot faster than NPM pack, so when PNPM is detected
    * we use that instead.
    */
-  switch (packageManager) {
+  switch (name) {
     case "pnpm": {
       const stdout = await new Promise<string>((resolve, reject) => {
         exec(
