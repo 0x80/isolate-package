@@ -345,8 +345,8 @@ stored to the isolate directory.
 
 ### Node 16 vs Node 18
 
-It seems that when deploying to Node 16 Firebase the `npm ci` command fails with
-a message like:
+It seems that when deploying to the Firebase node16 runtime the `npm ci` can
+fail with a message like:
 
 > `npm ci` can only install packages when your package.json and
 > package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock
@@ -355,24 +355,25 @@ a message like:
 I haven't been able to figure out what causes this, as the message is misleading
 (the lockfile is clearly there).
 
-With Node 18 this seems to have been resolved. If you experience this issue
-there are two options:
+Luckily, with Node 18 this seems to have been resolved, so if you experience
+this issue there are two options:
 
-- Upgrade to Node 18, by setting the `"runtime": "nodejs18"` in your
-  firebase.json config.
+- Upgrade to Node 18 by setting the `"runtime": "nodejs18"` in your
+  firebase.json config. Note that you most likely also have to re-create your
+  lockfile using Node 18.
 - Exclude the lockfile from deployment by setting `"excludeLockfile": false` in
   your isolate.config.json file.
 
 ### PNPM Lockfiles disabled for now
 
 There is still [an issue with the PNPM lockfile
-conversion](https://github.com/0x80/isolate-package/issues/5) and it is unusable
-at the moment. Until that is resolved, the lockfile is automatically excluded
-for PNPM.
+conversion](https://github.com/0x80/isolate-package/issues/5) which makes it
+unusable at the moment. Until that is resolved, the lockfile is automatically
+excluded for PNPM.
 
-Personally, I also use PNPM and I don't see this as a big problem. I am
-declaring versions with `^` in my manifest, which means that a missing lockfile
-can only ever result in unexpected patch versions, and I am not using
+Personally I also use PNPM, and I don't see this as a big problem, because, like
+most of us, I declare versions with `^` in my manifest. This means that
+dependencies can only resolve to newer patch versions, but I am not using
 dependencies that are likely to break on patch version changes.
 
 ## Different Package Managers
@@ -394,5 +395,5 @@ lockfile that was found in the deployed package.
 If you are using Yarn 3 with zero-installs, the deployed package is not aware of
 that, because the `.yarnrc` file and `.yarn` folder are located in the root of
 your monorepo, and the version is not recorded as part of the lockfile. Therefor
-the Firebase deploy cloud pipeline will use Yarn 1 to install your
-dependencies. I don't think that is an issue but it might be good to know.
+the Firebase deploy cloud pipeline will use Yarn 1 to install your dependencies.
+I don't think that is an issue but it might be good to know.
