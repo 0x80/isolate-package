@@ -75,23 +75,22 @@ include them in the output.
 
 How dependencies are listed with regards to versioning is not important, because
 packages are matched based on their name. For example the following flavors all
-work:
+work (some depending on your package manager):
 
 ```cjson
 // package.json
 {
   "dependencies": {
-    "shared-package": "workspace:*",
+    "shared-package": "0.0.0"
     "shared-package": "*",
+    "shared-package": "workspace:*",
     "shared-package": "../shared-package",
-    "shared-package": "^1.0.0"
   }
 }
 ```
 
-So basically, version information is ignored, and if the package name can be
-found in the list of local monorepo packages, it will be processed regardless of
-its version specifier.
+So if the a package name can be found as part of the workspace definition, it
+will be processed regardless of its version specifier.
 
 ### Define "files" and "version" in each manifest
 
@@ -134,8 +133,9 @@ into the folders. So if you declare your packages to live in `packages/*` it
 will only find the packages directly in that folder and not at
 `packages/nested/more-packages`.
 
-You can, however, declare multiple packages folders like `["packages/*",
-"apps/*"]`. It's just that the structure inside them should be flat.
+You can, however, declare multiple packages folders. I personally like to use
+`["packages/*", "apps/*", "services/*"]`. It's just that the structure inside
+them should be flat.
 
 ## Usage
 
@@ -172,8 +172,8 @@ Here's an example using [Turborepo](https://turbo.build/):
 }
 ```
 
-With this configuration you can then run `firebase deploy --only functions` from
-the package.
+With this configuration you can then run `npx firebase deploy --only functions`
+from the package.
 
 If you like to deploy to Firebase Functions from multiple packages you will also
 need to configure a unique `codebase` identifier for each of them. For more
@@ -212,10 +212,11 @@ The Firebase configuration should then look something like this:
 
 ## Configuration Options
 
-For most users no configuration should be required. You can configure the
-isolate process by placing a `isolate.config.json` file in the package that you
-want to isolate, except when you're [deploying to Firebase from the root of the
-workspace](#deploying-firebase-from-the-root).
+For most users no configuration should be necessary.
+
+You can configure the isolate process by placing a `isolate.config.json` file in
+the package that you want to isolate, except when you're [deploying to Firebase
+from the root of the workspace](#deploying-firebase-from-the-root).
 
 For the config file to be picked up, you will have to execute `isolate` from the
 same location, as it uses the current working directory.
@@ -238,6 +239,11 @@ Sets the inclusion or exclusion of the lockfile as part of the deployment. For
 Yarn and NPM the lockfiles are included by default, but for PNPM they are
 excluded by default because they are not supported yet. For more information see
 [lockfiles](#lockfiles).
+
+_Tip:_ If you can't use a lockfile I advise you to declare dependencies using
+absolute versions in your manifest files. This doesn't prevent their
+dependencies from installing newer versions, but at least you minimize the risk
+of things breaking.
 
 ### includeDevDependencies
 
@@ -297,10 +303,10 @@ from the root of the workspace.
 
 Type: `string`, default: `"../.."`
 
-The relative path to the root of the workspace / monorepo. In a typical
-repository you will have a `packages` and possibly an `apps` directory, and both
-contain packages, so any package you would want to isolate is located 2 levels
-up from the root.
+The relative path to the root of the workspace / monorepo. In a typical setup
+you will have a `packages` directory and possibly also an `apps` and a
+`services` directory, all of which contain packages. So any package you would
+want to isolate is located 2 levels up from the root.
 
 For example
 
@@ -372,10 +378,10 @@ conversion](https://github.com/0x80/isolate-package/issues/5) which makes it
 unusable at the moment. Until that is resolved, the lockfile is automatically
 excluded for PNPM.
 
-Personally I also use PNPM, and I don't see this as a big problem, because, like
-most of us, I declare versions with `^` in my manifest. This means that
-dependencies can only resolve to newer patch versions, but I am not using
-dependencies that are likely to break on patch version changes.
+_Tip:_ If you can't use a lockfile I advise you to declare dependencies using
+absolute versions in your manifest files. This doesn't prevent their
+dependencies from installing newer versions, but at least you minimize the risk
+of things breaking.
 
 ## Different Package Managers
 
