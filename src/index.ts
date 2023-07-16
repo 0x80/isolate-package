@@ -182,9 +182,7 @@ async function start() {
   );
   await fs.remove(tmpDir);
 
-  log.debug("Stored isolate output at", isolateDir);
-
-  log.info("Isolate completed");
+  log.info("Isolate completed at %s", isolateDir);
 }
 
 start().catch((err) => {

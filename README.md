@@ -343,26 +343,27 @@ The PNPM lockfile clearly has a structure describing the different packages by
 their relative paths, and so to correct the lockfile it is adapted before being
 stored to the isolate directory.
 
-### Node 16 vs Node 18
+### NPM
 
-It seems that when deploying to the Firebase node16 runtime the `npm ci` can
-fail with a message like:
+It seems that when using NPM the `npm ci` can fail with a message like:
 
 > `npm ci` can only install packages when your package.json and
 > package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock
 > file with `npm install` before continuing.
 
-I haven't been able to figure out what causes this, as the message is misleading
-(the lockfile is clearly there).
+I haven't been able to figure out what causes this. I have seen NPM deploys
+working with lockfiles, but I can not reliably reproduce it.
 
-Luckily, with Node 18 this seems to have been resolved, so if you experience
-this issue there are two options:
+If you experience this issue I have two suggestions:
 
 - Upgrade to Node 18 by setting the `"runtime": "nodejs18"` in your
   firebase.json config. Note that you most likely also have to re-create your
   lockfile using Node 18.
 - Exclude the lockfile from deployment by setting `"excludeLockfile": false` in
   your isolate.config.json file.
+
+I hope we can eventually figure out what is causing this, but more investigation
+is required.
 
 ### PNPM Lockfiles disabled for now
 
