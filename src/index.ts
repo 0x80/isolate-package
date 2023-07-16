@@ -1,14 +1,17 @@
 #!/usr/bin/env node
+/**
+ * For PNPM the hashbang at the top of the script was not required, but Yarn 3
+ * did not seem to execute without it.
+ */
 
 /**
  * A word about used terminology:
  *
  * The various package managers, while being very similar, seem to use a
- * different definition for the term "workspace". If you want to read the code it
- * might be good to know that I consider the workspace to be the monorepo itself,
- * in other words, the overall structure that holds all the packages.
+ * different definition for the term "workspace". If you want to read the code
+ * it might be good to know that I consider the workspace to be the monorepo
+ * itself, in other words, the overall structure that holds all the packages.
  */
-
 import fs from "fs-extra";
 import assert from "node:assert";
 import { exec } from "node:child_process";
@@ -171,38 +174,18 @@ async function start() {
 
     if (packageManager.name === "npm") {
       /**
-       * If there is an .npmrc file in the workspace root, copy it to the isolate
-       * because the settings there could affect how the lockfile is resolved.
+       * If there is an .npmrc file in the workspace root, copy it to the
+       * isolate because the settings there could affect how the lockfile is
+       * resolved.
        *
        * Also see https://github.com/npm/cli/issues/5113
        */
       const npmrcPath = path.join(workspaceRootDir, ".npmrc");
 
       if (fs.existsSync(npmrcPath)) {
-        log.warn("Copying .npmrc file to the isolate output");
         await fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
+        log.debug("Copied .npmrc file to the isolate output");
       }
-
-      //   /**
-      //    * Shrinkwrap the package-lock.json file
-      //    */
-      //   log.debug("Running npm shrinkwrap");
-      //   const oldCwd = process.cwd();
-      //   process.chdir(isolateDir);
-
-      //   const stdout = await new Promise<string>((resolve, reject) => {
-      //     exec(`npm shrinkwrap`, (err, stdout) => {
-      //       if (err) {
-      //         return reject(err);
-      //       }
-
-      //       resolve(stdout);
-      //     });
-      //   });
-
-      //   log.debug(stdout);
-
-      //   process.chdir(oldCwd);
     }
   }
 

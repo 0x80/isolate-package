@@ -15,43 +15,51 @@ There is nothing Firebase specific to this solution but I am currently not aware
 of other reasons to isolate a workspace package. If you find a different
 use-case, I would love to hear about it.
 
-In the code and text you see the word manifest a lot, and it simply means to the
-contents of a `package.json` file.
+In the documentation and code you will see the word "manifest" a lot, and it
+simply means to the contents of a `package.json` file.
 
 ## Features
 
 - Zero-config for the vast majority of use-cases, with no manual steps involved.
 - Support NPM, Yarn classic (v1) and current (v3) and PNPM.
-- Compatible with the Firebase tools CLI.
+- Fully compatible with the Firebase tools CLI, supporting 1st gen and 2nd gen
+  Firebase functions.
 - Uses a pack/unpack approach to isolate only the files that would have been
   part of a published package, so the output contains a minimal set of files.
 - Isolates shared dependencies recursively. If package A depends on local
   package B which depends on local package C, all of them will be isolated.
-- Include and (in the case of PNPM) update the lockfile so the isolated
-  deployment should be deterministic. For PNPM see [lockfiles](#lockfiles)
+- Includes the lockfile so the isolated deployment should be deterministic. PNPM
+  lockfiles are not supported yet. See [lockfiles](#lockfiles) for more info.
 - Optionally include devDependencies in the isolated output.
 
-## Quickstart
+## Firebase Deployment Quickstart
 
-This describes the steps required for Firebase deployment in the most common
-use-cases, assuming your are using a fairly typical monorepo setup, and your
-`firebase.json` config lives in the package where you deploy from. If this
-doesn't work for you, continue reading the [Prerequisites](#prerequisites)
-section, as you might have to tweak your package.json files a bit.
+This describes the steps required for Firebase deployment, assuming:
 
-1. Install isolate-package by running `pnpm add isolate-package -D` (or the Yarn
-   / NPM equivalent) _from the root of the package you would like to deploy to
-   Firebase_.
-2. In the `firebase.json` config (assuming it lives in the package you deploy
-   from) set `"source"` to `"./isolate"` and `"predeploy"` to `["turbo build",
-"isolate"]` or whatever fits your build tool.
-3. That's it! You should now be able to deploy with `npx firebase deploy` or
-   `npx firebase deploy --only functions` if your package only contains code for
-   functions.
+- You use a fairly typical monorepo setup
+- Your `firebase.json` config lives in the root of the package that you like to
+  deploy to Firebase, hereafter referred to as the "target package".
 
-I recommend keeping your `firebase.json` file inside the package (as opposed to
-the monorepo root), because it keeps things clean and allows you to deploy to
-firebase from multiple independent packages.
+If you use a different setup, just continue reading the
+[Prerequisites](#prerequisites) section.
+
+1. In the target package, install isolate-package and firebase-tools by running
+   `pnpm add isolate-package firebase-tools -D` or the Yarn / NPM equivalent. I
+   like to install firebase-tools as a devDependency in every firebase package,
+   but you could of course also use a global install if you prefer.
+2. In the `firebase.json` config set `"source"` to `"./isolate"` and
+   `"predeploy"` to `["turbo build", "isolate"]` or whatever suits your build
+   tool.
+3. From the target package root, you should now be able to deploy with `npx
+firebase deploy` or `npx firebase deploy --only functions` in case your package
+   only contains code for Firebase functions.
+
+I recommend keeping a `firebase.json` file inside each Firebase package (as
+opposed to the monorepo root), because it allows you to deploy from multiple
+independent packages. This give you more flexibility to organize your code. It
+also makes it easy to deploy 1st gen functions next to 2nd gen functions, or mix
+different node versions should you want to. Your bundle sizes and dependency
+lists for each function might also decrease, which improves cold-start times.
 
 ## Prerequisites
 
@@ -335,30 +343,47 @@ The PNPM lockfile clearly has a structure describing the different packages by
 their relative paths, and so to correct the lockfile it is adapted before being
 stored to the isolate directory.
 
-However, there is still [an issue with the PNPM lockfile
+### Node 16 vs Node 18
+
+It seems that when deploying to Node 16 Firebase the `npm ci` command fails with
+a message like:
+
+> `npm ci` can only install packages when your package.json and
+> package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock
+> file with `npm install` before continuing.
+
+I haven't been able to figure out what causes this, as the message is misleading
+(the lockfile is clearly there).
+
+With Node 18 this seems to have been resolved. If you experience this issue
+there are two options:
+
+- Upgrade to Node 18, by setting the `"runtime": "nodejs18"` in your
+  firebase.json config.
+- Exclude the lockfile from deployment by setting `"excludeLockfile": false` in
+  your isolate.config.json file.
+
+### PNPM Lockfiles disabled for now
+
+There is still [an issue with the PNPM lockfile
 conversion](https://github.com/0x80/isolate-package/issues/5) and it is unusable
 at the moment. Until that is resolved, the lockfile is automatically excluded
 for PNPM.
 
-Personally, I don't see this as a big problem. I am declaring versions with `^`
-in my manifest, which means that a missing lockfile can only ever result in
-unexpected patch versions, and I am not using dependencies that are likely to
-break on patch version changes.
+Personally, I also use PNPM and I don't see this as a big problem. I am
+declaring versions with `^` in my manifest, which means that a missing lockfile
+can only ever result in unexpected patch versions, and I am not using
+dependencies that are likely to break on patch version changes.
 
 ## Different Package Managers
 
-Isolate package has been designed to work with all package managers. Personally
-I have been testing it with NPM 9, Yarn 1.22, Yarn 3.6 and PNPM 8 on a fairly
-complex real-life project.
+Isolate package has been designed to work with all package managers. It has been
+testing it with NPM 8, 9, Yarn 1.22, Yarn 3.6 and PNPM 8.
 
 The isolate process will infer the package manager name and version from the
-"packageManager" field in the manifest located in root of your monorepo. If the
-field is empty it will then infer it from the type of lockfile found and the
-version that the OS reports for the installed executable. This is just so we can
-make some distinction in the code where needed, but until now it is hardly
-necessary.
-
-For example, the PNPM `pack` process is preferred over the default NPM `pack` if
+type of lockfile found and the version that the OS reports for the installed
+executable. This information is then used to change some of its behavior. For
+example, the PNPM `pack` process is preferred over the default NPM `pack` if
 PNPM in used, simply because it seems to be much faster.
 
 The Firebase cloud deploy pipeline will use the package manager that matches
@@ -369,15 +394,5 @@ lockfile that was found in the deployed package.
 If you are using Yarn 3 with zero-installs, the deployed package is not aware of
 that, because the `.yarnrc` file and `.yarn` folder are located in the root of
 your monorepo, and the version is not recorded as part of the lockfile. Therefor
-the Firebase deploy could pipeline will likely use Yarn 1 to install your
+the Firebase deploy cloud pipeline will use Yarn 1 to install your
 dependencies. I don't think that is an issue but it might be good to know.
-
-## Binary as ESM module
-
-The `isolate` binary is an ES module. It is required to have the `.mjs` file
-extension, otherwise a non-ESM workspace will try to load it as commonJS. For
-details on this read [this article from Alex
-Rauschmayer](https://exploringjs.com/nodejs-shell-scripting/ch_creating-shell-scripts.html#node.js-esm-modules-as-standalone-shell-scripts-on-unix)
-
-For PNPM the hashbang at the top of the script was not required, but Yarn 3 did
-not seem to execute without it.
