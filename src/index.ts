@@ -169,28 +169,41 @@ async function start() {
       packagesRegistry,
     });
 
-    // if (packageManager.name === "npm") {
-    //   /**
-    //    * Shrinkwrap the package-lock.json file
-    //    */
-    //   log.debug("Running npm shrinkwrap");
-    //   const oldCwd = process.cwd();
-    //   process.chdir(isolateDir);
+    if (packageManager.name === "npm") {
+      /**
+       * If there is an .npmrc file in the workspace root, copy it to the isolate
+       * because the settings there could affect how the lockfile is resolved.
+       *
+       * Also see https://github.com/npm/cli/issues/5113
+       */
+      const npmrcPath = path.join(workspaceRootDir, ".npmrc");
 
-    //   const stdout = await new Promise<string>((resolve, reject) => {
-    //     exec(`npm shrinkwrap`, (err, stdout) => {
-    //       if (err) {
-    //         return reject(err);
-    //       }
+      if (fs.existsSync(npmrcPath)) {
+        log.warn("Copying .npmrc file to the isolate output");
+        await fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
+      }
 
-    //       resolve(stdout);
-    //     });
-    //   });
+      //   /**
+      //    * Shrinkwrap the package-lock.json file
+      //    */
+      //   log.debug("Running npm shrinkwrap");
+      //   const oldCwd = process.cwd();
+      //   process.chdir(isolateDir);
 
-    //   log.debug(stdout);
+      //   const stdout = await new Promise<string>((resolve, reject) => {
+      //     exec(`npm shrinkwrap`, (err, stdout) => {
+      //       if (err) {
+      //         return reject(err);
+      //       }
 
-    //   process.chdir(oldCwd);
-    // }
+      //       resolve(stdout);
+      //     });
+      //   });
+
+      //   log.debug(stdout);
+
+      //   process.chdir(oldCwd);
+    }
   }
 
   /**
