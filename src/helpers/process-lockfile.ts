@@ -64,12 +64,40 @@ export function processLockfile({
   const lockfileDstPath = path.join(isolateDir, fileName);
 
   switch (name) {
-    /**
-     * It seems that at least for Yarn v1 and NPM v3 lockfile the content is not
-     * dependent on the workspace packages structure, so I am assuming we can
-     * just copy it over.
-     */
-    case "npm":
+    case "npm": {
+      /**
+       * If there is a shrinkwrap file we copy that instead of the lockfile
+       */
+      const shrinkwrapSrcPath = path.join(
+        workspaceRootDir,
+        "npm-shrinkwrap.json"
+      );
+      const shrinkwrapDstPath = path.join(isolateDir, "npm-shrinkwrap.json");
+
+      if (fs.existsSync(shrinkwrapSrcPath)) {
+        fs.copyFileSync(shrinkwrapSrcPath, shrinkwrapDstPath);
+        log.debug("Copied shrinkwrap to", shrinkwrapDstPath);
+      } else {
+        fs.copyFileSync(lockfileSrcPath, lockfileDstPath);
+        log.debug("Copied lockfile to", lockfileDstPath);
+      }
+
+      /**
+       * If there is an .npmrc file in the workspace root, copy it to the
+       * isolate because the settings there could affect how the lockfile is
+       * resolved.
+       *
+       * Also see https://github.com/npm/cli/issues/5113
+       */
+      const npmrcPath = path.join(workspaceRootDir, ".npmrc");
+
+      if (fs.existsSync(npmrcPath)) {
+        fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
+        log.debug("Copied .npmrc file to the isolate output");
+      }
+
+      return;
+    }
     case "yarn": {
       fs.copyFileSync(lockfileSrcPath, lockfileDstPath);
       log.debug("Copied lockfile to", lockfileDstPath);

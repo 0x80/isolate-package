@@ -14,7 +14,6 @@
  */
 import fs from "fs-extra";
 import assert from "node:assert";
-import { exec } from "node:child_process";
 import path from "node:path";
 import sourceMaps from "source-map-support";
 import {
@@ -171,22 +170,6 @@ async function start() {
       isolateDir,
       packagesRegistry,
     });
-
-    if (packageManager.name === "npm") {
-      /**
-       * If there is an .npmrc file in the workspace root, copy it to the
-       * isolate because the settings there could affect how the lockfile is
-       * resolved.
-       *
-       * Also see https://github.com/npm/cli/issues/5113
-       */
-      const npmrcPath = path.join(workspaceRootDir, ".npmrc");
-
-      if (fs.existsSync(npmrcPath)) {
-        await fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
-        log.debug("Copied .npmrc file to the isolate output");
-      }
-    }
   }
 
   /**
