@@ -1,4 +1,5 @@
 export * from "./filter-object-undefined";
+export * from "./get-dirname";
 export * from "./get-error-message";
 export * from "./get-relative-path";
 export * from "./inspect-value";

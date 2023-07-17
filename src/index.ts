@@ -30,7 +30,12 @@ import {
   processLockfile,
   unpackDependencies,
 } from "~/helpers";
-import { createLogger, getRootRelativePath, readTypedJson } from "~/utils";
+import {
+  createLogger,
+  getDirname,
+  getRootRelativePath,
+  readTypedJson,
+} from "~/utils";
 
 const config = getConfig();
 const log = createLogger(config.logLevel);
@@ -38,6 +43,14 @@ const log = createLogger(config.logLevel);
 sourceMaps.install();
 
 async function start() {
+  const __dirname = getDirname(import.meta.url);
+
+  const thisPackageManifest = await readTypedJson<PackageManifest>(
+    path.join(path.join(__dirname, "..", "package.json"))
+  );
+
+  log.debug("Running isolate-package version", thisPackageManifest.version);
+
   /**
    * If a targetPackagePath is set, we assume the configuration lives in the
    * root of the workspace. If targetPackagePath is undefined (the default), we
