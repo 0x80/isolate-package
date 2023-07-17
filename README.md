@@ -1,5 +1,6 @@
 # Isolate Package
 
+Isolate a monorepo workspace package so that it can be deployed as a completely
 self-contained directory with the sources of all its local dependencies
 included.
 
@@ -9,9 +10,12 @@ included.
 - [Features](#features)
 - [Firebase Deployment Quickstart](#firebase-deployment-quickstart)
 - [Prerequisites](#prerequisites)
-  - [Define shared package dependencies in the manifest](#define-shared-package-dependencies-in-the-manifest)
-  - [Define "files" and "version" in each manifest](#define-files-and-version-in-each-manifest)
-  - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
+  - [Define shared package dependencies in the
+    manifest](#define-shared-package-dependencies-in-the-manifest)
+  - [Define "files" and "version" in each
+    manifest](#define-files-and-version-in-each-manifest)
+  - [Use a flat structure inside your packages
+    folders](#use-a-flat-structure-inside-your-packages-folders)
 - [Usage](#usage)
   - [Deploying to Firebase](#deploying-to-firebase)
   - [Deploying to Firebase from the root](#deploying-to-firebase-from-the-root)
@@ -31,6 +35,8 @@ included.
   - [PNPM Lockfiles disabled for now](#pnpm-lockfiles-disabled-for-now)
 - [Different Package Managers](#different-package-managers)
   - [Yarn v1 and v3](#yarn-v1-and-v3)
+- [Using the Firebase Functions
+  Emulator](#using-the-firebase-functions-emulator)
 
 <!-- /TOC -->
 
@@ -435,3 +441,34 @@ that, because the `.yarnrc` file and `.yarn` folder are located in the root of
 your monorepo, and the version is not recorded as part of the lockfile. Therefor
 the Firebase deploy cloud pipeline will use Yarn 1 to install your dependencies.
 I don't think that is an issue but it might be good to know.
+
+## Using the Firebase Functions Emulator
+
+The Firebase functions emulator runs on the code that firebase.json `source`
+points to. Unfortunately, this is the same location as is used for uploading the
+code for deployment, which means the emulator is forced to use the isolated
+output.
+
+As a result, any changes to your code first need to go through the isolate
+process in order to be picked up by the emulator. In other words, changes do not
+propagate automatically while the emulator is running.
+
+The strategy I use at the moment is to create a "emulate" script in your
+manifest which does the same as the Firebase predeploy, and then starts the
+emulator. For example:
+
+`turbo build && isolate && firebase emulators:start --only functions`
+
+But you will still have to stop and restart the emulator on every code change,
+which is a bummer.
+
+The real solution to this, I think, involves changing the firebase-tools CLI. I
+see two options:
+
+1. Give the firebase config an extra field to distinguish between code that is
+   used by the emulator and code that is bundled for deployment.
+2. Integrate the isolate process into the firebase-tools deploy command, so it
+   is only used as part of the deployment and the `source` property can still
+   point to the original code.
+
+I plan to take this up in the near future.
