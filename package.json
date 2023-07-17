@@ -1,6 +1,6 @@
 {
   "name": "isolate-package",
-  "version": "1.3.0-rc1",
+  "version": "1.3.0-rc2",
   "description": "Isolate a monorepo package by bundling the build output with its shared workspace packages and lock file to form a self-contained directory.",
   "author": "Thijs Koerselman",
   "license": "MIT",
