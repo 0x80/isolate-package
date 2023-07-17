@@ -30,7 +30,7 @@
     "test": "vitest",
     "format": "prettier --write .",
     "lint:format": "prettier --check .",
-    "compile:watch": "tsc --noEmit -w"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "chalk": "^5.2.0",
