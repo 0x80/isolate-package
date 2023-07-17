@@ -5,7 +5,7 @@ on:
     branches:
       - main
 jobs:
-  build:
+  everything:
     runs-on: ubuntu-latest
     strategy:
       matrix:
