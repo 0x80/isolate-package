@@ -190,7 +190,7 @@ async function start() {
    * when thing go wrong.
    */
   log.debug(
-    "Deleting temporary directory",
+    "Deleting temp directory",
     getRootRelativePath(tmpDir, workspaceRootDir)
   );
   await fs.remove(tmpDir);

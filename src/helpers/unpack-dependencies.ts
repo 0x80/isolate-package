@@ -1,5 +1,5 @@
 import fs from "fs-extra";
-import { join } from "node:path";
+import path, { join } from "node:path";
 import { getIsolateRelativePath } from "~/utils";
 import { createLogger } from "~/utils/logger";
 import { PackagesRegistry, getConfig } from ".";
@@ -18,7 +18,7 @@ export async function unpackDependencies(
       const dir = packagesRegistry[packageName].rootRelativeDir;
       const unpackDir = join(tmpDir, dir);
 
-      log.debug("Unpacking", filePath);
+      log.debug("Unpacking", `(temp)/${path.basename(filePath)}`);
 
       await unpack(filePath, unpackDir);
 

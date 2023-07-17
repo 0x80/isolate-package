@@ -6,7 +6,7 @@ import { Logger, createLogger } from "./logger";
 
 export async function pack(
   srcDir: string,
-  destDir: string,
+  dstDir: string,
   usePnpmPack = false
 ) {
   const log = createLogger(getConfig().logLevel);
@@ -18,62 +18,45 @@ export async function pack(
    * PNPM pack seems to be a lot faster than NPM pack, so when PNPM is detected
    * we use that instead.
    */
-  if (usePnpmPack) {
-    const stdout = await new Promise<string>((resolve, reject) => {
-      exec(`pnpm pack --pack-destination ${destDir}`, (err, stdout, stderr) => {
-        if (err) {
-          log.error(stderr);
-          return reject(err);
-        }
+  const stdout = usePnpmPack
+    ? await new Promise<string>((resolve, reject) => {
+        exec(
+          `pnpm pack --pack-destination ${dstDir}`,
+          (err, stdout, stderr) => {
+            if (err) {
+              log.error(stderr);
+              return reject(err);
+            }
 
-        resolve(stdout);
+            resolve(stdout);
+          }
+        );
+      })
+    : await new Promise<string>((resolve, reject) => {
+        exec(`npm pack --pack-destination ${dstDir}`, (err, stdout) => {
+          if (err) {
+            return reject(err);
+          }
+
+          resolve(stdout);
+        });
       });
-    });
 
-    /**
-     * @TODO use a regex to see if the result from stdout is a valid file
-     * path. It could be that other output like warnings are printed. In that
-     * case we can to log the stdout.
-     */
+  const fileName = path.basename(stdout.trim());
 
-    /**
-     * Trim newlines and whitespace
-     */
-    const packedFilePath = stdout.trim();
+  const absolutePath = path.join(dstDir, fileName);
 
-    validatePackResponse(packedFilePath, log);
+  validatePackResponse(absolutePath, log);
 
-    log.debug("PNPM packed", `(temp)/${path.basename(packedFilePath)}`);
+  log.debug(`${usePnpmPack ? "PNPM" : "NPM"} packed (temp)/${fileName}`);
 
-    process.chdir(previousCwd);
-    return packedFilePath;
-  } else {
-    const stdout = await new Promise<string>((resolve, reject) => {
-      exec(`npm pack --pack-destination ${destDir}`, (err, stdout) => {
-        if (err) {
-          return reject(err);
-        }
+  process.chdir(previousCwd);
 
-        resolve(stdout);
-      });
-    });
-
-    /**
-     * Trim newlines and whitespace
-     */
-    const packedFileName = stdout.trim();
-
-    validatePackResponse(packedFileName, log);
-
-    log.debug("NPM packed", `(temp)/${path.basename(packedFileName)}`);
-
-    process.chdir(previousCwd);
-    return path.join(destDir, packedFileName);
-  }
+  return absolutePath;
 }
 
 function validatePackResponse(filePath: string, log: Logger) {
   if (!fs.existsSync(filePath)) {
-    log.warn(`Pack response is not a valid file path: ${filePath}`);
+    log.error(`Pack response is not a valid file path: ${filePath}`);
   }
 }
