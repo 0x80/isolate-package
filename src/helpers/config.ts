@@ -13,6 +13,7 @@ export type IsolateConfigResolved = {
   workspacePackages?: string[];
   workspaceRoot: string;
   excludeLockfile: boolean;
+  avoidPnpmPack: boolean;
 };
 
 export type IsolateConfig = Partial<IsolateConfigResolved>;
@@ -27,6 +28,7 @@ const configDefaults: IsolateConfigResolved = {
   workspacePackages: undefined,
   workspaceRoot: "../..",
   excludeLockfile: false,
+  avoidPnpmPack: false,
 };
 
 /**

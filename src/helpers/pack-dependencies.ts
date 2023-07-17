@@ -2,6 +2,7 @@ import assert from "node:assert";
 import { createLogger, pack } from "~/utils";
 import { getConfig } from "./config";
 import { PackagesRegistry } from "./create-packages-registry";
+import { usePackageManager } from "./detect-package-manager";
 
 /**
  * Pack dependencies so that we extract only the files that are supposed to be
@@ -35,6 +36,13 @@ export async function packDependencies({
 
   const packedFileByName: Record<string, string> = {};
 
+  const { name, version } = usePackageManager();
+
+  const versionMajor = parseInt(version.split(".")[0], 10);
+
+  const usePnpmPack =
+    !config.avoidPnpmPack && name === "pnpm" && versionMajor >= 6;
+
   for (const dependency of localDependencies) {
     const def = packagesRegistry[dependency];
 
@@ -51,11 +59,11 @@ export async function packDependencies({
       continue;
     }
 
-    packedFileByName[name] = await pack(def.absoluteDir, packDestinationDir);
-
-    /**
-     * @TODO call recursively
-     */
+    packedFileByName[name] = await pack(
+      def.absoluteDir,
+      packDestinationDir,
+      usePnpmPack
+    );
   }
 
   return packedFileByName;
