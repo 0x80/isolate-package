@@ -1,8 +1,38 @@
 # Isolate Package
 
-Isolate a monorepo workspace package so that it can be deployed as a completely
 self-contained directory with the sources of all its local dependencies
 included.
+
+<!-- TOC -->
+
+- [Motivation](#motivation)
+- [Features](#features)
+- [Firebase Deployment Quickstart](#firebase-deployment-quickstart)
+- [Prerequisites](#prerequisites)
+  - [Define shared package dependencies in the manifest](#define-shared-package-dependencies-in-the-manifest)
+  - [Define "files" and "version" in each manifest](#define-files-and-version-in-each-manifest)
+  - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
+- [Usage](#usage)
+  - [Deploying to Firebase](#deploying-to-firebase)
+  - [Deploying to Firebase from the root](#deploying-to-firebase-from-the-root)
+- [Configuration Options](#configuration-options)
+  - [buildDirName](#builddirname)
+  - [excludeLockfile](#excludelockfile)
+  - [includeDevDependencies](#includedevdependencies)
+  - [isolateDirName](#isolatedirname)
+  - [logLevel](#loglevel)
+  - [targetPackagePath](#targetpackagepath)
+  - [tsconfigPath](#tsconfigpath)
+  - [workspacePackages](#workspacepackages)
+  - [workspaceRoot](#workspaceroot)
+- [Troubleshooting](#troubleshooting)
+- [Lockfiles](#lockfiles)
+  - [NPM](#npm)
+  - [PNPM Lockfiles disabled for now](#pnpm-lockfiles-disabled-for-now)
+- [Different Package Managers](#different-package-managers)
+  - [Yarn v1 and v3](#yarn-v1-and-v3)
+
+<!-- /TOC -->
 
 ## Motivation
 
@@ -152,7 +182,8 @@ You will probably want to add the output directory to your `.gitignore` file.
 You can deploy to Firebase from multiple packages in your monorepo, so I advise
 you to co-locate your `firebase.json` file with the source code, and not place
 it in the root of the monorepo. If you do want to keep the firebase config in
-the root, some additional configuration is required, so read on.
+the root, read the instructions for [deploying to Firebase from the
+root](#deploying-to-firebase-from-the-root).
 
 In order to deploy to Firebase, the `functions.source` setting in
 `firebase.json` needs to point to the isolated output folder, which would be
