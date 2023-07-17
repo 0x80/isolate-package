@@ -43,6 +43,10 @@ export async function packDependencies({
   const usePnpmPack =
     !config.avoidPnpmPack && name === "pnpm" && versionMajor >= 6;
 
+  if (usePnpmPack) {
+    log.debug("Using PNPM pack instead of NPM pack");
+  }
+
   for (const dependency of localDependencies) {
     const def = packagesRegistry[dependency];
 

@@ -15,9 +15,9 @@ export async function getBuildOutputDir(targetPackageDir: string) {
 
   const tsconfigPath = path.join(targetPackageDir, config.tsconfigPath);
 
-  log.debug("Looking for tsconfig at:", tsconfigPath);
-
   if (fs.existsSync(tsconfigPath)) {
+    log.debug("Found tsconfig at:", config.tsconfigPath);
+
     const tsconfig = await readTypedJson<{
       compilerOptions?: { outDir?: string };
     }>(tsconfigPath);
@@ -32,6 +32,8 @@ export async function getBuildOutputDir(targetPackageDir: string) {
       `);
     }
   } else {
+    log.warn("Failed to find tsconfig at:", tsconfigPath);
+
     throw new Error(outdent`
       Failed to infer the build output directory from either the isolate config buildDirName or a Typescript config file. See the documentation on how to configure one of these options.
     `);

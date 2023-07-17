@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import { exec } from "node:child_process";
 import path from "node:path";
 import { getConfig } from "~/helpers";
-import { Logger, createLogger } from "./logger";
+import { createLogger } from "./logger";
 
 export async function pack(
   srcDir: string,
@@ -44,19 +44,22 @@ export async function pack(
 
   const fileName = path.basename(stdout.trim());
 
-  const absolutePath = path.join(dstDir, fileName);
+  const filePath = path.join(dstDir, fileName);
 
-  validatePackResponse(absolutePath, log);
-
-  log.debug(`${usePnpmPack ? "PNPM" : "NPM"} packed (temp)/${fileName}`);
+  if (!fs.existsSync(filePath)) {
+    log.error(
+      `The response from pack could not be resolved to an existing file: ${filePath}`
+    );
+  } else {
+    log.debug(`Packed (temp)/${fileName}`);
+  }
 
   process.chdir(previousCwd);
 
-  return absolutePath;
-}
-
-function validatePackResponse(filePath: string, log: Logger) {
-  if (!fs.existsSync(filePath)) {
-    log.error(`Pack response is not a valid file path: ${filePath}`);
-  }
+  /**
+   * Return the path anyway even if it doesn't validate. A later stage will wait
+   * for the file to occur still. Not sure if this makes sense. Maybe we should
+   * stop at the validation error...
+   */
+  return filePath;
 }

@@ -10,12 +10,9 @@ included.
 - [Features](#features)
 - [Firebase Deployment Quickstart](#firebase-deployment-quickstart)
 - [Prerequisites](#prerequisites)
-  - [Define shared package dependencies in the
-    manifest](#define-shared-package-dependencies-in-the-manifest)
-  - [Define "files" and "version" in each
-    manifest](#define-files-and-version-in-each-manifest)
-  - [Use a flat structure inside your packages
-    folders](#use-a-flat-structure-inside-your-packages-folders)
+  - [Define shared package dependencies in the manifest](#define-shared-package-dependencies-in-the-manifest)
+  - [Define "files" and "version" in each manifest](#define-files-and-version-in-each-manifest)
+  - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
 - [Usage](#usage)
   - [Deploying to Firebase](#deploying-to-firebase)
   - [Deploying to Firebase from the root](#deploying-to-firebase-from-the-root)
@@ -35,8 +32,7 @@ included.
   - [PNPM Lockfiles disabled for now](#pnpm-lockfiles-disabled-for-now)
 - [Different Package Managers](#different-package-managers)
   - [Yarn v1 and v3](#yarn-v1-and-v3)
-- [Using the Firebase Functions
-  Emulator](#using-the-firebase-functions-emulator)
+- [Using the Firebase Functions Emulator](#using-the-firebase-functions-emulator)
 
 <!-- /TOC -->
 
