@@ -186,6 +186,20 @@ async function start() {
   }
 
   /**
+   * If there is an .npmrc file in the workspace root, copy it to the
+   * isolate because the settings there could affect how the lockfile is
+   * resolved. Note that .npmrc is used by both NPM and PNPM for configuration.
+   *
+   * See also: https://pnpm.io/npmrc
+   */
+  const npmrcPath = path.join(workspaceRootDir, ".npmrc");
+
+  if (fs.existsSync(npmrcPath)) {
+    fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
+    log.debug("Copied .npmrc file to the isolate output");
+  }
+
+  /**
    * Clean up. Only so this in the happy path, so we can look at the temp folder
    * when thing go wrong.
    */

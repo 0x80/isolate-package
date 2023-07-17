@@ -82,20 +82,6 @@ export function processLockfile({
         log.debug("Copied lockfile to", lockfileDstPath);
       }
 
-      /**
-       * If there is an .npmrc file in the workspace root, copy it to the
-       * isolate because the settings there could affect how the lockfile is
-       * resolved.
-       *
-       * Also see https://github.com/npm/cli/issues/5113
-       */
-      const npmrcPath = path.join(workspaceRootDir, ".npmrc");
-
-      if (fs.existsSync(npmrcPath)) {
-        fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
-        log.debug("Copied .npmrc file to the isolate output");
-      }
-
       return;
     }
     case "yarn": {
