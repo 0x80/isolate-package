@@ -41,7 +41,7 @@ export async function packDependencies({
   const versionMajor = parseInt(version.split(".")[0], 10);
 
   const usePnpmPack =
-    !config.avoidPnpmPack && name === "pnpm" && versionMajor >= 6;
+    !config.avoidPnpmPack && name === "pnpm" && versionMajor >= 8;
 
   if (usePnpmPack) {
     log.debug("Using PNPM pack instead of NPM pack");
