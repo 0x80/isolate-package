@@ -1,6 +1,5 @@
 import fs from "fs-extra";
 import { globSync } from "glob";
-import { set } from "lodash-es";
 import path from "node:path";
 import { createLogger, readTypedJson } from "~/utils";
 import { getConfig } from "./config";
@@ -90,10 +89,12 @@ export async function createPackagesRegistry(
         }
       })
     )
-  ).reduce<PackagesRegistry>(
-    (acc, info) => (info ? set(acc, info.manifest.name, info) : acc),
-    {}
-  );
+  ).reduce<PackagesRegistry>((acc, info) => {
+    if (info) {
+      acc[info.manifest.name] = info;
+    }
+    return acc;
+  }, {});
 
   process.chdir(cwd);
 
