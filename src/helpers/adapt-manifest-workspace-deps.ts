@@ -15,7 +15,7 @@ export function adaptManifestWorkspaceDeps(
   opts: { includeDevDependencies?: boolean } = {}
 ): PackageManifest {
   return Object.assign(
-    omit(manifest, ["scripts", "devDependencies"]),
+    omit(manifest, ["devDependencies"]),
     filterObjectUndefined({
       dependencies: manifest.dependencies
         ? patchWorkspaceEntries(
