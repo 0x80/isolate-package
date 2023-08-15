@@ -38,10 +38,10 @@ included.
 
 ## Motivation
 
-This solution was developed out of a desire to deploy to
+This solution was developed from the desire to deploy to
 [Firebase](https://firebase.google.com/) from a monorepo without resorting to
 hacks, shell scripts and manual tasks. I have written an article explaining the
-issue [here](https://medium.com/p/e685de39025e).
+issue in detail [here](https://medium.com/p/e685de39025e).
 
 There is nothing Firebase specific to this solution but I am currently not aware
 of other reasons to isolate a workspace package. If you find a different
