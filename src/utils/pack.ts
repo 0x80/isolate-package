@@ -9,6 +9,10 @@ export async function pack(
   dstDir: string,
   usePnpmPack = false
 ) {
+  const execMaxBufferSize = {
+    maxBuffer: 10 * 1024 * 1024,
+  };
+
   const log = createLogger(getConfig().logLevel);
 
   const previousCwd = process.cwd();
@@ -22,6 +26,7 @@ export async function pack(
     ? await new Promise<string>((resolve, reject) => {
         exec(
           `pnpm pack --pack-destination ${dstDir}`,
+          execMaxBufferSize,
           (err, stdout, stderr) => {
             if (err) {
               log.error(stderr);
@@ -33,13 +38,17 @@ export async function pack(
         );
       })
     : await new Promise<string>((resolve, reject) => {
-        exec(`npm pack --pack-destination ${dstDir}`, (err, stdout) => {
-          if (err) {
-            return reject(err);
-          }
+        exec(
+          `npm pack --pack-destination ${dstDir}`,
+          execMaxBufferSize,
+          (err, stdout) => {
+            if (err) {
+              return reject(err);
+            }
 
-          resolve(stdout);
-        });
+            resolve(stdout);
+          }
+        );
       });
 
   const fileName = path.basename(stdout.trim());
