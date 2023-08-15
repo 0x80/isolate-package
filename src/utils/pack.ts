@@ -9,7 +9,7 @@ export async function pack(
   dstDir: string,
   usePnpmPack = false
 ) {
-  const execMaxBufferSize = {
+  const execOption = {
     maxBuffer: 10 * 1024 * 1024,
   };
 
@@ -26,7 +26,7 @@ export async function pack(
     ? await new Promise<string>((resolve, reject) => {
         exec(
           `pnpm pack --pack-destination ${dstDir}`,
-          execMaxBufferSize,
+          execOption,
           (err, stdout, stderr) => {
             if (err) {
               log.error(stderr);
@@ -40,7 +40,7 @@ export async function pack(
     : await new Promise<string>((resolve, reject) => {
         exec(
           `npm pack --pack-destination ${dstDir}`,
-          execMaxBufferSize,
+          execOption,
           (err, stdout) => {
             if (err) {
               return reject(err);
