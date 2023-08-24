@@ -411,10 +411,10 @@ conversion](https://github.com/0x80/isolate-package/issues/5) which makes it
 unusable at the moment. Until that is resolved, the lockfile is automatically
 excluded for PNPM.
 
-_Tip:_ If you can't use a lockfile I advise you to declare dependencies using
-absolute versions in your manifest files. This doesn't prevent their
-dependencies from installing newer versions, but at least you minimize the risk
-of things breaking.
+_Tip:_ If you can't use a lockfile, a partial workaround would be to declare 
+dependencies using exact versions in your manifest file. This doesn't prevent 
+your dependencies dependencies from installing newer versions, like a lockfile 
+would, but at least you minimize the risk of things breaking.
 
 ## Different Package Managers
 
