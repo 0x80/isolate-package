@@ -411,7 +411,10 @@ conversion](https://github.com/0x80/isolate-package/issues/5) which makes it
 unusable at the moment. Until that is resolved, the lockfile is automatically
 excluded for PNPM.
 
-_Tip:_ If you can't use a lockfile, a partial workaround would be to declare 
+### A Partial Workaround
+
+If you can't use a lockfile, and you are worried about things breaking, 
+a partial workaround would be to declare 
 dependencies using exact versions in your manifest file. This doesn't prevent 
 your dependencies dependencies from installing newer versions, like a lockfile 
 would, but at least you minimize the risk of things breaking.
@@ -419,7 +422,7 @@ would, but at least you minimize the risk of things breaking.
 ## Different Package Managers
 
 Isolate package has been designed to work with all package managers. It has been
-testing it with NPM 8, 9, Yarn 1.22, Yarn 3.6 and PNPM 8.
+tested with NPM 8, 9, Yarn 1.22, Yarn 3.6 and PNPM 8.
 
 The isolate process will infer the package manager name and version from the
 type of lockfile found and the version that the OS reports for the installed
