@@ -413,10 +413,10 @@ excluded for PNPM.
 
 ### A Partial Workaround
 
-If you can't use a lockfile, and you are worried about things breaking, 
-a partial workaround would be to declare 
-dependencies using exact versions in your manifest file. This doesn't prevent 
-your dependencies dependencies from installing newer versions, like a lockfile 
+If you can't use a lockfile, and you are worried about things breaking,
+a partial workaround would be to declare
+dependencies using exact versions in your manifest file. This doesn't prevent
+your dependencies dependencies from installing newer versions, like a lockfile
 would, but at least you minimize the risk of things breaking.
 
 ## Different Package Managers
