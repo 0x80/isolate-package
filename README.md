@@ -38,10 +38,10 @@ included.
 
 ## Motivation
 
-This solution was developed out of a desire to deploy to
+This solution was developed from the desire to deploy to
 [Firebase](https://firebase.google.com/) from a monorepo without resorting to
 hacks, shell scripts and manual tasks. I have written an article explaining the
-issue [here](https://medium.com/p/e685de39025e).
+issue in detail [here](https://medium.com/p/e685de39025e).
 
 There is nothing Firebase specific to this solution but I am currently not aware
 of other reasons to isolate a workspace package. If you find a different
@@ -411,15 +411,18 @@ conversion](https://github.com/0x80/isolate-package/issues/5) which makes it
 unusable at the moment. Until that is resolved, the lockfile is automatically
 excluded for PNPM.
 
-_Tip:_ If you can't use a lockfile I advise you to declare dependencies using
-absolute versions in your manifest files. This doesn't prevent their
-dependencies from installing newer versions, but at least you minimize the risk
-of things breaking.
+### A Partial Workaround
+
+If you can't use a lockfile, and you are worried about things breaking, 
+a partial workaround would be to declare 
+dependencies using exact versions in your manifest file. This doesn't prevent 
+your dependencies dependencies from installing newer versions, like a lockfile 
+would, but at least you minimize the risk of things breaking.
 
 ## Different Package Managers
 
 Isolate package has been designed to work with all package managers. It has been
-testing it with NPM 8, 9, Yarn 1.22, Yarn 3.6 and PNPM 8.
+tested with NPM 8, 9, Yarn 1.22, Yarn 3.6 and PNPM 8.
 
 The isolate process will infer the package manager name and version from the
 type of lockfile found and the version that the OS reports for the installed
