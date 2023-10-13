@@ -8,6 +8,7 @@ export * from "./find-packages-globs";
 export * from "./get-build-output-dir";
 export * from "./list-local-dependencies";
 export * from "./manifest";
+export * from "./omit-package-scripts";
 export * from "./pack-dependencies";
 export * from "./patch-workspace-entries";
 export * from "./process-build-output-files";

@@ -25,6 +25,7 @@ import {
   getBuildOutputDir,
   getConfig,
   listLocalDependencies,
+  omitPackageScripts,
   packDependencies,
   processBuildOutputFiles,
   processLockfile,
@@ -197,6 +198,20 @@ async function start() {
   if (fs.existsSync(npmrcPath)) {
     fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
     log.debug("Copied .npmrc file to the isolate output");
+  }
+
+  /**
+   * Firebase Functions relies on the build script from package.json.
+   * However, Cloud Build only recognizes npm, not pnpm, leading to issues with
+   * commands like pnpm nest build. To resolve this, the script section from package.json
+   * is removed, as there is no need to rerun the script commands when the file, which
+   * should already be built and ready for deployment, is being deployed.
+   *
+   * Ensure smooth deployments in a pnpm environment by utilizing the omitScripts option to prevent issues during deployment.
+   */
+  if (config.omitScripts) {
+    await omitPackageScripts(isolateDir);
+    log.debug("Removed the scripts section from package.json in isolate");
   }
 
   /**
