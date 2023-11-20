@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * For PNPM the hashbang at the top of the script was not required, but Yarn 3
+ * For PNPM the hash bang at the top of the script was not required, but Yarn 3
  * did not seem to execute without it.
  */
 

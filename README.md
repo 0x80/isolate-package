@@ -10,9 +10,12 @@ included.
 - [Features](#features)
 - [Firebase Deployment Quickstart](#firebase-deployment-quickstart)
 - [Prerequisites](#prerequisites)
-  - [Define shared package dependencies in the manifest](#define-shared-package-dependencies-in-the-manifest)
-  - [Define "files" and "version" in each manifest](#define-files-and-version-in-each-manifest)
-  - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
+  - [Define shared package dependencies in the
+    manifest](#define-shared-package-dependencies-in-the-manifest)
+  - [Define "files" and "version" in each
+    manifest](#define-files-and-version-in-each-manifest)
+  - [Use a flat structure inside your packages
+    folders](#use-a-flat-structure-inside-your-packages-folders)
 - [Usage](#usage)
   - [Deploying to Firebase](#deploying-to-firebase)
   - [Deploying to Firebase from the root](#deploying-to-firebase-from-the-root)
@@ -32,7 +35,8 @@ included.
   - [PNPM Lockfiles disabled for now](#pnpm-lockfiles-disabled-for-now)
 - [Different Package Managers](#different-package-managers)
   - [Yarn v1 and v3](#yarn-v1-and-v3)
-- [Using the Firebase Functions Emulator](#using-the-firebase-functions-emulator)
+- [Using the Firebase Functions
+  Emulator](#using-the-firebase-functions-emulator)
 
 <!-- /TOC -->
 
@@ -124,7 +128,16 @@ work (some depending on your package manager):
 So if the a package name can be found as part of the workspace definition, it
 will be processed regardless of its version specifier.
 
-### Define "files" and "version" in each manifest
+### Define "version" field in each manifest
+
+The `version` field is required for `pack` to execute, because it is use to
+generate part of the packed filename. I personally always set it to `"0.0.0"` to
+indicate that the version does not have any real meaning.
+
+### Define "files" field in each manifest
+
+> NOTE: This step is not required if you use the [internal packages
+> strategy](#the-internal-packages-strategy)
 
 The isolate process uses (p)npm `pack` to extract files from package
 directories, just like publishing a package would.
@@ -142,10 +155,6 @@ directory, for example:
   "files": ["dist"]
 }
 ```
-
-The `version` field is also required for `pack` to execute. I personally always
-set it to `"0.0.0"` to indicate that the version does not have a practical
-function.
 
 A few additional files will be included by `pack` automatically, like the
 `package.json` and `README.md` files.
@@ -413,11 +422,11 @@ excluded for PNPM.
 
 ### A Partial Workaround
 
-If you can't use a lockfile, and you are worried about things breaking, 
-a partial workaround would be to declare 
-dependencies using exact versions in your manifest file. This doesn't prevent 
-your dependencies dependencies from installing newer versions, like a lockfile 
-would, but at least you minimize the risk of things breaking.
+If you can't use a lockfile, and you are worried about things breaking, a
+partial workaround would be to declare dependencies using exact versions in your
+manifest file. This doesn't prevent your dependencies dependencies from
+installing newer versions, like a lockfile would, but at least you minimize the
+risk of things breaking.
 
 ## Different Package Managers
 
@@ -471,3 +480,28 @@ see two options:
    point to the original code.
 
 I plan to take this up in the near future.
+
+## The internal packages strategy
+
+Recently I changed [my own monorepo setup](https://github.com/0x80/mono-ts) to
+use [the internal packages
+strategy](https://turbo.build/blog/you-might-not-need-typescript-project-references)
+and I was happy to find that the approach is compatible with `isolate-packages`
+without any additional configuration.
+
+It ends up working like this:
+
+1. The package to be deployed lists its internal dependencies as usual, but the
+   manifest files for those packages point directly to the Typescript source.
+2. You tell the bundler to include the source code for those package in its
+   output bundle. In the case of the TSUP for the [API service in the
+   mono-ts](https://github.com/0x80/mono-ts/blob/main/services/api/tsup.config.ts)
+   example it is: `noExternal: ["@mono/common"]`
+3. When `isolate` runs, it does the exact same thing as always. It will pick up
+   the shared packages, and copy and link them to the target package in the
+   isolate output folder. Then, when deploying to Firebase the cloud pipeline
+   will look at the manifest and install all dependencies of the target package
+   including any dependencies of the linked internal packages. The entry points
+   in the manifest files for those packages will still point to the Typescript
+   source files, but these are never used since the shared code was already
+   embedded in the bundled output.
