@@ -1,20 +1,18 @@
 {
   "name": "isolate-package",
   "version": "1.3.3",
-  "description": "Isolate a monorepo package by bundling the build output with its shared workspace packages and lock file to form a self-contained directory.",
+  "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
   "author": "Thijs Koerselman",
   "license": "MIT",
   "keywords": [
     "monorepo",
-    "workspace",
+    "turborepo",
+    "workspaces",
     "isolate",
     "package",
     "deploy",
     "firebase",
-    "ci",
-    "pnpm",
-    "yarn",
-    "npm"
+    "ci"
   ],
   "type": "module",
   "module": "dist/index.mjs",
