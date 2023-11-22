@@ -42,6 +42,7 @@
     "yaml": "^2.2.2"
   },
   "devDependencies": {
+    "@npmcli/arborist": "^7.2.1",
     "@types/fs-extra": "^11.0.1",
     "@types/lodash-es": "^4.17.7",
     "@types/node": "^18.16.2",
