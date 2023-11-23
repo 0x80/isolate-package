@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { createLogger, pack } from "~/utils";
 import { getConfig } from "./config";
-import { PackagesRegistry } from "./create-packages-registry";
+import type { PackagesRegistry } from "./create-packages-registry";
 import { usePackageManager } from "./detect-package-manager";
 
 /**
@@ -11,13 +11,9 @@ import { usePackageManager } from "./detect-package-manager";
  * @returns A map of package names to the path of the packed file
  */
 export async function packDependencies({
-  /**
-   * All packages found in the monorepo by workspaces declaration
-   */
+  /** All packages found in the monorepo by workspaces declaration */
   packagesRegistry,
-  /**
-   * The package names that appear to be local dependencies
-   */
+  /** The package names that appear to be local dependencies */
   internalDependencies,
   /**
    * The directory where the isolated package and all its dependencies will end

@@ -4,11 +4,14 @@ import {
   readWantedLockfile,
   writeWantedLockfile,
 } from "@pnpm/lockfile-file";
-import { pruneSharedLockfile } from "@pnpm/prune-lockfile";
+import { pruneLockfile } from "@pnpm/prune-lockfile";
 import assert from "node:assert";
 import path from "path";
 import renameOverwrite from "rename-overwrite";
-import type { PackagesRegistry } from "./create-packages-registry";
+import type {
+  PackageManifest,
+  PackagesRegistry,
+} from "./create-packages-registry";
 
 /**
  * Code inspired by
@@ -20,12 +23,14 @@ export async function generatePnpmLockfile({
   isolateDir,
   internalDependencies,
   packagesRegistry,
+  targetPackageManifest,
 }: {
   workspaceRootDir: string;
   targetPackageDir: string;
   isolateDir: string;
   internalDependencies: string[];
   packagesRegistry: PackagesRegistry;
+  targetPackageManifest: PackageManifest;
 }) {
   const lockfile = await readWantedLockfile(workspaceRootDir, {
     ignoreIncompatible: false,
@@ -70,13 +75,15 @@ export async function generatePnpmLockfile({
     }
   }
 
-  const dedicatedLockfile = pruneSharedLockfile(lockfile);
+  const prunedLockfile = pruneLockfile(
+    lockfile,
+    targetPackageManifest as PackageManifest,
+    targetImporterId
+  );
 
-  // await writeWantedLockfile(targetPackageDir, dedicatedLockfile);
+  await writeWantedLockfile(targetPackageDir, prunedLockfile);
   await writeWantedLockfile(isolateDir, lockfile);
 
-  // const { manifest, writeProjectManifest } =
-  //   await readProjectManifest(isolateDir);
   // const publishManifest = await createExportableManifest(
   //   targetPackageDir,
   //   manifest

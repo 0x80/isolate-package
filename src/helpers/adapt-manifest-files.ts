@@ -1,15 +1,13 @@
 import fs from "fs-extra";
 import path from "node:path";
-import {
-  PackagesRegistry,
-  adaptManifestInternalDeps,
-  getConfig,
-} from "~/helpers";
+import type { PackagesRegistry } from "~/helpers/create-packages-registry";
+import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
+import { getConfig } from "./config";
 
 /**
- * Adapt the manifest files of all the isolated internal packages (excluding the target
- * package), so that their dependencies point to the other isolated packages in the
- * same folder.
+ * Adapt the manifest files of all the isolated internal packages (excluding the
+ * target package), so that their dependencies point to the other isolated
+ * packages in the same folder.
  */
 export async function adaptInternalPackageManifests(
   internalDependencies: string[],

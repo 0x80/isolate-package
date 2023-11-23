@@ -1,5 +1,8 @@
 import { uniq } from "lodash-es";
-import { PackageManifest, PackagesRegistry } from "./create-packages-registry";
+import type {
+  PackageManifest,
+  PackagesRegistry,
+} from "./create-packages-registry";
 
 /**
  * Recursively list the packages from dependencies (and optionally

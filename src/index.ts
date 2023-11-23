@@ -17,26 +17,26 @@ import assert from "node:assert";
 import path from "node:path";
 import sourceMaps from "source-map-support";
 import {
-  PackageManifest,
-  adaptInternalPackageManifests,
-  adaptTargetPackageManifest,
-  createPackagesRegistry,
-  detectPackageManager,
-  getBuildOutputDir,
-  getConfig,
-  listInternalDependencies,
-  packDependencies,
-  processBuildOutputFiles,
-  unpackDependencies,
-} from "~/helpers";
-import {
   createLogger,
   getDirname,
   getRootRelativePath,
   readTypedJson,
 } from "~/utils";
+import { adaptInternalPackageManifests } from "./helpers/adapt-manifest-files";
+import { adaptTargetPackageManifest } from "./helpers/adapt-target-package-manifest";
+import { getConfig } from "./helpers/config";
+import {
+  createPackagesRegistry,
+  type PackageManifest,
+} from "./helpers/create-packages-registry";
+import { detectPackageManager } from "./helpers/detect-package-manager";
 import { generateNpmLockfile } from "./helpers/generate-npm-lockfile";
 import { generatePnpmLockfile } from "./helpers/generate-pnpm-lockfile";
+import { getBuildOutputDir } from "./helpers/get-build-output-dir";
+import { listInternalDependencies } from "./helpers/list-internal-dependencies";
+import { packDependencies } from "./helpers/pack-dependencies";
+import { processBuildOutputFiles } from "./helpers/process-build-output-files";
+import { unpackDependencies } from "./helpers/unpack-dependencies";
 
 const config = getConfig();
 const log = createLogger(config.logLevel);
@@ -143,18 +143,14 @@ async function start() {
     isolateDir
   );
 
-  /**
-   * Adapt the manifest files for all the unpacked local dependencies
-   */
+  /** Adapt the manifest files for all the unpacked local dependencies */
   await adaptInternalPackageManifests(
     internalDependencies,
     packagesRegistry,
     isolateDir
   );
 
-  /**
-   * Pack the target package directory, and unpack it in the isolate location
-   */
+  /** Pack the target package directory, and unpack it in the isolate location */
   await processBuildOutputFiles({
     targetPackageDir,
     tmpDir,
@@ -176,9 +172,7 @@ async function start() {
   } else {
     switch (packageManager.name) {
       case "npm":
-        /**
-         * Generate the lockfile
-         */
+        /** Generate the lockfile */
         await generateNpmLockfile({
           workspaceRootDir,
           targetPackageName: targetPackageManifest.name,
@@ -193,6 +187,7 @@ async function start() {
           isolateDir,
           internalDependencies,
           packagesRegistry,
+          targetPackageManifest,
         });
         break;
       default:
@@ -203,9 +198,9 @@ async function start() {
   }
 
   /**
-   * If there is an .npmrc file in the workspace root, copy it to the
-   * isolate because the settings there could affect how the lockfile is
-   * resolved. Note that .npmrc is used by both NPM and PNPM for configuration.
+   * If there is an .npmrc file in the workspace root, copy it to the isolate
+   * because the settings there could affect how the lockfile is resolved. Note
+   * that .npmrc is used by both NPM and PNPM for configuration.
    *
    * See also: https://pnpm.io/npmrc
    */

@@ -1,11 +1,9 @@
 import Arborist from "@npmcli/arborist";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { PackagesRegistry } from "./create-packages-registry";
+import type { PackagesRegistry } from "./create-packages-registry";
 
-/**
- * Arborist does not seem to work on PNPM installed node_modules folders
- */
+/** Arborist does not seem to work on PNPM installed node_modules folders */
 export async function generateNpmLockfile({
   workspaceRootDir,
   targetPackageName,
@@ -23,9 +21,7 @@ export async function generateNpmLockfile({
   const internalPackageNames = Object.keys(packagesRegistry);
   console.log("+++ internal packages", internalPackageNames);
 
-  /**
-   * Should be a list of local package names I think
-   */
+  /** Should be a list of local package names I think */
 
   // Create a tree of the dependencies for this workspace.
   const arborist = new Arborist({ path: workspaceRootDir });

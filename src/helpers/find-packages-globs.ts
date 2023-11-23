@@ -49,8 +49,9 @@ export function findPackagesGlobs(workspaceRootDir: string) {
         return workspaces;
       } else {
         /**
-         * For Yarn, workspaces could be defined as an object with { packages: [],
-         * nohoist: [] }. See https://classic.yarnpkg.com/blog/2018/02/15/nohoist/
+         * For Yarn, workspaces could be defined as an object with { packages:
+         * [], nohoist: [] }. See
+         * https://classic.yarnpkg.com/blog/2018/02/15/nohoist/
          */
         const workspacesObject = workspaces as { packages?: string[] };
 

@@ -1,17 +1,18 @@
 import fs from "fs-extra";
 import path from "node:path";
-import {
+import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
+import { getConfig } from "./config";
+import type {
   PackageManifest,
   PackagesRegistry,
-  adaptManifestInternalDeps,
-  getConfig,
-} from "~/helpers";
+} from "./create-packages-registry";
 
 /**
  * Change the target package manifest file, so that:
- * - its internal dependencies point to the isolated ./packages/* directory.
- * - devDependencies are possibly removed
- * - scripts are possibly removed
+ *
+ * - Its internal dependencies point to the isolated ./packages/* directory.
+ * - DevDependencies are possibly removed
+ * - Scripts are possibly removed
  */
 export async function adaptTargetPackageManifest(
   manifest: PackageManifest,

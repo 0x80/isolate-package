@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import { exec } from "node:child_process";
 import path from "node:path";
-import { getConfig } from "~/helpers";
+import { getConfig } from "~/helpers/config";
 import { createLogger } from "./logger";
 
 export async function pack(

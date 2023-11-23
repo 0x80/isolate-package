@@ -1,6 +1,10 @@
 import { omit } from "lodash-es";
 import { filterObjectUndefined } from "~/utils";
-import { PackageManifest, PackagesRegistry, patchInternalEntries } from ".";
+import type {
+  PackageManifest,
+  PackagesRegistry,
+} from "./create-packages-registry";
+import { patchInternalEntries } from "./patch-internal-entries";
 
 export function adaptManifestInternalDeps(
   {
