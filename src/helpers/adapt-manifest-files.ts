@@ -2,12 +2,16 @@ import fs from "fs-extra";
 import path from "node:path";
 import {
   PackagesRegistry,
-  adaptManifestWorkspaceDeps,
+  adaptManifestInternalDeps,
   getConfig,
 } from "~/helpers";
-import { createLogger } from "~/utils";
 
-export async function adaptManifestFiles(
+/**
+ * Adapt the manifest files of all the isolated internal packages (excluding the target
+ * package), so that their dependencies point to the other isolated packages in the
+ * same folder.
+ */
+export async function adaptInternalPackageManifests(
   localDependencies: string[],
   packagesRegistry: PackagesRegistry,
   isolateDir: string
@@ -16,7 +20,7 @@ export async function adaptManifestFiles(
     localDependencies.map(async (packageName) => {
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
-      const outputManifest = adaptManifestWorkspaceDeps(
+      const outputManifest = adaptManifestInternalDeps(
         { manifest, packagesRegistry, parentRootRelativeDir: rootRelativeDir },
         { includeDevDependencies: getConfig().includeDevDependencies }
       );

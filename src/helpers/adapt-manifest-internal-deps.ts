@@ -1,8 +1,8 @@
 import { omit } from "lodash-es";
 import { filterObjectUndefined } from "~/utils";
-import { PackageManifest, PackagesRegistry, patchWorkspaceEntries } from ".";
+import { PackageManifest, PackagesRegistry, patchInternalEntries } from ".";
 
-export function adaptManifestWorkspaceDeps(
+export function adaptManifestInternalDeps(
   {
     manifest,
     packagesRegistry,
@@ -18,7 +18,7 @@ export function adaptManifestWorkspaceDeps(
     omit(manifest, ["devDependencies"]),
     filterObjectUndefined({
       dependencies: manifest.dependencies
-        ? patchWorkspaceEntries(
+        ? patchInternalEntries(
             manifest.dependencies,
             packagesRegistry,
             parentRootRelativeDir
@@ -26,7 +26,7 @@ export function adaptManifestWorkspaceDeps(
         : undefined,
       devDependencies:
         opts.includeDevDependencies && manifest.devDependencies
-          ? patchWorkspaceEntries(
+          ? patchInternalEntries(
               manifest.devDependencies,
               packagesRegistry,
               parentRootRelativeDir

@@ -8,7 +8,7 @@ import { PackageManifest, PackagesRegistry } from "./create-packages-registry";
  * manifest. We can simply compare the package names with the list of packages
  * that were found via the workspace glob patterns and added to the registry.
  */
-export function listLocalDependencies(
+export function listInternalDependencies(
   manifest: PackageManifest,
   packagesRegistry: PackagesRegistry,
   { includeDevDependencies = false } = {}
@@ -26,7 +26,7 @@ export function listLocalDependencies(
 
   const nestedLocalDependencies = localDependencyPackageNames.flatMap(
     (packageName) =>
-      listLocalDependencies(
+      listInternalDependencies(
         packagesRegistry[packageName].manifest,
         packagesRegistry,
         { includeDevDependencies }

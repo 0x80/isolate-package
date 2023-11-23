@@ -30,6 +30,11 @@ export type WorkspacePackageInfo = {
    * The package.json file contents
    */
   manifest: PackageManifest;
+
+  /**
+   * The path of the isolated package relative to the isolated root.
+   */
+  isolateRelativeDir: string;
 };
 
 export type PackagesRegistry = Record<string, WorkspacePackageInfo>;

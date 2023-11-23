@@ -3,7 +3,7 @@ import { createLogger } from "~/utils";
 import { getConfig } from "./config";
 import { PackagesRegistry } from "./create-packages-registry";
 
-export function patchWorkspaceEntries(
+export function patchInternalEntries(
   dependencies: Record<string, string>,
   packagesRegistry: PackagesRegistry,
   parentRootRelativeDir?: string
@@ -17,8 +17,8 @@ export function patchWorkspaceEntries(
         const def = packagesRegistry[key];
 
         /**
-         * When nested shared dependencies are used (local deps linking to other
-         * local deps), the parentRootRelativeDir will be passed in, and we
+         * When nested internal dependencies are used (internal deps linking to other
+         * internal deps), the parentRootRelativeDir will be passed in, and we
          * store the relative path to the isolate/packages directory, as is
          * required by some package managers.
          *

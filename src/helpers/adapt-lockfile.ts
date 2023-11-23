@@ -1,4 +1,5 @@
 import fs from "fs-extra";
+import { forEach } from "lodash-es";
 import assert from "node:assert";
 import path from "node:path";
 import { createLogger, readTypedYamlSync, writeTypedYamlSync } from "~/utils";
@@ -40,7 +41,7 @@ export function getLockfileFileName(name: PackageManagerName) {
  * be done is to remove the root dependencies and devDependencies, and rename
  * the path to the target package to act as the new root.
  */
-export function processLockfile({
+export function adaptLockfile({
   workspaceRootDir,
   targetPackageName,
   packagesRegistry,
@@ -52,6 +53,16 @@ export function processLockfile({
   isolateDir: string;
 }) {
   const log = createLogger(getConfig().logLevel);
+
+  console.log("+++ adaptLockfile");
+  console.log("+++ isolateDir", isolateDir);
+
+  const internalPackageNames = Object.keys(packagesRegistry);
+  console.log("+++ internal packages", internalPackageNames);
+
+  Object.entries(packagesRegistry).forEach(([name, pkg]) => {
+    console.log("+++ pkg", name, pkg);
+  });
 
   const targetPackageRelativeDir =
     packagesRegistry[targetPackageName].rootRelativeDir;
