@@ -4,10 +4,12 @@ import {
   readWantedLockfile,
   writeWantedLockfile,
 } from "@pnpm/lockfile-file";
-import { pruneLockfile } from "@pnpm/prune-lockfile";
 import assert from "node:assert";
 import path from "path";
 import renameOverwrite from "rename-overwrite";
+import { createLogger } from "~/utils";
+import { mapImporterLinks } from "./adapt-lockfile";
+import { getConfig } from "./config";
 import type {
   PackageManifest,
   PackagesRegistry,
@@ -32,13 +34,18 @@ export async function generatePnpmLockfile({
   packagesRegistry: PackagesRegistry;
   targetPackageManifest: PackageManifest;
 }) {
+  const config = getConfig();
+  const log = createLogger(config.logLevel);
+
+  log.info("Generating PNPM lockfile");
+
   const lockfile = await readWantedLockfile(workspaceRootDir, {
     ignoreIncompatible: false,
   });
 
   assert(lockfile, "No lockfile found");
 
-  const allImporters = lockfile.importers;
+  const originalImporters = lockfile.importers;
   lockfile.importers = {};
 
   const targetImporterId = getLockfileImporterId(
@@ -52,36 +59,31 @@ export async function generatePnpmLockfile({
     return pkg.rootRelativeDir;
   });
 
-  console.log("+++ importerIds", targetImporterId, internalDepImporterIds);
+  log.debug("Relevant importer ids:", targetImporterId, internalDepImporterIds);
 
-  for (const [importerId, importer] of Object.entries(allImporters)) {
-    // This is for nested deps we use flat structure
-    // if (importerId.startsWith(`${baseImporterId}/`)) {
-    //   const newImporterId = importerId.slice(baseImporterId.length + 1);
-    //   lockfile.importers[newImporterId] =
-    //     projectSnapshotWithoutLinkedDeps(importer);
-    //   continue;
-    // }
+  for (const [importerId, importer] of Object.entries(originalImporters)) {
     if (importerId === targetImporterId) {
-      console.log("+++ setting target importer");
-      // @todo convert imported linked packages
-      lockfile.importers["."] = importer;
+      log.debug('Converting target importer to "."');
+
+      lockfile.importers["."] = mapImporterLinks(importer);
+      // lockfile.importers["."] = importer;
     }
 
     if (internalDepImporterIds.includes(importerId)) {
-      console.log("+++ setting internal deps importer:", importerId);
-      // @todo convert imported linked packages
-      lockfile.importers[importerId] = importer;
+      log.debug("Converting internal package importer:", importerId);
+      // console.log("+++ importer", mapImporterLinks(importer));
+      lockfile.importers[importerId] = mapImporterLinks(importer);
+      // lockfile.importers[importerId] = importer;
     }
   }
 
-  const prunedLockfile = pruneLockfile(
-    lockfile,
-    targetPackageManifest as PackageManifest,
-    targetImporterId
-  );
+  // const prunedLockfile = pruneLockfile(
+  //   lockfile,
+  //   targetPackageManifest as PackageManifest,
+  //   targetImporterId
+  // );
 
-  await writeWantedLockfile(targetPackageDir, prunedLockfile);
+  // await writeWantedLockfile(targetPackageDir, lockfile);
   await writeWantedLockfile(isolateDir, lockfile);
 
   // const publishManifest = await createExportableManifest(
@@ -105,7 +107,7 @@ export async function generatePnpmLockfile({
   }
 
   try {
-    console.log("+++ typeof pnpmExec", pnpmExec);
+    log.debug("+++ typeof pnpmExec", pnpmExec);
     // @ts-expect-error That mysterious ESM default import mismatch again
     await pnpmExec.default(
       [
