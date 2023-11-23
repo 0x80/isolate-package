@@ -1,5 +1,5 @@
 import fs from "fs-extra";
-import { forEach } from "lodash-es";
+import { omit } from "lodash-es";
 import assert from "node:assert";
 import path from "node:path";
 import { createLogger, readTypedYamlSync, writeTypedYamlSync } from "~/utils";
@@ -10,17 +10,21 @@ import {
   usePackageManager,
 } from "./detect-package-manager";
 
-type PackagePath = string;
-
 type PnpmLockfile = {
   lockfileVersion: string;
-  importers: Record<
-    PackagePath,
-    {
-      dependencies?: Record<string, unknown>;
-      devDependencies?: Record<string, unknown>;
-    }
-  >;
+  importers: { [packagePath: string]: PnpmImporterDef };
+};
+
+type PnpmImporterDef = {
+  dependencies?: PnpmDependenciesDef;
+  devDependencies?: PnpmDependenciesDef;
+};
+
+type PnpmDependenciesDef = {
+  [packageName: string]: {
+    specifier: string;
+    version: string;
+  };
 };
 
 export function getLockfileFileName(name: PackageManagerName) {
@@ -55,14 +59,6 @@ export function adaptLockfile({
   const log = createLogger(getConfig().logLevel);
 
   console.log("+++ adaptLockfile");
-  console.log("+++ isolateDir", isolateDir);
-
-  const internalPackageNames = Object.keys(packagesRegistry);
-  console.log("+++ internal packages", internalPackageNames);
-
-  Object.entries(packagesRegistry).forEach(([name, pkg]) => {
-    console.log("+++ pkg", name, pkg);
-  });
 
   const targetPackageRelativeDir =
     packagesRegistry[targetPackageName].rootRelativeDir;
@@ -105,30 +101,102 @@ export function adaptLockfile({
 
       log.debug("Read PNPM lockfile, version:", origLockfile.lockfileVersion);
 
-      const adaptedLockfile = structuredClone(origLockfile);
+      const { importers: origImporters, ...rest } = origLockfile;
 
-      const targetPackageDef =
-        adaptedLockfile.importers[targetPackageRelativeDir];
-
-      assert(
-        targetPackageDef,
-        `Failed to find target package in lockfile at importers[${targetPackageRelativeDir}]`
+      const movedImporters = moveImportersTargetPackageDef(
+        origImporters,
+        targetPackageRelativeDir
       );
-      /**
-       * Overwrite the root importer with the target package importer contents
-       */
-      adaptedLockfile.importers["."] = targetPackageDef;
 
-      /**
-       * Delete the target package original importer. Not really necessary.
-       */
-      delete adaptedLockfile.importers[targetPackageRelativeDir];
+      const mappedImporters = mapImportersLinks(
+        movedImporters,
+        getConfig().includeDevDependencies
+      );
 
-      writeTypedYamlSync(lockfileDstPath, adaptedLockfile);
+      writeTypedYamlSync(lockfileDstPath, {
+        importers: mappedImporters,
+        ...rest,
+      });
 
       log.debug("Stored adapted lockfile at", lockfileDstPath);
 
       return;
     }
   }
+}
+
+function moveImportersTargetPackageDef(
+  importers: PnpmLockfile["importers"],
+  targetPackageRelativeDir: string
+): PnpmLockfile["importers"] {
+  const targetPackageDef = importers[targetPackageRelativeDir];
+
+  assert(
+    targetPackageDef,
+    `Failed to find target package in lockfile at importers[${targetPackageRelativeDir}]`
+  );
+
+  /**
+   * Overwrite the root "."importer with the target package importer contents,
+   * and omit the original target package importer (not strictly necessary).
+   */
+
+  return omit({ ...importers, ["."]: targetPackageDef }, [
+    targetPackageRelativeDir,
+  ]);
+}
+
+function mapImportersLinks(
+  importers: PnpmLockfile["importers"],
+  includeDevDependencies = false
+): PnpmLockfile["importers"] {
+  return Object.fromEntries(
+    Object.entries(importers).map(
+      ([importerPath, { dependencies, devDependencies }]) => {
+        return [
+          importerPath,
+          {
+            dependencies: dependencies
+              ? mapDependenciesLinks(dependencies)
+              : undefined,
+            devDependencies:
+              includeDevDependencies && devDependencies
+                ? mapDependenciesLinks(devDependencies)
+                : undefined,
+          },
+        ];
+      }
+    )
+  );
+}
+
+function mapDependenciesLinks(def: PnpmDependenciesDef): PnpmDependenciesDef {
+  return Object.fromEntries(
+    Object.entries(def).map(([packageName, def]) => {
+      if (def.version.startsWith("link:")) {
+        return [packageName, convertVersionLink(def)];
+      } else {
+        return [packageName, def];
+      }
+    })
+  );
+}
+
+function convertVersionLink(def: PnpmDependenciesDef["string"]) {
+  const regex = /([^/]+)$/;
+
+  const match = def.version.match(regex);
+
+  if (!match) {
+    throw new Error(
+      `Failed to extract package folder name from ${def.version}`
+    );
+  }
+
+  const packageFolderName = match[1];
+
+  return {
+    ...def,
+    version: `./packages/${packageFolderName}`,
+  };
 }

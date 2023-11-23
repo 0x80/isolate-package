@@ -17,10 +17,9 @@ export function patchInternalEntries(
         const def = packagesRegistry[key];
 
         /**
-         * When nested internal dependencies are used (internal deps linking to other
-         * internal deps), the parentRootRelativeDir will be passed in, and we
-         * store the relative path to the isolate/packages directory, as is
-         * required by some package managers.
+         * When nested internal dependencies are used (internal packages linking to other
+         * internal packages), the parentRootRelativeDir will be passed in, and we
+         * store the relative path to the isolate/packages directory.
          *
          * For consistency we also write the other file paths starting with
          * ./, but it doesn't seem to be necessary for any package manager.
