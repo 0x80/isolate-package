@@ -12,12 +12,12 @@ import {
  * same folder.
  */
 export async function adaptInternalPackageManifests(
-  localDependencies: string[],
+  internalDependencies: string[],
   packagesRegistry: PackagesRegistry,
   isolateDir: string
 ) {
   await Promise.all(
-    localDependencies.map(async (packageName) => {
+    internalDependencies.map(async (packageName) => {
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
       const outputManifest = adaptManifestInternalDeps(

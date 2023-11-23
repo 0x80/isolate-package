@@ -1,3 +1,4 @@
+import { uniq } from "lodash-es";
 import { PackageManifest, PackagesRegistry } from "./create-packages-registry";
 
 /**
@@ -24,7 +25,7 @@ export function listInternalDependencies(
       : Object.keys(manifest.dependencies ?? {})
   ).filter((name) => allWorkspacePackageNames.includes(name));
 
-  const nestedLocalDependencies = localDependencyPackageNames.flatMap(
+  const nestedInternalDependencies = localDependencyPackageNames.flatMap(
     (packageName) =>
       listInternalDependencies(
         packagesRegistry[packageName].manifest,
@@ -33,5 +34,5 @@ export function listInternalDependencies(
       )
   );
 
-  return localDependencyPackageNames.concat(nestedLocalDependencies);
+  return uniq(localDependencyPackageNames.concat(nestedInternalDependencies));
 }

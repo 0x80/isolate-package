@@ -19,7 +19,6 @@ import sourceMaps from "source-map-support";
 import {
   PackageManifest,
   adaptInternalPackageManifests,
-  adaptLockfile,
   adaptTargetPackageManifest,
   createPackagesRegistry,
   detectPackageManager,
@@ -37,6 +36,7 @@ import {
   readTypedJson,
 } from "~/utils";
 import { generateNpmLockfile } from "./helpers/generate-npm-lockfile";
+import { generatePnpmLockfile } from "./helpers/generate-pnpm-lockfile";
 
 const config = getConfig();
 const log = createLogger(config.logLevel);
@@ -112,13 +112,6 @@ async function start() {
   );
 
   /**
-   * Disable lock files for PNPM because they are not yet supported.
-   */
-  // if (packageManager.name === "pnpm") {
-  //   config.excludeLockfile = true;
-  // }
-
-  /**
    * Build a packages registry so we can find the workspace packages by name and
    * have access to their manifest files and relative paths.
    */
@@ -127,7 +120,7 @@ async function start() {
     config.workspacePackages
   );
 
-  const localDependencies = listInternalDependencies(
+  const internalDependencies = listInternalDependencies(
     targetPackageManifest,
     packagesRegistry,
     {
@@ -135,8 +128,10 @@ async function start() {
     }
   );
 
+  console.log("+++ internalDependencies", internalDependencies);
+
   const packedFilesByName = await packDependencies({
-    localDependencies,
+    internalDependencies,
     packagesRegistry,
     packDestinationDir: tmpDir,
   });
@@ -152,7 +147,7 @@ async function start() {
    * Adapt the manifest files for all the unpacked local dependencies
    */
   await adaptInternalPackageManifests(
-    localDependencies,
+    internalDependencies,
     packagesRegistry,
     isolateDir
   );
@@ -179,26 +174,31 @@ async function start() {
   if (config.excludeLockfile) {
     log.warn("Excluding the lockfile from the isolate output");
   } else {
-    if (packageManager.name === "npm") {
-      /**
-       * Generate the lockfile
-       */
-      await generateNpmLockfile({
-        workspaceRootDir,
-        targetPackageName: targetPackageManifest.name,
-        isolateDir,
-        packagesRegistry,
-      });
-    } else {
-      /**
-       * Copy and adapt the lockfile
-       */
-      await adaptLockfile({
-        workspaceRootDir,
-        targetPackageName: targetPackageManifest.name,
-        isolateDir,
-        packagesRegistry,
-      });
+    switch (packageManager.name) {
+      case "npm":
+        /**
+         * Generate the lockfile
+         */
+        await generateNpmLockfile({
+          workspaceRootDir,
+          targetPackageName: targetPackageManifest.name,
+          isolateDir,
+          packagesRegistry,
+        });
+        break;
+      case "pnpm":
+        await generatePnpmLockfile({
+          workspaceRootDir,
+          targetPackageDir,
+          isolateDir,
+          internalDependencies,
+          packagesRegistry,
+        });
+        break;
+      default:
+        log.warn(
+          `Creating isolated lockfiles for ${packageManager.name} is currently not supported`
+        );
     }
   }
 

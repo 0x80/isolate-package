@@ -18,7 +18,7 @@ export async function packDependencies({
   /**
    * The package names that appear to be local dependencies
    */
-  localDependencies,
+  internalDependencies,
   /**
    * The directory where the isolated package and all its dependencies will end
    * up. This is also the directory from where the package will be deployed. By
@@ -28,7 +28,7 @@ export async function packDependencies({
   packDestinationDir,
 }: {
   packagesRegistry: PackagesRegistry;
-  localDependencies: string[];
+  internalDependencies: string[];
   packDestinationDir: string;
 }) {
   const config = getConfig();
@@ -47,7 +47,7 @@ export async function packDependencies({
     log.debug("Using PNPM pack instead of NPM pack");
   }
 
-  for (const dependency of localDependencies) {
+  for (const dependency of internalDependencies) {
     const def = packagesRegistry[dependency];
 
     assert(dependency, `Failed to find package definition for ${dependency}`);
