@@ -1,22 +1,18 @@
 import pnpmExec from "@pnpm/exec";
-import { createExportableManifest } from "@pnpm/exportable-manifest";
 import {
   getLockfileImporterId,
   readWantedLockfile,
   writeWantedLockfile,
-  type ProjectSnapshot,
 } from "@pnpm/lockfile-file";
 import { pruneSharedLockfile } from "@pnpm/prune-lockfile";
-import { readProjectManifest } from "@pnpm/read-project-manifest";
-import { DEPENDENCIES_FIELDS } from "@pnpm/types";
 import assert from "node:assert";
 import path from "path";
-import pickBy from "ramda/src/pickBy";
 import renameOverwrite from "rename-overwrite";
-import { PackagesRegistry } from "./create-packages-registry";
+import type { PackagesRegistry } from "./create-packages-registry";
 
 /**
- * Code inspired by https://github.com/pnpm/pnpm/tree/main/packages/make-dedicated-lockfile
+ * Code inspired by
+ * https://github.com/pnpm/pnpm/tree/main/packages/make-dedicated-lockfile
  */
 export async function generatePnpmLockfile({
   workspaceRootDir,
@@ -77,20 +73,20 @@ export async function generatePnpmLockfile({
   const dedicatedLockfile = pruneSharedLockfile(lockfile);
 
   // await writeWantedLockfile(targetPackageDir, dedicatedLockfile);
-  await writeWantedLockfile(targetPackageDir, lockfile);
+  await writeWantedLockfile(isolateDir, lockfile);
 
-  const { manifest, writeProjectManifest } = await readProjectManifest(
-    targetPackageDir
-  );
-  const publishManifest = await createExportableManifest(
-    targetPackageDir,
-    manifest
-  );
-  await writeProjectManifest(publishManifest);
+  // const { manifest, writeProjectManifest } =
+  //   await readProjectManifest(isolateDir);
+  // const publishManifest = await createExportableManifest(
+  //   targetPackageDir,
+  //   manifest
+  // );
+  // await writeProjectManifest(publishManifest);
 
   const modulesDir = path.join(targetPackageDir, "node_modules");
-  const tmp = path.join(targetPackageDir, "tmp_node_modules");
-  const tempModulesDir = path.join(targetPackageDir, "node_modules/.tmp");
+  const tmp = path.join(isolateDir, "tmp_node_modules");
+  const tempModulesDir = path.join(isolateDir, "node_modules/.tmp");
+
   let modulesRenamed = false;
   try {
     await renameOverwrite(modulesDir, tmp);
@@ -123,20 +119,6 @@ export async function generatePnpmLockfile({
       await renameOverwrite(tempModulesDir, tmp);
       await renameOverwrite(tmp, modulesDir);
     }
-    await writeProjectManifest(manifest);
+    // await writeProjectManifest(manifest);
   }
-}
-
-function projectSnapshotWithoutLinkedDeps(projectSnapshot: ProjectSnapshot) {
-  const newProjectSnapshot: ProjectSnapshot = {
-    specifiers: projectSnapshot.specifiers,
-  };
-  for (const depField of DEPENDENCIES_FIELDS) {
-    if (projectSnapshot[depField] == null) continue;
-    newProjectSnapshot[depField] = pickBy(
-      (depVersion) => !depVersion.startsWith("link:"),
-      projectSnapshot[depField]
-    );
-  }
-  return newProjectSnapshot;
 }

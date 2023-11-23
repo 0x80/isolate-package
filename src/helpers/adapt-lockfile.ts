@@ -1,14 +1,16 @@
+import type {
+  ProjectSnapshot,
+  ResolvedDependencies,
+} from "@pnpm/lockfile-file";
 import fs from "fs-extra";
 import { omit } from "lodash-es";
 import assert from "node:assert";
 import path from "node:path";
 import { createLogger, readTypedYamlSync, writeTypedYamlSync } from "~/utils";
 import { getConfig } from "./config";
-import { PackagesRegistry } from "./create-packages-registry";
-import {
-  PackageManagerName,
-  usePackageManager,
-} from "./detect-package-manager";
+import type { PackagesRegistry } from "./create-packages-registry";
+import type { PackageManagerName } from "./detect-package-manager";
+import { usePackageManager } from "./detect-package-manager";
 
 type PnpmLockfile = {
   lockfileVersion: string;
@@ -72,9 +74,7 @@ export function adaptLockfile({
 
   switch (name) {
     case "npm": {
-      /**
-       * If there is a shrinkwrap file we copy that instead of the lockfile
-       */
+      /** If there is a shrinkwrap file we copy that instead of the lockfile */
       const shrinkwrapSrcPath = path.join(
         workspaceRootDir,
         "npm-shrinkwrap.json"
@@ -170,7 +170,21 @@ function mapImportersLinks(
   );
 }
 
-function mapDependenciesLinks(def: PnpmDependenciesDef): PnpmDependenciesDef {
+export function mapImporterLinks({
+  dependencies,
+  devDependencies,
+  ...rest
+}: ProjectSnapshot): ProjectSnapshot {
+  return {
+    dependencies: dependencies ? mapDependenciesLinks(dependencies) : undefined,
+    devDependencies: devDependencies
+      ? mapDependenciesLinks(devDependencies)
+      : undefined,
+    ...rest,
+  };
+}
+
+function mapDependenciesLinks(def: ResolvedDependencies): ResolvedDependencies {
   return Object.fromEntries(
     Object.entries(def).map(([packageName, def]) => {
       if (def.version.startsWith("link:")) {
