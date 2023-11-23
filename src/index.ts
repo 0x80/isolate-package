@@ -128,8 +128,6 @@ async function start() {
     }
   );
 
-  console.log("+++ internalDependencies", internalDependencies);
-
   const packedFilesByName = await packDependencies({
     internalDependencies,
     packagesRegistry,
@@ -187,7 +185,6 @@ async function start() {
           isolateDir,
           internalDependencies,
           packagesRegistry,
-          targetPackageManifest,
         });
         break;
       default:
