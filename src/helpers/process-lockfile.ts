@@ -63,7 +63,6 @@ function mapSpecifiers(
   specifiers: Record<string, string>,
   directoryByPackageName: { [packageName: string]: string }
 ) {
-  console.log("directoryByPackageName", directoryByPackageName);
   const internalPackageNames = Object.keys(directoryByPackageName);
 
   return mapValues(specifiers, (specifier, name) =>
