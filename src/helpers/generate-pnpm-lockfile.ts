@@ -1,12 +1,10 @@
-import pnpmExec from "@pnpm/exec";
 import {
   getLockfileImporterId,
   readWantedLockfile,
   writeWantedLockfile,
 } from "@pnpm/lockfile-file";
 import assert from "node:assert";
-import path from "path";
-import renameOverwrite from "rename-overwrite";
+import path from "node:path";
 import { createLogger } from "~/utils";
 import { mapImporterLinks } from "./adapt-lockfile";
 import { getConfig } from "./config";
@@ -32,7 +30,7 @@ export async function generatePnpmLockfile({
   const config = getConfig();
   const log = createLogger(config.logLevel);
 
-  log.info("Generating PNPM lockfile");
+  log.debug("Generating PNPM lockfile");
 
   const lockfile = await readWantedLockfile(workspaceRootDir, {
     ignoreIncompatible: false,
@@ -70,42 +68,5 @@ export async function generatePnpmLockfile({
 
   await writeWantedLockfile(isolateDir, lockfile);
 
-  if (config.runInstallAfterIsolation) {
-    const modulesDir = path.join(targetPackageDir, "node_modules");
-    const tmp = path.join(isolateDir, "tmp_node_modules");
-    const tempModulesDir = path.join(isolateDir, "node_modules/.tmp");
-
-    let modulesRenamed = false;
-    try {
-      await renameOverwrite(modulesDir, tmp);
-      await renameOverwrite(tmp, tempModulesDir);
-      modulesRenamed = true;
-    } catch (err: any) {
-      // eslint-disable-line
-      if (err["code"] !== "ENOENT") throw err;
-    }
-
-    try {
-      // @ts-expect-error That mysterious ESM default import mismatch again
-      await pnpmExec.default(
-        [
-          "install",
-          "--frozen-lockfile",
-          "--lockfile-dir=.",
-          "--fix-lockfile",
-          "--filter=.",
-          "--no-link-workspace-packages",
-          "--config.dedupe-peer-dependents=false", // TODO: remove this. It should work without it
-        ],
-        {
-          cwd: targetPackageDir,
-        }
-      );
-    } finally {
-      if (modulesRenamed) {
-        await renameOverwrite(tempModulesDir, tmp);
-        await renameOverwrite(tmp, modulesDir);
-      }
-    }
-  }
+  log.debug("Created lockfile at", path.join(isolateDir, "pnpm-lock.yaml"));
 }
