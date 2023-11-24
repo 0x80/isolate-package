@@ -61,33 +61,37 @@ that includes internal dependencies and a compatible lockfile.
 ## Motivation
 
 This solution was born from a desire to deploy to
-[Firebase](https://firebase.google.com/) from a monorepo without resorting to
-hacks, shell scripts and manual tasks. Here is [an
-article](https://medium.com/p/e685de39025e) explaining the issue in more detail.
+[Firebase](https://firebase.google.com/) from a monorepo without requiring
+custom shell scripts and other hacks. Here is
+[an article](https://thijs-koerselman.medium.com/deploy-to-firebase-without-the-hacks-e685de39025e)
+explaining the issue in more detail.
 
 There is nothing Firebase-specific to this solution and there should be other
-use-cases for it, but it is for this reason that the documentation contains some
-instructions related to Firebase.
+use-cases for it, but that is why this documentation contains some instructions
+related to Firebase.
 
 ## Install
 
 Run `pnpm install isolate-package --dev` or the equivalent for `yarn` or `npm`.
 
-I recommend using `pnpm` for [a number of
-reasons](https://pnpm.io/feature-comparison). Also, at the time of writing it is
-the only package manger that isolate-package can generate an [isolated
-lockfile](#lockfiles) for.
+I recommend using `pnpm` for
+[a number of reasons](https://pnpm.io/feature-comparison). Also, at the time of
+writing it is the only package manger that isolate-package can generate a
+[lockfile](#lockfiles) for.
 
 ## Usage
 
-If you arrived here for your Firebase deployments check out the [Firebase quick
-start guide](#a-quick-start) .
+Run `npx isolate` from the root of the package you want to isolate. Make sure
+you build the package first.
 
-This package exposes the `isolate` executable. Once installed you can run `npx
-isolate` in any package directory _after_ you have build the source files. By
-default this will produce a directory at `./isolate` but this can be configured.
+The `isolate` binary will try to infer your build output location from a
+`tsconfig` file, but see the [buildDirName configuration](#builddirname) if you
+are not using Typescript.
 
-You will probably want to add the output directory to your `.gitignore` file.
+By default the isolated output will become available at `./isolate`.
+
+If you are here to simplify and improve your Firebase deployments check out the
+[Firebase quick start guide](#a-quick-start) .
 
 ## Prerequisites
 
@@ -128,8 +132,8 @@ generate part of the packed filename. A personal preference is to set it to
 
 ### Define "files" field in each package manifest
 
-> NOTE: This step is not required if you use the [internal packages
-> strategy](#the-internal-packages-strategy)
+> NOTE: This step is not required if you use the
+> [internal packages strategy](#the-internal-packages-strategy)
 
 The isolate process uses (p)npm `pack` to extract files from package
 directories, just like publishing a package would.
@@ -151,8 +155,8 @@ directory, for example:
 A few additional files will be included by `pack` automatically, like the
 `package.json` and `README.md` files.
 
-**Tip** If you deploy to Firebase [2nd
-generation](https://firebase.google.com/docs/firestore/extend-with-functions-2nd-gen)
+**Tip** If you deploy to Firebase
+[2nd generation](https://firebase.google.com/docs/firestore/extend-with-functions-2nd-gen)
 functions, you might want to include some .env files in the "files" list, so
 they are packaged and deployed together with your build output (as 1st gen
 functions config is no longer supported).
@@ -196,8 +200,8 @@ If your setup diverges from a traditional one, please continue reading the
    `"predeploy"` to `["turbo build", "isolate"]` or whatever suits your build
    tool. The important part here is that isolate is being executed after the
    build stage.
-3. From the target package folder, you should now be able to deploy with `npx
-firebase deploy`.
+3. From the target package folder, you should now be able to deploy with
+   `npx firebase deploy`.
 
 I recommend keeping a `firebase.json` file inside each Firebase package (as
 opposed to the monorepo root), because it allows you to deploy from multiple
@@ -211,8 +215,8 @@ times.
 You can deploy to Firebase from multiple packages in your monorepo, in which
 case you co-locate your `firebase.json` file with the source code, and not in
 the root of the monorepo. If you do want to keep the firebase config in the
-root, read the instructions for [deploying to Firebase from the
-root](#deploying-to-firebase-from-the-root).
+root, read the instructions for
+[deploying to Firebase from the root](#deploying-to-firebase-from-the-root).
 
 In order to deploy to Firebase, the `functions.source` setting in
 `firebase.json` needs to point to the isolated output folder, which would be
@@ -237,8 +241,8 @@ from the package.
 
 If you like to deploy to Firebase Functions from multiple packages you will also
 need to configure a unique `codebase` identifier for each of them. For more
-information, [read
-this](https://firebase.google.com/docs/functions/beta/organize-functions).
+information,
+[read this](https://firebase.google.com/docs/functions/beta/organize-functions).
 
 Make sure your Firebase package adheres to the things mentioned in
 [prerequisites](#prerequisites) and its package manifest contains the field
@@ -275,8 +279,8 @@ The Firebase configuration should then look something like this:
 For most users no configuration should be necessary.
 
 You can configure the isolate process by placing a `isolate.config.json` file in
-the package that you want to isolate, except when you're [deploying to Firebase
-from the root of the workspace](#deploying-firebase-from-the-root).
+the package that you want to isolate, except when you're
+[deploying to Firebase from the root of the workspace](#deploying-firebase-from-the-root).
 
 For the config file to be picked up, you will have to execute `isolate` from the
 same location, as it uses the current working directory.
@@ -437,9 +441,9 @@ deployment by setting `"excludeLockfile": false` in your isolate.config.json
 file, or make the move to PNPM (recommended).
 
 A real solution, regenerating an isolated lockfile, should be possible based on
-the [NPM CLI
-Arborist](https://github.com/npm/cli/tree/latest/workspaces/arborist) code, so I
-plan to look into that in the near future.
+the
+[NPM CLI Arborist](https://github.com/npm/cli/tree/latest/workspaces/arborist)
+code, so I plan to look into that in the near future.
 
 ### Yarn
 
@@ -509,8 +513,8 @@ I plan to work on this once isolate-package is bit more mature.
 ## The internal packages strategy
 
 Recently I changed [my example monorepo setup](https://github.com/0x80/mono-ts)
-to include [the internal packages
-strategy](https://turbo.build/blog/you-might-not-need-typescript-project-references),
+to include
+[the internal packages strategy](https://turbo.build/blog/you-might-not-need-typescript-project-references),
 (in which the package manifest entries point directly to TS source files, to
 omit the build step), and I was pleased to discover that the approach is
 compatible with `isolate-packages` with only a single change in configuration.
@@ -522,8 +526,7 @@ In summary this is how it works:
    source (and types).
 2. You configure the bundler of your target package to include the source code
    for those internal packages in its output bundle. In the case of TSUP for the
-   [API service in the
-   mono-ts](https://github.com/0x80/mono-ts/blob/main/services/api/tsup.config.ts)
+   [API service in the mono-ts](https://github.com/0x80/mono-ts/blob/main/services/api/tsup.config.ts)
    that configuration is: `noExternal: ["@mono/common"]`
 3. When `isolate` runs, it does the exact same thing as always. It will detect
    the internal packages, copies them to the isolate output folder and adjusts

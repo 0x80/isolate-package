@@ -5,7 +5,11 @@ import { createLogger } from "~/utils";
 import { getConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
 
-/** This code is experimental and not verified to work. */
+/**
+ * This code is probably not working yet. It should eventually do something
+ * similar to generatePnpmLockfile, but my NPM install is giving me
+ * non-descriptive errors and my patience and time for now is running out...
+ */
 export async function generateNpmLockfile({
   workspaceRootDir,
   targetPackageName,

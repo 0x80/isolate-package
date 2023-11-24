@@ -24,41 +24,74 @@ export function getLockfileFileName(name: PackageManagerName) {
   }
 }
 
-export function mapImporterLinks({
-  dependencies,
-  devDependencies,
-  ...rest
-}: ProjectSnapshot): ProjectSnapshot {
+/** Convert dependency links and version specifiers */
+export function mapImporter(
+  { dependencies, devDependencies, specifiers, ...rest }: ProjectSnapshot,
+  {
+    includeDevDependencies,
+    directoryByPackageName,
+  }: {
+    includeDevDependencies: boolean;
+    directoryByPackageName: { [packageName: string]: string };
+  }
+): ProjectSnapshot {
   return {
-    dependencies: dependencies ? mapDependenciesLinks(dependencies) : undefined,
-    devDependencies: devDependencies
-      ? mapDependenciesLinks(devDependencies)
+    dependencies: dependencies
+      ? mapDependenciesLinks(dependencies, directoryByPackageName)
       : undefined,
+    devDependencies:
+      includeDevDependencies && devDependencies
+        ? mapDependenciesLinks(devDependencies, directoryByPackageName)
+        : undefined,
+    specifiers: mapSpecifiers(specifiers, directoryByPackageName),
     ...rest,
   };
 }
 
-function mapDependenciesLinks(def: ResolvedDependencies): ResolvedDependencies {
-  return mapValues(def, (version) =>
-    version.startsWith("link:") ? convertVersionLink(version) : version
+function mapDependenciesLinks(
+  def: ResolvedDependencies,
+  directoryByPackageName: { [packageName: string]: string }
+): ResolvedDependencies {
+  return mapValues(def, (version, name) =>
+    version.startsWith("link:")
+      ? `link:./${directoryByPackageName[name]}`
+      : version
   );
 }
 
-function convertVersionLink(version: string) {
-  const regex = /([^/]+)$/;
+function mapSpecifiers(
+  specifiers: Record<string, string>,
+  directoryByPackageName: { [packageName: string]: string }
+) {
+  console.log("directoryByPackageName", directoryByPackageName);
+  const internalPackageNames = Object.keys(directoryByPackageName);
 
-  const match = version.match(regex);
-
-  if (!match) {
-    throw new Error(
-      `Failed to extract package folder name from link ${version}`
-    );
-  }
-
-  const packageFolderName = match[1];
-
-  return `link:./packages/${packageFolderName}`;
+  return mapValues(specifiers, (specifier, name) =>
+    internalPackageNames.includes(name)
+      ? `file:./${directoryByPackageName[name]}`
+      : specifier
+  );
 }
+
+// function convertVersionLink(version: string, path: string) {
+//   /**
+//    * Get the package folder name from the last part of the link. @todo try to
+//    * use pathname from node:path
+//    */
+//   const regex = /([^/]+)$/;
+
+//   const match = version.match(regex);
+
+//   if (!match) {
+//     throw new Error(
+//       `Failed to extract package folder name from link ${version}`
+//     );
+//   }
+
+//   const packageFolderName = match[1];
+
+//   return `link:./${path}`;
+// }
 
 /**
  * Adapt the lockfile and write it to the isolate directory. Because we keep the
@@ -71,14 +104,14 @@ export async function processLockfile({
   workspaceRootDir,
   packagesRegistry,
   isolateDir,
-  internalPackages,
+  internalDepPackageNames,
   targetPackageDir,
   targetPackageName,
 }: {
   workspaceRootDir: string;
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
-  internalPackages: string[];
+  internalDepPackageNames: string[];
   targetPackageDir: string;
   targetPackageName: string;
 }) {
@@ -130,7 +163,7 @@ export async function processLockfile({
         workspaceRootDir,
         targetPackageDir,
         isolateDir,
-        internalPackages,
+        internalDepPackageNames,
         packagesRegistry,
       });
       break;

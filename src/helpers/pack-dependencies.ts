@@ -14,7 +14,7 @@ export async function packDependencies({
   /** All packages found in the monorepo by workspaces declaration */
   packagesRegistry,
   /** The dependencies that appear to be internal packages */
-  internalPackages,
+  internalPackageNames,
   /**
    * The directory where the isolated package and all its dependencies will end
    * up. This is also the directory from where the package will be deployed. By
@@ -24,7 +24,7 @@ export async function packDependencies({
   packDestinationDir,
 }: {
   packagesRegistry: PackagesRegistry;
-  internalPackages: string[];
+  internalPackageNames: string[];
   packDestinationDir: string;
 }) {
   const config = getConfig();
@@ -43,7 +43,7 @@ export async function packDependencies({
     log.debug("Using PNPM pack instead of NPM pack");
   }
 
-  for (const dependency of internalPackages) {
+  for (const dependency of internalPackageNames) {
     const def = packagesRegistry[dependency];
 
     assert(dependency, `Failed to find package definition for ${dependency}`);

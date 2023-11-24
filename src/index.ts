@@ -113,7 +113,7 @@ async function start() {
     config.workspacePackages
   );
 
-  const internalPackages = listInternalPackages(
+  const internalPackageNames = listInternalPackages(
     targetPackageManifest,
     packagesRegistry,
     {
@@ -122,7 +122,7 @@ async function start() {
   );
 
   const packedFilesByName = await packDependencies({
-    internalPackages,
+    internalPackageNames,
     packagesRegistry,
     packDestinationDir: tmpDir,
   });
@@ -136,7 +136,7 @@ async function start() {
 
   /** Adapt the manifest files for all the unpacked local dependencies */
   await adaptInternalPackageManifests(
-    internalPackages,
+    internalPackageNames,
     packagesRegistry,
     isolateDir
   );
@@ -177,7 +177,7 @@ async function start() {
       workspaceRootDir,
       isolateDir,
       packagesRegistry,
-      internalPackages,
+      internalDepPackageNames: internalPackageNames,
       targetPackageDir,
       targetPackageName: targetPackageManifest.name,
     });
