@@ -72,26 +72,6 @@ function mapSpecifiers(
   );
 }
 
-// function convertVersionLink(version: string, path: string) {
-//   /**
-//    * Get the package folder name from the last part of the link. @todo try to
-//    * use pathname from node:path
-//    */
-//   const regex = /([^/]+)$/;
-
-//   const match = version.match(regex);
-
-//   if (!match) {
-//     throw new Error(
-//       `Failed to extract package folder name from link ${version}`
-//     );
-//   }
-
-//   const packageFolderName = match[1];
-
-//   return `link:./${path}`;
-// }
-
 /**
  * Adapt the lockfile and write it to the isolate directory. Because we keep the
  * structure of packages in the isolate directory the same as they were in the

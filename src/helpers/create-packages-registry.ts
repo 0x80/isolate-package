@@ -9,19 +9,6 @@ import { findPackagesGlobs } from "./find-packages-globs";
 export type PackageManifest = PnpmPackageManifest & {
   packageManager?: string;
 };
-// export type PackageManifest = {
-//   name: string;
-//   packageManager?: string;
-//   dependencies?: Record<string, string>;
-//   devDependencies?: Record<string, string>;
-//   main: string;
-//   module?: string;
-//   exports?: Record<string, { require: string; import: string }>;
-//   files: string[];
-//   version?: string;
-//   typings?: string;
-//   scripts?: Record<string, string>;
-// };
 
 export type WorkspacePackageInfo = {
   absoluteDir: string;
