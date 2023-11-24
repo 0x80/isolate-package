@@ -45,8 +45,8 @@ that includes internal dependencies and a compatible lockfile.
 - Isolate a monorepo package with its internal dependencies to form a
   self-contained installable package.
 - Deterministic deployment by generating an isolated lockfile based on the
-  existing monorepo lockfile. Currently this feature is only supported for PNPM. See
-  [lockfiles](#lockfiles) for more information.
+  existing monorepo lockfile. Currently this feature is only supported for PNPM.
+  See [lockfiles](#lockfiles) for more information.
 - Zero-config for the vast majority of use-cases, with no manual steps involved.
 - Support for PNPM, NPM and Yarn.
 - Compatible with the Firebase tools CLI, incl 1st gen and 2nd gen Firebase
@@ -65,8 +65,9 @@ This solution was born from a desire to deploy to
 hacks, shell scripts and manual tasks. Here is [an
 article](https://medium.com/p/e685de39025e) explaining the issue in more detail.
 
-It is important to note that there is nothing Firebase-specific to this approach
-and there should be other use-cases for it.
+There is nothing Firebase-specific to this solution and there should be other
+use-cases for it, but it is for this reason that the documentation contains some
+instructions related to Firebase.
 
 ## Install
 

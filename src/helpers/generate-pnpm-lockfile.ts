@@ -3,6 +3,7 @@ import {
   readWantedLockfile,
   writeWantedLockfile,
 } from "@pnpm/lockfile-file";
+import { pick } from "lodash-es";
 import assert from "node:assert";
 import path from "node:path";
 import { createLogger } from "~/utils";
@@ -10,10 +11,6 @@ import { getConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
 import { mapImporterLinks } from "./process-lockfile";
 
-/**
- * Code inspired by
- * https://github.com/pnpm/pnpm/tree/main/packages/make-dedicated-lockfile
- */
 export async function generatePnpmLockfile({
   workspaceRootDir,
   targetPackageDir,
@@ -38,9 +35,6 @@ export async function generatePnpmLockfile({
 
   assert(lockfile, "No lockfile found");
 
-  const originalImporters = lockfile.importers;
-  lockfile.importers = {};
-
   const targetImporterId = getLockfileImporterId(
     workspaceRootDir,
     targetPackageDir
@@ -52,19 +46,23 @@ export async function generatePnpmLockfile({
     return pkg.rootRelativeDir;
   });
 
-  log.debug("Relevant importer ids:", targetImporterId, internalDepImporterIds);
+  const relevantImporterIds = [targetImporterId, ...internalDepImporterIds];
 
-  for (const [importerId, importer] of Object.entries(originalImporters)) {
-    if (importerId === targetImporterId) {
-      log.debug('Converting target importer to "."');
-      lockfile.importers["."] = mapImporterLinks(importer);
-    }
+  log.debug("Relevant importer ids:", relevantImporterIds);
 
-    if (internalDepImporterIds.includes(importerId)) {
-      log.debug("Converting internal package importer:", importerId);
-      lockfile.importers[importerId] = mapImporterLinks(importer);
-    }
-  }
+  lockfile.importers = Object.fromEntries(
+    Object.entries(pick(lockfile.importers, relevantImporterIds)).map(
+      ([importerId, importer]) => {
+        if (importerId === targetImporterId) {
+          log.debug("Setting target package importer on root");
+          return [".", mapImporterLinks(importer)];
+        }
+
+        log.debug("Setting internal package importer:", importerId);
+        return [importerId, mapImporterLinks(importer)];
+      }
+    )
+  );
 
   await writeWantedLockfile(isolateDir, lockfile);
 
