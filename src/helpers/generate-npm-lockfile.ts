@@ -1,9 +1,11 @@
 import Arborist from "@npmcli/arborist";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createLogger } from "~/utils";
+import { getConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
 
-/** Arborist does not seem to work on PNPM installed node_modules folders */
+/** This code is experimental and not verified to work. */
 export async function generateNpmLockfile({
   workspaceRootDir,
   targetPackageName,
@@ -15,23 +17,24 @@ export async function generateNpmLockfile({
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
 }) {
-  console.log("+++ generateLockfile");
-  console.log("+++ isolateDir", isolateDir);
+  const config = getConfig();
+  const log = createLogger(config.logLevel);
+
+  log.warn("Generating NPM lockfile NOT IMPLEMENTED YET");
 
   const internalPackageNames = Object.keys(packagesRegistry);
-  console.log("+++ internal packages", internalPackageNames);
+  log.debug("Internal packages", internalPackageNames);
 
-  /** Should be a list of local package names I think */
-
-  // Create a tree of the dependencies for this workspace.
   const arborist = new Arborist({ path: workspaceRootDir });
-  const { meta } = await arborist.buildIdealTree({ rm: internalPackageNames });
+
+  const { meta } = await arborist.buildIdealTree({
+    add: [targetPackageName, ...internalPackageNames],
+  });
   meta?.commit();
 
   const lockfilePath = path.join(isolateDir, "package-lock.json");
-  // Write `package-lock.json` file in the `dist/` directory.
-  // await fs.mkdir(path.join(isolateDir, "dist"), { recursive: true });
+
   await fs.writeFile(lockfilePath, String(meta));
 
-  console.log("+++ generated lockfile at", lockfilePath);
+  log.debug("Created lockfile at", lockfilePath);
 }
