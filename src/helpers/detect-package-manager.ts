@@ -3,9 +3,9 @@ import assert from "node:assert";
 import { execSync } from "node:child_process";
 import path from "node:path";
 import { createLogger, readTypedJsonSync } from "~/utils";
-import { getLockfileFileName } from "./adapt-lockfile";
 import { getConfig } from "./config";
 import type { PackageManifest } from "./create-packages-registry";
+import { getLockfileFileName } from "./process-lockfile";
 
 const supportedPackageManagerNames = ["pnpm", "yarn", "npm"] as const;
 

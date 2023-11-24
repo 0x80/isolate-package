@@ -6,9 +6,9 @@ import {
 import assert from "node:assert";
 import path from "node:path";
 import { createLogger } from "~/utils";
-import { mapImporterLinks } from "./adapt-lockfile";
 import { getConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
+import { mapImporterLinks } from "./process-lockfile";
 
 /**
  * Code inspired by

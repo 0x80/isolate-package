@@ -3,15 +3,6 @@
  * For PNPM the hash bang at the top of the script was not required, but Yarn 3
  * did not seem to execute without it.
  */
-
-/**
- * A word about used terminology:
- *
- * The various package managers, while being very similar, seem to use a
- * different definition for the term "workspace". If you want to read the code
- * it might be good to know that I consider the workspace to be the monorepo
- * itself, in other words, the overall structure that holds all the packages.
- */
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
@@ -20,26 +11,28 @@ import {
   createLogger,
   getDirname,
   getRootRelativePath,
+  isDefined,
   readTypedJson,
 } from "~/utils";
 import { adaptInternalPackageManifests } from "./helpers/adapt-manifest-files";
 import { adaptTargetPackageManifest } from "./helpers/adapt-target-package-manifest";
-import { getConfig } from "./helpers/config";
+import { getConfig, getUserDefinedConfig } from "./helpers/config";
 import {
   createPackagesRegistry,
   type PackageManifest,
 } from "./helpers/create-packages-registry";
 import { detectPackageManager } from "./helpers/detect-package-manager";
-import { generateNpmLockfile } from "./helpers/generate-npm-lockfile";
-import { generatePnpmLockfile } from "./helpers/generate-pnpm-lockfile";
 import { getBuildOutputDir } from "./helpers/get-build-output-dir";
 import { listInternalPackages } from "./helpers/list-internal-packages";
 import { packDependencies } from "./helpers/pack-dependencies";
 import { processBuildOutputFiles } from "./helpers/process-build-output-files";
+import { processLockfile } from "./helpers/process-lockfile";
 import { unpackDependencies } from "./helpers/unpack-dependencies";
 
 const config = getConfig();
 const log = createLogger(config.logLevel);
+
+const userDefinedConfig = getUserDefinedConfig();
 
 sourceMaps.install();
 
@@ -165,33 +158,29 @@ async function start() {
     isolateDir
   );
 
+  /**
+   * If the user has not explicitly set the excludeLockfile option, we will
+   * exclude the lockfile for NPM and Yarn, because we still need to figure out
+   * how to generate the lockfile for those package managers.
+   */
+  if (!isDefined(userDefinedConfig.excludeLockfile)) {
+    if (packageManager.name === "npm" || packageManager.name === "yarn") {
+      config.excludeLockfile = true;
+    }
+  }
+
   if (config.excludeLockfile) {
     log.warn("Excluding the lockfile from the isolate output");
   } else {
-    switch (packageManager.name) {
-      case "npm":
-        /** Generate the lockfile */
-        await generateNpmLockfile({
-          workspaceRootDir,
-          targetPackageName: targetPackageManifest.name,
-          isolateDir,
-          packagesRegistry,
-        });
-        break;
-      case "pnpm":
-        await generatePnpmLockfile({
-          workspaceRootDir,
-          targetPackageDir,
-          isolateDir,
-          internalPackages,
-          packagesRegistry,
-        });
-        break;
-      default:
-        log.warn(
-          `Creating isolated lockfiles for ${packageManager.name} is currently not supported`
-        );
-    }
+    /** Copy and adapt the lockfile */
+    await processLockfile({
+      workspaceRootDir,
+      isolateDir,
+      packagesRegistry,
+      internalPackages,
+      targetPackageDir,
+      targetPackageName: targetPackageManifest.name,
+    });
   }
 
   /**

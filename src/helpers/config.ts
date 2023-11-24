@@ -85,3 +85,14 @@ export function getConfig(): IsolateConfigResolved {
   __config = config;
   return config;
 }
+
+/** Get only the configuration that the user set explicitly in the config file */
+export function getUserDefinedConfig(): IsolateConfig {
+  const configFilePath = path.join(process.cwd(), CONFIG_FILE_NAME);
+
+  const configFromFile = fs.existsSync(configFilePath)
+    ? readTypedJsonSync<IsolateConfig>(configFilePath)
+    : {};
+
+  return configFromFile;
+}

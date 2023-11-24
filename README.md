@@ -10,14 +10,10 @@ that includes internal dependencies and a compatible lockfile.
 - [Install](#install)
 - [Usage](#usage)
 - [Prerequisites](#prerequisites)
-  - [Define shared dependencies in the package
-    manifest](#define-shared-dependencies-in-the-package-manifest)
-  - [Define "version" field in each package
-    manifest](#define-version-field-in-each-package-manifest)
-  - [Define "files" field in each package
-    manifest](#define-files-field-in-each-package-manifest)
-  - [Use a flat structure inside your packages
-    folders](#use-a-flat-structure-inside-your-packages-folders)
+  - [Define shared dependencies in the package manifest](#define-shared-dependencies-in-the-package-manifest)
+  - [Define "version" field in each package manifest](#define-version-field-in-each-package-manifest)
+  - [Define "files" field in each package manifest](#define-files-field-in-each-package-manifest)
+  - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
 - [Working with Firebase](#working-with-firebase)
   - [A Quick Start](#a-quick-start)
   - [Deploying from multiple packages](#deploying-from-multiple-packages)
@@ -39,8 +35,7 @@ that includes internal dependencies and a compatible lockfile.
   - [Yarn](#yarn)
   - [A Partial Workaround](#a-partial-workaround)
 - [Different Package Managers](#different-package-managers)
-- [Using the Firebase Functions
-  Emulator](#using-the-firebase-functions-emulator)
+- [Using the Firebase Functions Emulator](#using-the-firebase-functions-emulator)
 - [The internal packages strategy](#the-internal-packages-strategy)
 
 <!-- /TOC -->
@@ -50,7 +45,7 @@ that includes internal dependencies and a compatible lockfile.
 - Isolate a monorepo package with its internal dependencies to form a
   self-contained installable package.
 - Deterministic deployment by generating an isolated lockfile based on the
-  existing monorepo. Currently this feature is only supported for PNPM. See
+  existing monorepo lockfile. Currently this feature is only supported for PNPM. See
   [lockfiles](#lockfiles) for more information.
 - Zero-config for the vast majority of use-cases, with no manual steps involved.
 - Support for PNPM, NPM and Yarn.
@@ -67,20 +62,20 @@ that includes internal dependencies and a compatible lockfile.
 
 This solution was born from a desire to deploy to
 [Firebase](https://firebase.google.com/) from a monorepo without resorting to
-hacks, shell scripts and manual tasks. I wrote [an
+hacks, shell scripts and manual tasks. Here is [an
 article](https://medium.com/p/e685de39025e) explaining the issue in more detail.
 
-There is nothing Firebase-specific to this solution but I am currently not aware
-of other needs for isolating a monorepo package, so if you find a different
-use-case I would love to hear about it.
+It is important to note that there is nothing Firebase-specific to this approach
+and there should be other use-cases for it.
 
 ## Install
 
 Run `pnpm install isolate-package --dev` or the equivalent for `yarn` or `npm`.
 
-I recommend using `pnpm` if you can because I don't think you will regret it.
-Also, at the moment it is the only package manger that isolate-package can
-generate an [isolated lockfile](#isolated-lockfiles) for.
+I recommend using `pnpm` for [a number of
+reasons](https://pnpm.io/feature-comparison). Also, at the time of writing it is
+the only package manger that isolate-package can generate an [isolated
+lockfile](#lockfiles) for.
 
 ## Usage
 
@@ -127,8 +122,8 @@ will be processed regardless of its version specifier.
 ### Define "version" field in each package manifest
 
 The `version` field is required for `pack` to execute, because it is use to
-generate part of the packed filename. I personally always set it to `"0.0.0"` to
-indicate that the version does not have any real meaning.
+generate part of the packed filename. A personal preference is to set it to
+`"0.0.0"` to indicate that the version does not have any real meaning.
 
 ### Define "files" field in each package manifest
 
@@ -170,17 +165,18 @@ down into the folders. So if you declare your packages to live in `packages/*`
 it will only find the packages directly in that folder and not at
 `packages/nested/more-packages`.
 
-You can, however, declare multiple packages folders. I personally like to use
-`["packages/*", "apps/*", "services/*"]`. It is just that the structure inside
-them should be flat.
+You can, however, declare multiple workspace packages directories. Personally, I
+prefer to use `["packages/*", "apps/*", "services/*"]`. It is only the structure
+inside them that should be flat.
 
 ## Working with Firebase
 
 ### A Quick Start
 
 If you are not confident that your monorepo setup is solid, please check out my
-in-dept example at [mono-ts](https://github.com/0x80/mono-ts) where
-`isolate-package` is being used to demonstrate Firebase deployments.
+in-dept example at [mono-ts](https://github.com/0x80/mono-ts) where many
+different aspects are discussed and `isolate-package` is used to demonstrate
+Firebase deployments.
 
 This section describes the steps required for Firebase deployment, assuming:
 
@@ -211,10 +207,10 @@ times.
 
 ### Deploying from multiple packages
 
-You can deploy to Firebase from multiple packages in your monorepo, so I advise
-you to co-locate your `firebase.json` file with the source code, and not place
-it in the root of the monorepo. If you do want to keep the firebase config in
-the root, read the instructions for [deploying to Firebase from the
+You can deploy to Firebase from multiple packages in your monorepo, in which
+case you co-locate your `firebase.json` file with the source code, and not in
+the root of the monorepo. If you do want to keep the firebase config in the
+root, read the instructions for [deploying to Firebase from the
 root](#deploying-to-firebase-from-the-root).
 
 In order to deploy to Firebase, the `functions.source` setting in
@@ -298,15 +294,14 @@ setting to specify where the build output files are located.
 
 Type: `boolean`, default: Depends on package manager.
 
-Sets the inclusion or exclusion of the lockfile as part of the deployment. For
-Yarn and NPM the lockfiles are included by default, but for PNPM they are
-excluded by default because they are not supported yet. For more information see
-[lockfiles](#lockfiles).
+Sets the inclusion or exclusion of the lockfile as part of the deployment.
 
-_Tip:_ If you can't use a lockfile I advise you to declare dependencies using
-absolute versions in your package manifests. This doesn't prevent their
-dependencies from installing newer versions, but at least you minimize the risk
-of things breaking.
+PNPM lockfiles are regenerated based on the isolated output, so they are
+included by default.
+
+For NPM and Yarn the lockfiles are excluded by default because they are
+currently copied as-is to the isolate output and can lead to issues during
+deployment installs. For more information see [lockfiles](#lockfiles).
 
 ### includeDevDependencies
 
@@ -394,8 +389,8 @@ When you use the `targetPackagePath` option, this setting will be ignored.
 
 ## Troubleshooting
 
-If something is not working, I advise you to add a `isolate.config.json` file,
-and set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
+If something is not working as expected, add a `isolate.config.json` file, and
+set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
 console.
 
 In addition define an environment variable to debug the configuration being used
@@ -447,9 +442,9 @@ plan to look into that in the near future.
 
 ### Yarn
 
-For now, Yarn lockfiles are simply copied over to the isolated output. I have
-seen Firebase deployments work with it, but I find it likely you will run into
-an error.
+For now, Yarn lockfiles are simply copied over to the isolated output. I believe
+I have seen Firebase deployments work with it, but it is likely you will run
+into an error.
 
 If you experience an issue, you can choose to exclude the lockfile from
 deployment by setting `"excludeLockfile": false` in your isolate.config.json
@@ -458,8 +453,8 @@ file, or make the move to PNPM (recommended).
 I am not aware of any code in the official Yarn repository for re-generating a
 lockfile, and I am reluctant to work on this feature based on user-land code.
 
-Personally I do not think Yarn is very relevant anymore in 2023 so I advise you
-to start using PNPM instead.
+Personally, I do not think Yarn is very relevant anymore in 2023 and I recommend
+switching to PNPM.
 
 ### A Partial Workaround
 
