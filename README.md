@@ -1,7 +1,7 @@
 # Isolate Package
 
-Isolate a monorepo workspace package to form a self-contained
-directory including any internally shared code and a compatible lockfile.
+Isolate a monorepo workspace package to form a self-contained deployable package
+that includes internal dependencies and a compatible lockfile.
 
 <!-- TOC -->
 
@@ -10,10 +10,14 @@ directory including any internally shared code and a compatible lockfile.
 - [Install](#install)
 - [Usage](#usage)
 - [Prerequisites](#prerequisites)
-  - [Define shared dependencies in the package manifest](#define-shared-dependencies-in-the-package-manifest)
-  - [Define "version" field in each package manifest](#define-version-field-in-each-package-manifest)
-  - [Define "files" field in each package manifest](#define-files-field-in-each-package-manifest)
-  - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
+  - [Define shared dependencies in the package
+    manifest](#define-shared-dependencies-in-the-package-manifest)
+  - [Define "version" field in each package
+    manifest](#define-version-field-in-each-package-manifest)
+  - [Define "files" field in each package
+    manifest](#define-files-field-in-each-package-manifest)
+  - [Use a flat structure inside your packages
+    folders](#use-a-flat-structure-inside-your-packages-folders)
 - [Working with Firebase](#working-with-firebase)
   - [A Quick Start](#a-quick-start)
   - [Deploying from multiple packages](#deploying-from-multiple-packages)
@@ -35,7 +39,8 @@ directory including any internally shared code and a compatible lockfile.
   - [Yarn](#yarn)
   - [A Partial Workaround](#a-partial-workaround)
 - [Different Package Managers](#different-package-managers)
-- [Using the Firebase Functions Emulator](#using-the-firebase-functions-emulator)
+- [Using the Firebase Functions
+  Emulator](#using-the-firebase-functions-emulator)
 - [The internal packages strategy](#the-internal-packages-strategy)
 
 <!-- /TOC -->
@@ -160,13 +165,13 @@ functions config is no longer supported).
 
 At the moment, nesting packages inside packages is not supported.
 
-When building the registry of all local packages, `isolate` doesn't drill down
-into the folders. So if you declare your packages to live in `packages/*` it
-will only find the packages directly in that folder and not at
+When building the registry of all internal packages, `isolate` doesn't drill
+down into the folders. So if you declare your packages to live in `packages/*`
+it will only find the packages directly in that folder and not at
 `packages/nested/more-packages`.
 
 You can, however, declare multiple packages folders. I personally like to use
-`["packages/*", "apps/*", "services/*"]`. It's just that the structure inside
+`["packages/*", "apps/*", "services/*"]`. It is just that the structure inside
 them should be flat.
 
 ## Working with Firebase
@@ -490,8 +495,8 @@ order to be picked up by the emulator. In other words, changes do not propagate
 automatically while the emulator is running.
 
 The workaround I use at the moment is to create a "emulate" script in the
-package manifest which does the same as the Firebase predeploy, and then starts the
-emulator. For example:
+package manifest which does the same as the Firebase predeploy, and then starts
+the emulator. For example:
 
 `turbo build && isolate && firebase emulators:start --only functions`
 
@@ -503,38 +508,39 @@ firebase-tools `deploy` command, so it is only executed as part of the
 deployment process and the `source` property can still point to the original
 code.
 
-I plan to work on this once isolate-package is bit more mature. The current
-priority is to get lockfiles working.
+I plan to work on this once isolate-package is bit more mature.
 
 ## The internal packages strategy
 
 Recently I changed [my example monorepo setup](https://github.com/0x80/mono-ts)
 to include [the internal packages
-strategy](https://turbo.build/blog/you-might-not-need-typescript-project-references)
-and I was happy to find that the approach is compatible with `isolate-packages`
-with only a single change in configuration.
+strategy](https://turbo.build/blog/you-might-not-need-typescript-project-references),
+(in which the package manifest entries point directly to TS source files, to
+omit the build step), and I was pleased to discover that the approach is
+compatible with `isolate-packages` with only a single change in configuration.
 
 In summary this is how it works:
 
 1. The package to be deployed lists its internal dependencies as usual, but the
-   package manifests of those dependencies point directly to the Typescript source.
+   package manifests of those dependencies point directly to the Typescript
+   source (and types).
 2. You configure the bundler of your target package to include the source code
-   for those internal package in its output bundle. In the case of TSUP for the
+   for those internal packages in its output bundle. In the case of TSUP for the
    [API service in the
    mono-ts](https://github.com/0x80/mono-ts/blob/main/services/api/tsup.config.ts)
-   it is: `noExternal: ["@mono/common"]`
-3. When `isolate` runs, it does the exact same thing as always. It will pick up
-   the shared packages, and copies and links them to the isolated target
-   package.
-4. When deploying to Firebase, the Google cloud pipeline will use the package
-   manifest as usual, to install the listed dependencies and any
+   that configuration is: `noExternal: ["@mono/common"]`
+3. When `isolate` runs, it does the exact same thing as always. It will detect
+   the internal packages, copies them to the isolate output folder and adjusts
+   any links.
+4. When deploying to Firebase, the cloud pipeline will treat the package
+   manifest as usual, which installs the listed dependencies and any
    dependencies listed in the linked internal package manifests.
 
 Steps 3 and 4 are no different from a traditional setup.
 
-Note that the entry points in the manifest files for the isolated internal
-packages will still point to the Typescript source files, but since these
-packages are never referenced in the code (we embedded all the code in the
-bundled target output) they are completely ignored. The only reason those
-packages are included in the isolated output is so that the package manager
-knows what dependencies to install.
+Note that the manifests for the internal packages will still point to the
+Typescript source files, but since the shared code was embedded in the deployed
+bundle, they will never be referenced via import statements and as a result the
+entry points remain unused. The only reason the packages are included in the
+isolated output is so that the package manager knows what dependencies to
+install.

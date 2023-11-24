@@ -18,13 +18,13 @@ export async function generatePnpmLockfile({
   workspaceRootDir,
   targetPackageDir,
   isolateDir,
-  internalDependencies,
+  internalPackages,
   packagesRegistry,
 }: {
   workspaceRootDir: string;
   targetPackageDir: string;
   isolateDir: string;
-  internalDependencies: string[];
+  internalPackages: string[];
   packagesRegistry: PackagesRegistry;
 }) {
   const config = getConfig();
@@ -46,7 +46,7 @@ export async function generatePnpmLockfile({
     targetPackageDir
   );
 
-  const internalDepImporterIds = internalDependencies.map((name) => {
+  const internalDepImporterIds = internalPackages.map((name) => {
     const pkg = packagesRegistry[name];
     assert(pkg, `Package ${name} not found in packages registry`);
     return pkg.rootRelativeDir;

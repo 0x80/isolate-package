@@ -5,21 +5,22 @@ import type {
 } from "./create-packages-registry";
 
 /**
- * Recursively list the packages from dependencies (and optionally
- * devDependencies) that are found in the workspace.
+ * Recursively list all the packages from dependencies (and optionally
+ * devDependencies) that are found in the monorepo.
  *
- * Here we do not need to rely on packages being declared as "workspace:" in the
- * manifest. We can simply compare the package names with the list of packages
- * that were found via the workspace glob patterns and added to the registry.
+ * Here we do not need to rely on packages being declared with "workspace:" in
+ * the package manifest. We can simply compare the package names with the list
+ * of packages that were found via the workspace glob patterns and add them to
+ * the registry.
  */
-export function listInternalDependencies(
+export function listInternalPackages(
   manifest: PackageManifest,
   packagesRegistry: PackagesRegistry,
   { includeDevDependencies = false } = {}
 ): string[] {
   const allWorkspacePackageNames = Object.keys(packagesRegistry);
 
-  const localDependencyPackageNames = (
+  const internalPackageNames = (
     includeDevDependencies
       ? [
           ...Object.keys(manifest.dependencies ?? {}),
@@ -28,14 +29,14 @@ export function listInternalDependencies(
       : Object.keys(manifest.dependencies ?? {})
   ).filter((name) => allWorkspacePackageNames.includes(name));
 
-  const nestedInternalDependencies = localDependencyPackageNames.flatMap(
+  const nestedInternalPackageNames = internalPackageNames.flatMap(
     (packageName) =>
-      listInternalDependencies(
+      listInternalPackages(
         packagesRegistry[packageName].manifest,
         packagesRegistry,
         { includeDevDependencies }
       )
   );
 
-  return uniq(localDependencyPackageNames.concat(nestedInternalDependencies));
+  return uniq(internalPackageNames.concat(nestedInternalPackageNames));
 }

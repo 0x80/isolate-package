@@ -33,7 +33,7 @@ import { detectPackageManager } from "./helpers/detect-package-manager";
 import { generateNpmLockfile } from "./helpers/generate-npm-lockfile";
 import { generatePnpmLockfile } from "./helpers/generate-pnpm-lockfile";
 import { getBuildOutputDir } from "./helpers/get-build-output-dir";
-import { listInternalDependencies } from "./helpers/list-internal-dependencies";
+import { listInternalPackages } from "./helpers/list-internal-packages";
 import { packDependencies } from "./helpers/pack-dependencies";
 import { processBuildOutputFiles } from "./helpers/process-build-output-files";
 import { unpackDependencies } from "./helpers/unpack-dependencies";
@@ -120,7 +120,7 @@ async function start() {
     config.workspacePackages
   );
 
-  const internalDependencies = listInternalDependencies(
+  const internalPackages = listInternalPackages(
     targetPackageManifest,
     packagesRegistry,
     {
@@ -129,7 +129,7 @@ async function start() {
   );
 
   const packedFilesByName = await packDependencies({
-    internalDependencies,
+    internalPackages,
     packagesRegistry,
     packDestinationDir: tmpDir,
   });
@@ -143,7 +143,7 @@ async function start() {
 
   /** Adapt the manifest files for all the unpacked local dependencies */
   await adaptInternalPackageManifests(
-    internalDependencies,
+    internalPackages,
     packagesRegistry,
     isolateDir
   );
@@ -183,7 +183,7 @@ async function start() {
           workspaceRootDir,
           targetPackageDir,
           isolateDir,
-          internalDependencies,
+          internalPackages,
           packagesRegistry,
         });
         break;

@@ -10,12 +10,12 @@ import { getConfig } from "./config";
  * packages in the same folder.
  */
 export async function adaptInternalPackageManifests(
-  internalDependencies: string[],
+  internalPackages: string[],
   packagesRegistry: PackagesRegistry,
   isolateDir: string
 ) {
   await Promise.all(
-    internalDependencies.map(async (packageName) => {
+    internalPackages.map(async (packageName) => {
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
       const outputManifest = adaptManifestInternalDeps(
