@@ -1,24 +1,23 @@
 # Isolate Package
 
-Isolate a monorepo workspace package so that it can be deployed as a completely
-self-contained directory with the sources of all its local dependencies
-included.
+Isolate a monorepo workspace package to form a self-contained
+directory including any internally shared code and a compatible lockfile.
 
 <!-- TOC -->
 
-- [Motivation](#motivation)
 - [Features](#features)
-- [Firebase Deployment Quickstart](#firebase-deployment-quickstart)
-- [Prerequisites](#prerequisites)
-  - [Define shared package dependencies in the
-    manifest](#define-shared-package-dependencies-in-the-manifest)
-  - [Define "files" and "version" in each
-    manifest](#define-files-and-version-in-each-manifest)
-  - [Use a flat structure inside your packages
-    folders](#use-a-flat-structure-inside-your-packages-folders)
+- [Motivation](#motivation)
+- [Install](#install)
 - [Usage](#usage)
-  - [Deploying to Firebase](#deploying-to-firebase)
-  - [Deploying to Firebase from the root](#deploying-to-firebase-from-the-root)
+- [Prerequisites](#prerequisites)
+  - [Define shared dependencies in the package manifest](#define-shared-dependencies-in-the-package-manifest)
+  - [Define "version" field in each package manifest](#define-version-field-in-each-package-manifest)
+  - [Define "files" field in each package manifest](#define-files-field-in-each-package-manifest)
+  - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
+- [Working with Firebase](#working-with-firebase)
+  - [A Quick Start](#a-quick-start)
+  - [Deploying from multiple packages](#deploying-from-multiple-packages)
+  - [Deploying from the root](#deploying-from-the-root)
 - [Configuration Options](#configuration-options)
   - [buildDirName](#builddirname)
   - [excludeLockfile](#excludelockfile)
@@ -31,83 +30,70 @@ included.
   - [workspaceRoot](#workspaceroot)
 - [Troubleshooting](#troubleshooting)
 - [Lockfiles](#lockfiles)
+  - [PNPM](#pnpm)
   - [NPM](#npm)
-  - [PNPM Lockfiles disabled for now](#pnpm-lockfiles-disabled-for-now)
+  - [Yarn](#yarn)
+  - [A Partial Workaround](#a-partial-workaround)
 - [Different Package Managers](#different-package-managers)
-  - [Yarn v1 and v3](#yarn-v1-and-v3)
-- [Using the Firebase Functions
-  Emulator](#using-the-firebase-functions-emulator)
+- [Using the Firebase Functions Emulator](#using-the-firebase-functions-emulator)
+- [The internal packages strategy](#the-internal-packages-strategy)
 
 <!-- /TOC -->
 
-## Motivation
-
-This solution was developed from the desire to deploy to
-[Firebase](https://firebase.google.com/) from a monorepo without resorting to
-hacks, shell scripts and manual tasks. I have written an article explaining the
-issue in detail [here](https://medium.com/p/e685de39025e).
-
-There is nothing Firebase specific to this solution but I am currently not aware
-of other reasons to isolate a workspace package. If you find a different
-use-case, I would love to hear about it.
-
-In the documentation and code you will see the word "manifest" a lot, and it
-simply means to the contents of a `package.json` file.
-
 ## Features
 
+- Isolate a monorepo package with its internal dependencies to form a
+  self-contained installable package.
+- Deterministic deployment by generating an isolated lockfile based on the
+  existing monorepo. Currently this feature is only supported for PNPM. See
+  [lockfiles](#lockfiles) for more information.
 - Zero-config for the vast majority of use-cases, with no manual steps involved.
-- Support for NPM, Yarn and PNPM.
-- Fully compatible with the Firebase tools CLI, supporting 1st gen and 2nd gen
-  Firebase functions.
-- Uses a pack/unpack approach to isolate only the files that would have been
-  part of a published package, so the output contains a minimal set of files.
-- Isolates shared dependencies recursively. If package A depends on internal
-  package B which depends on internal package C, all of them will be isolated.
-- Includes the lockfile so the isolated deployment should be deterministic. Not
-  all lockfiles are not supported yet. See [lockfiles](#lockfiles) for more
-  info.
+- Support for PNPM, NPM and Yarn.
+- Compatible with the Firebase tools CLI, incl 1st gen and 2nd gen Firebase
+  functions deployments.
+- Uses a pack/unpack approach to isolate only those files that would have been
+  part of a published NPM package.
+- Isolates internal workspace dependencies recursively. If package A depends on
+  internal package B which depends on internal package C, all of them will be
+  included.
 - Optionally include devDependencies in the isolated output.
 
-## A Quick Guide to Firebase Deployment
+## Motivation
 
-If you are not confident that your monorepo setup is solid, please check out my
-in-dept example at [mono-ts](https://github.com/0x80/mono-ts) where
-`isolate-package` is being used to demonstrate Firebase deployments.
+This solution was born from a desire to deploy to
+[Firebase](https://firebase.google.com/) from a monorepo without resorting to
+hacks, shell scripts and manual tasks. I wrote [an
+article](https://medium.com/p/e685de39025e) explaining the issue in more detail.
 
-This section describes the steps required for Firebase deployment, assuming:
+There is nothing Firebase-specific to this solution but I am currently not aware
+of other needs for isolating a monorepo package, so if you find a different
+use-case I would love to hear about it.
 
-- You use a fairly typical monorepo setup
-- Your `firebase.json` config lives in the root of the package that you like to
-  deploy to Firebase, hereafter referred to as the "target package".
+## Install
 
-If your setup diverges from a traditional one, please continue reading the
-[Prerequisites](#prerequisites) section.
+Run `pnpm install isolate-package --dev` or the equivalent for `yarn` or `npm`.
 
-1. In the target package, install `isolate-package` and `firebase-tools` by
-   running `pnpm add isolate-package firebase-tools -D` or the Yarn / NPM
-   equivalent. I tend to install firebase-tools as a devDependency in every
-   Firebase package, but you could also use a global install if you prefer that.
-2. In the `firebase.json` config set `"source"` to `"./isolate"` and
-   `"predeploy"` to `["turbo build", "isolate"]` or whatever suits your build
-   tool. The important part here is that isolate is being executed after the
-   build stage.
-3. From the target package folder, you should now be able to deploy with `npx
-firebase deploy`.
+I recommend using `pnpm` if you can because I don't think you will regret it.
+Also, at the moment it is the only package manger that isolate-package can
+generate an [isolated lockfile](#isolated-lockfiles) for.
 
-I recommend keeping a `firebase.json` file inside each Firebase package (as
-opposed to the monorepo root), because it allows you to deploy from multiple
-independent packages. It makes it easy to deploy 1st gen functions next to 2nd
-gen functions, deploy different node versions, and decrease the built output
-size and dependency lists for each package, improving deployment and cold-start
-times.
+## Usage
+
+If you arrived here for your Firebase deployments check out the [Firebase quick
+start guide](#a-quick-start) .
+
+This package exposes the `isolate` executable. Once installed you can run `npx
+isolate` in any package directory _after_ you have build the source files. By
+default this will produce a directory at `./isolate` but this can be configured.
+
+You will probably want to add the output directory to your `.gitignore` file.
 
 ## Prerequisites
 
 Because historically many different approaches to monorepos exist, we need to
 establish some basic rules for the isolate process to work.
 
-### Define shared package dependencies in the manifest
+### Define shared dependencies in the package manifest
 
 This one might sound obvious, but if the `package.json` from the package you are
 targeting does not list the other monorepo packages it depends on, in either the
@@ -133,13 +119,13 @@ work (some depending on your package manager):
 So if the a package name can be found as part of the workspace definition, it
 will be processed regardless of its version specifier.
 
-### Define "version" field in each manifest
+### Define "version" field in each package manifest
 
 The `version` field is required for `pack` to execute, because it is use to
 generate part of the packed filename. I personally always set it to `"0.0.0"` to
 indicate that the version does not have any real meaning.
 
-### Define "files" field in each manifest
+### Define "files" field in each package manifest
 
 > NOTE: This step is not required if you use the [internal packages
 > strategy](#the-internal-packages-strategy)
@@ -148,8 +134,8 @@ The isolate process uses (p)npm `pack` to extract files from package
 directories, just like publishing a package would.
 
 For this to work it is required that you define the `files` property in each
-`package.json` manifest, as it declares what files should be included in the
-published output.
+package manifest, as it declares what files should be included in the published
+output.
 
 Typically the value contains an array with just the name of the build output
 directory, for example:
@@ -183,17 +169,42 @@ You can, however, declare multiple packages folders. I personally like to use
 `["packages/*", "apps/*", "services/*"]`. It's just that the structure inside
 them should be flat.
 
-## Usage
+## Working with Firebase
 
-Run `npm install isolate-package --dev` or the equivalent for `yarn` or `pnpm`.
+### A Quick Start
 
-This package exposes the `isolate` executable. Once installed you can run `npx
-isolate` in any package directory _after_ you have build the source files. By
-default this will produce a directory at `./isolate` but this can be configured.
+If you are not confident that your monorepo setup is solid, please check out my
+in-dept example at [mono-ts](https://github.com/0x80/mono-ts) where
+`isolate-package` is being used to demonstrate Firebase deployments.
 
-You will probably want to add the output directory to your `.gitignore` file.
+This section describes the steps required for Firebase deployment, assuming:
 
-### Deploying to Firebase
+- You use a fairly typical monorepo setup
+- Your `firebase.json` config lives in the root of the package that you like to
+  deploy to Firebase, hereafter referred to as the "target package".
+
+If your setup diverges from a traditional one, please continue reading the
+[Prerequisites](#prerequisites) section.
+
+1. In the target package, install `isolate-package` and `firebase-tools` by
+   running `pnpm add isolate-package firebase-tools -D` or the Yarn / NPM
+   equivalent. I tend to install firebase-tools as a devDependency in every
+   Firebase package, but you could also use a global install if you prefer that.
+2. In the `firebase.json` config set `"source"` to `"./isolate"` and
+   `"predeploy"` to `["turbo build", "isolate"]` or whatever suits your build
+   tool. The important part here is that isolate is being executed after the
+   build stage.
+3. From the target package folder, you should now be able to deploy with `npx
+firebase deploy`.
+
+I recommend keeping a `firebase.json` file inside each Firebase package (as
+opposed to the monorepo root), because it allows you to deploy from multiple
+independent packages. It makes it easy to deploy 1st gen functions next to 2nd
+gen functions, deploy different node versions, and decrease the built output
+size and dependency lists for each package, improving deployment and cold-start
+times.
+
+### Deploying from multiple packages
 
 You can deploy to Firebase from multiple packages in your monorepo, so I advise
 you to co-locate your `firebase.json` file with the source code, and not place
@@ -228,11 +239,11 @@ information, [read
 this](https://firebase.google.com/docs/functions/beta/organize-functions).
 
 Make sure your Firebase package adheres to the things mentioned in
-[prerequisites](#prerequisites) and its manifest file contains the field
+[prerequisites](#prerequisites) and its package manifest contains the field
 `"main"`, or `"module"` if you set `"type": "module"`, so Firebase knows the
 entry point to your source code.
 
-### Deploying to Firebase from the root
+### Deploying from the root
 
 If, for some reason, you choose to keep the `firebase.json` file in the root of
 the monorepo you will have to place a configuration file called
@@ -288,7 +299,7 @@ excluded by default because they are not supported yet. For more information see
 [lockfiles](#lockfiles).
 
 _Tip:_ If you can't use a lockfile I advise you to declare dependencies using
-absolute versions in your manifest files. This doesn't prevent their
+absolute versions in your package manifests. This doesn't prevent their
 dependencies from installing newer versions, but at least you minimize the risk
 of things breaking.
 
@@ -391,61 +402,75 @@ isolate process manually with `npx isolate` and possibly
 
 ## Lockfiles
 
-Deploying the isolated code together with a valid lockfile turns out to be the
+Deploying the isolated code together with a valid lockfile turned out to be the
 biggest challenge of this solution.
 
-A lockfile in a monorepo describes the dependencies of all packages, and
-depending on the package manager, does not necessarily translate to the isolated
-output without altering it.
+A lockfile in a monorepo describes the dependencies of all packages, and does
+not necessarily translate to the isolated output without altering it. Different
+package managers use very different formats, and it is not enough to just go in
+and change some paths.
 
-The lockfiles for NPM and Yarn seem to have a flat structure unrelated to the
-workspace packages structure, so they are copied to the isolate output as-is,
-but I haven't been able to verify that they work reliably.
+It is also not enough to simply generate a brand new lockfile from the isolated
+code, because the versions in that lockfile are likely to diverge from what you
+have in your monorepo lockfile.
 
-The PNPM lockfile clearly has a structure describing the different packages by
-their relative paths, and so to correct the lockfile it is adapted before being
-stored to the isolate directory.
+What we need is to re-generate a lockfile for the isolated output based on the
+versions that were locked in the monorepo lockfile.
+
+### PNPM
+
+For PNPM a new isolated lockfile is generated.
 
 ### NPM
 
-It seems that when using NPM the `npm ci` can fail with a message like:
+For now, NPM lockfiles are simply copied over to the isolated output. I have
+seen Firebase deployments work with it, but likely you are going to run into an
+error like this:
 
 > `npm ci` can only install packages when your package.json and
 > package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock
 > file with `npm install` before continuing.
 
-I haven't been able to figure out what is causing this. I have seen NPM deploys
-working with lockfiles, but I can not reliably reproduce it.
+If you experience this issue, you can choose to exclude the lockfile from
+deployment by setting `"excludeLockfile": false` in your isolate.config.json
+file, or make the move to PNPM (recommended).
 
-If you experience this issue I have two suggestions:
+A real solution, regenerating an isolated lockfile, should be possible based on
+the [NPM CLI
+Arborist](https://github.com/npm/cli/tree/latest/workspaces/arborist) code, so I
+plan to look into that in the near future.
 
-- Upgrade to Node 18 by setting the `"runtime": "nodejs18"` in your
-  firebase.json config. Note that you most likely also have to re-create your
-  lockfile using Node 18.
-- Exclude the lockfile from deployment by setting `"excludeLockfile": false` in
-  your isolate.config.json file.
+### Yarn
 
-### PNPM Lockfiles disabled for now
+For now, Yarn lockfiles are simply copied over to the isolated output. I have
+seen Firebase deployments work with it, but I find it likely you will run into
+an error.
 
-There is still [an issue with the PNPM lockfile
-conversion](https://github.com/0x80/isolate-package/issues/5) which makes it
-unusable at the moment. Until that is resolved, the lockfile is automatically
-excluded for PNPM.
+If you experience an issue, you can choose to exclude the lockfile from
+deployment by setting `"excludeLockfile": false` in your isolate.config.json
+file, or make the move to PNPM (recommended).
+
+I am not aware of any code in the official Yarn repository for re-generating a
+lockfile, and I am reluctant to work on this feature based on user-land code.
+
+Personally I do not think Yarn is very relevant anymore in 2023 so I advise you
+to start using PNPM instead.
 
 ### A Partial Workaround
 
-If you can't use a lockfile, and you are worried about things breaking, a
-partial workaround would be to declare dependencies using exact versions in your
-manifest file. This doesn't prevent your dependencies dependencies from
-installing newer versions, like a lockfile would, but at least you minimize the
-risk of things breaking.
+If you can not use a lockfile, because you depend on NPM or Yarn, a partial
+workaround would be to declare dependencies using exact versions in your package
+manifest. This doesn't prevent your dependencies-dependencies from installing
+newer versions, like a lockfile would, but at least you minimize the risk of
+things breaking.
 
 ## Different Package Managers
 
-Isolate package has been designed to work with all package managers. It has been
-tested with NPM 8, 9, Yarn 1.22, Yarn 3.6 and PNPM 8.
+Isolate package has been designed to work with all package managers, although
+[PNPM is recommended](https://pnpm.io/feature-comparison), especially for
+monorepo environments.
 
-The isolate process will infer the package manager name and version from the
+The isolation process will infer the package manager name and version from the
 type of lockfile found and the version that the OS reports for the installed
 executable. This information is then used to change some of its behavior. For
 example, the PNPM `pack` process is preferred over the default NPM `pack` if
@@ -453,14 +478,6 @@ PNPM in used, simply because it seems to be much faster.
 
 The Firebase cloud deploy pipeline will use the package manager that matches
 lockfile that was found in the deployed package.
-
-### Yarn v1 and v3
-
-If you are using Yarn 3 with zero-installs, the deployed package is not aware of
-that, because the `.yarnrc` file and `.yarn` folder are located in the root of
-your monorepo, and the version is not recorded as part of the lockfile. Therefor
-the Firebase deploy cloud pipeline will use Yarn 1 to install your dependencies.
-I don't think that is an issue but it might be good to know.
 
 ## Using the Firebase Functions Emulator
 
@@ -472,18 +489,19 @@ As a result, any changes to your code have to go through the isolate process in
 order to be picked up by the emulator. In other words, changes do not propagate
 automatically while the emulator is running.
 
-The workaround I use at the moment is to create a "emulate" script in the manifest
-which does the same as the Firebase predeploy, and then starts the emulator. For
-example:
+The workaround I use at the moment is to create a "emulate" script in the
+package manifest which does the same as the Firebase predeploy, and then starts the
+emulator. For example:
 
 `turbo build && isolate && firebase emulators:start --only functions`
 
 You will still have to stop and restart the emulator on every code change, which
 is unfortunate of course.
 
-A real solution to this would be to integrate isolate-package into the firebase-tools
-`deploy` command, so it is only executed as part of the deployment process and
-the `source` property can still point to the original code.
+A real solution to this would be to integrate isolate-package into the
+firebase-tools `deploy` command, so it is only executed as part of the
+deployment process and the `source` property can still point to the original
+code.
 
 I plan to work on this once isolate-package is bit more mature. The current
 priority is to get lockfiles working.
@@ -499,7 +517,7 @@ with only a single change in configuration.
 In summary this is how it works:
 
 1. The package to be deployed lists its internal dependencies as usual, but the
-   manifest files for those packages point directly to the Typescript source.
+   package manifests of those dependencies point directly to the Typescript source.
 2. You configure the bundler of your target package to include the source code
    for those internal package in its output bundle. In the case of TSUP for the
    [API service in the
@@ -508,9 +526,9 @@ In summary this is how it works:
 3. When `isolate` runs, it does the exact same thing as always. It will pick up
    the shared packages, and copies and links them to the isolated target
    package.
-4. When deploying to Firebase, the Google cloud pipeline will look at the
-   manifest, install the dependencies of the target package and the dependencies
-   of any linked internal packages.
+4. When deploying to Firebase, the Google cloud pipeline will use the package
+   manifest as usual, to install the listed dependencies and any
+   dependencies listed in the linked internal package manifests.
 
 Steps 3 and 4 are no different from a traditional setup.
 
