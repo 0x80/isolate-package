@@ -26,7 +26,7 @@ export function getLockfileFileName(name: PackageManagerName) {
 
 /** Convert dependency links and version specifiers */
 export function mapImporter(
-  { dependencies, devDependencies, specifiers, ...rest }: ProjectSnapshot,
+  { dependencies, devDependencies, /* specifiers, */ ...rest }: ProjectSnapshot,
   {
     includeDevDependencies,
     directoryByPackageName,
@@ -43,7 +43,7 @@ export function mapImporter(
       includeDevDependencies && devDependencies
         ? mapDependenciesLinks(devDependencies, directoryByPackageName)
         : undefined,
-    specifiers: mapSpecifiers(specifiers, directoryByPackageName),
+    // specifiers: mapSpecifiers(specifiers, directoryByPackageName),
     ...rest,
   };
 }
@@ -59,18 +59,18 @@ function mapDependenciesLinks(
   );
 }
 
-function mapSpecifiers(
-  specifiers: Record<string, string>,
-  directoryByPackageName: { [packageName: string]: string }
-) {
-  const internalPackageNames = Object.keys(directoryByPackageName);
+// function mapSpecifiers(
+//   specifiers: Record<string, string>,
+//   directoryByPackageName: { [packageName: string]: string }
+// ) {
+//   const internalPackageNames = Object.keys(directoryByPackageName);
 
-  return mapValues(specifiers, (specifier, name) =>
-    internalPackageNames.includes(name)
-      ? `file:./${directoryByPackageName[name]}`
-      : specifier
-  );
-}
+//   return mapValues(specifiers, (specifier, name) =>
+//     internalPackageNames.includes(name)
+//       ? `file:./${directoryByPackageName[name]}`
+//       : specifier
+//   );
+// }
 
 /**
  * Adapt the lockfile and write it to the isolate directory. Because we keep the

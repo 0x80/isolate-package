@@ -1,7 +1,10 @@
 import fs from "fs-extra";
+import { omit } from "lodash-es";
 import path from "node:path";
-import type { PackagesRegistry } from "~/helpers/create-packages-registry";
-import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
+import type {
+  PackageManifest,
+  PackagesRegistry,
+} from "~/helpers/create-packages-registry";
 import { getConfig } from "./config";
 
 /**
@@ -18,10 +21,20 @@ export async function adaptInternalPackageManifests(
     internalPackageNames.map(async (packageName) => {
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
-      const outputManifest = adaptManifestInternalDeps(
-        { manifest, packagesRegistry, parentRootRelativeDir: rootRelativeDir },
-        { includeDevDependencies: getConfig().includeDevDependencies }
-      );
+      // const outputManifest = adaptManifestInternalDeps(
+      //   { manifest, packagesRegistry, parentRootRelativeDir: rootRelativeDir },
+      //   { includeDevDependencies: getConfig().includeDevDependencies }
+      // );
+
+      const outputManifest = Object.assign(
+        omit(manifest, ["devDependencies"]),
+        {
+          dependencies: manifest.dependencies,
+          devDependencies: getConfig().includeDevDependencies
+            ? manifest.devDependencies
+            : undefined,
+        }
+      ) as PackageManifest;
 
       await fs.writeFile(
         path.join(isolateDir, rootRelativeDir, "package.json"),

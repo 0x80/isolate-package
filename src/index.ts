@@ -14,7 +14,7 @@ import {
   isDefined,
   readTypedJson,
 } from "~/utils";
-import { adaptInternalPackageManifests } from "./helpers/adapt-manifest-files";
+import { adaptInternalPackageManifests } from "./helpers/adapt-internal-package-manifests";
 import { adaptTargetPackageManifest } from "./helpers/adapt-target-package-manifest";
 import { getConfig, getUserDefinedConfig } from "./helpers/config";
 import {
@@ -183,6 +183,17 @@ async function start() {
     });
   }
 
+  if (packageManager.name === "pnpm") {
+    /**
+     * PNPM doesn't install dependencies of packages that are linked via link:
+     * or file: specifiers. It requires the directory to be configured as a
+     * workspace, so we copy the workspace config file to the isolate output.
+     */
+    fs.copyFileSync(
+      path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+      path.join(isolateDir, "pnpm-workspace.yaml")
+    );
+  }
   /**
    * If there is an .npmrc file in the workspace root, copy it to the isolate
    * because the settings there could affect how the lockfile is resolved. Note

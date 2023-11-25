@@ -6,6 +6,7 @@ import type {
 } from "./create-packages-registry";
 import { patchInternalEntries } from "./patch-internal-entries";
 
+/** @deprecated */
 export function adaptManifestInternalDeps(
   {
     manifest,
