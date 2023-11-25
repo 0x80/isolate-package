@@ -9,7 +9,7 @@ import path from "node:path";
 import { createLogger } from "~/utils";
 import { getConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
-import { mapImporter } from "./process-lockfile";
+import { pnpmMapImporter } from "./process-lockfile";
 
 export async function generatePnpmLockfile({
   workspaceRootDir,
@@ -67,7 +67,7 @@ export async function generatePnpmLockfile({
 
           return [
             ".",
-            mapImporter(importer, {
+            pnpmMapImporter(importer, {
               includeDevDependencies,
               directoryByPackageName,
             }),
@@ -78,7 +78,7 @@ export async function generatePnpmLockfile({
 
         return [
           importerId,
-          mapImporter(importer, {
+          pnpmMapImporter(importer, {
             includeDevDependencies,
             directoryByPackageName,
           }),

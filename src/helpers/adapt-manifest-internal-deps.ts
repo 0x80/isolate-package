@@ -6,7 +6,11 @@ import type {
 } from "./create-packages-registry";
 import { patchInternalEntries } from "./patch-internal-entries";
 
-/** @deprecated */
+/**
+ * Replace the workspace version specifiers for internal dependency with file:
+ * paths. Not needed for PNPM (because we configure the isolated output as a
+ * workspace), but maybe still for NPM and Yarn.
+ */
 export function adaptManifestInternalDeps(
   {
     manifest,

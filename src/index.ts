@@ -189,6 +189,7 @@ async function start() {
      * or file: specifiers. It requires the directory to be configured as a
      * workspace, so we copy the workspace config file to the isolate output.
      */
+
     fs.copyFileSync(
       path.join(workspaceRootDir, "pnpm-workspace.yaml"),
       path.join(isolateDir, "pnpm-workspace.yaml")
@@ -230,4 +231,4 @@ start().catch((err) => {
   }
 });
 
-process.on("unhandledRejection", log.error);
+// process.on("unhandledRejection", log.error);
