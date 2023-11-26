@@ -1,6 +1,6 @@
 {
   "name": "isolate-package",
-  "version": "1.4.1-1",
+  "version": "1.4.1-0",
   "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
   "author": "Thijs Koerselman",
   "license": "MIT",
@@ -19,6 +19,9 @@
     "url": "git+https://github.com/0x80/isolate-package.git"
   },
   "type": "module",
+  "?//": "Use main/types to support older versions of Node for firebase-tools?",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
