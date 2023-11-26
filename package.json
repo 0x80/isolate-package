@@ -23,7 +23,7 @@
     ".": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
@@ -33,8 +33,8 @@
     "isolate": "dist/isolate-bin.mjs"
   },
   "scripts": {
-    "build": "tsup-node",
-    "build:watch": "tsup-node --watch",
+    "build": "tsup-node --config tsup.config.esm.ts && tsup-node --config tsup.config.cjs.ts",
+    "build:watch": "tsup-node --config tsup.config.esm.ts --watch",
     "test": "vitest",
     "format": "prettier --write .",
     "lint:format": "prettier --check .",
