@@ -421,7 +421,7 @@ set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
 console.
 
 In addition define an environment variable to debug the configuration being used
-by setting `DEBUG_ISOLATE_CONFIG=true` before you execute `isolate`
+by setting `DEBUG_ISOLATE_CONFIG=true` before you execute `isolate`.
 
 When debugging Firebase deployment issues it might be convenient to trigger the
 isolate process manually with `npx isolate` and possibly
@@ -434,15 +434,15 @@ biggest challenge of this solution.
 
 A lockfile in a monorepo describes the dependencies of all packages, and does
 not necessarily translate to the isolated output without altering it. Different
-package managers use very different formats, and it is not enough to just go in
-and change some paths.
+package managers use very different formats, and it might not be enough to do a
+find/replace on some paths.
 
-It is also not enough to simply generate a brand new lockfile from the isolated
-code, because the versions in that lockfile are likely to diverge from what you
-have in your monorepo lockfile.
+It is also not possibly to generate a brand new lockfile from the isolated code
+by mimicking a fresh install, because versions would be able to diverge and thus
+it would negate the whole point of having a lockfile in the first place.
 
 What we need is to re-generate a lockfile for the isolated output based on the
-versions that were locked in the monorepo lockfile.
+versions that are currently installed and locked in the monorepo lockfile.
 
 ### PNPM
 
