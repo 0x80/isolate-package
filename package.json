@@ -19,12 +19,9 @@
     "url": "git+https://github.com/0x80/isolate-package.git"
   },
   "type": "module",
-  "?": "Need to support older versions of node for firebase-tools?",
-  "main": "./dist/index.cjs",
-  "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
@@ -36,7 +33,7 @@
     "isolate": "dist/isolate-bin.mjs"
   },
   "scripts": {
-    "build": "tsup-node && mv dist/isolate-bin.js dist/isolate-bin.mjs",
+    "build": "tsup-node && mv dist/isolate-bin.js dist/isolate-bin.mjs && mv dist/isolate-bin.map.js dist/isolate-bin.map.mjs",
     "build:watch": "tsup-node --watch",
     "test": "vitest",
     "format": "prettier --write .",
