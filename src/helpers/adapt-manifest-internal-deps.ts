@@ -1,4 +1,4 @@
-import { omit } from "lodash-es";
+import { omit } from "ramda";
 import { filterObjectUndefined } from "~/utils";
 import type {
   PackageManifest,
@@ -24,7 +24,7 @@ export function adaptManifestInternalDeps(
   opts: { includeDevDependencies?: boolean } = {}
 ): PackageManifest {
   return Object.assign(
-    omit(manifest, ["devDependencies"]),
+    omit(["devDependencies"], manifest),
     filterObjectUndefined({
       dependencies: manifest.dependencies
         ? patchInternalEntries(

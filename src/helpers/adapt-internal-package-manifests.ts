@@ -1,6 +1,6 @@
 import fs from "fs-extra";
-import { omit } from "lodash-es";
 import path from "node:path";
+import { omit } from "ramda";
 import type { PackagesRegistry } from "~/helpers/create-packages-registry";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
 import { useConfig } from "./config";
@@ -33,7 +33,7 @@ export async function adaptInternalPackageManifests(
                * error since the package file contains something that is not
                * referenced in the lockfile.
                */
-              omit(manifest, ["devDependencies", "peerDependencies"]),
+              omit(["devDependencies", "peerDependencies"], manifest),
               {
                 dependencies: manifest.dependencies,
                 devDependencies: includeDevDependencies
