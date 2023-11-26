@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import { isEmpty } from "lodash-es";
+import assert from "node:assert";
 import path from "node:path";
-import { assert } from "vitest";
 import {
   inspectValue,
   readTypedJsonSync,
