@@ -112,6 +112,9 @@ await isolate({
 });
 ```
 
+If you do not pass in any configuration, the function will try to read a
+`isolate.config.json` file from disk. You can set
+
 ## Prerequisites
 
 Because historically many different approaches to monorepos exist, we need to
@@ -347,7 +350,7 @@ Type: `"info" | "debug" | "warn" | "error"`, default: `"info"`.
 
 Because the configuration loader depends on this setting, its output is not
 affected by this setting. If you want to debug the configuration set
-`ISOLATE_CONFIG_LOG_LEVEL=debug` before you run `isolate`
+`DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
 
 ### targetPackagePath
 
@@ -418,11 +421,11 @@ set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
 console.
 
 In addition define an environment variable to debug the configuration being used
-by setting `ISOLATE_CONFIG_LOG_LEVEL=debug` before you execute `isolate`
+by setting `DEBUG_ISOLATE_CONFIG=true` before you execute `isolate`
 
 When debugging Firebase deployment issues it might be convenient to trigger the
 isolate process manually with `npx isolate` and possibly
-`ISOLATE_CONFIG_LOG_LEVEL=debug npx isolate`
+`DEBUG_ISOLATE_CONFIG=true npx isolate`
 
 ## Lockfiles
 

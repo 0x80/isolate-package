@@ -31,21 +31,21 @@ let _loggerHandlers: Logger = {
 const _logger: Logger = {
   debug(...args: unknown[]) {
     if (_logLevel === "debug") {
-      _loggerHandlers.debug(args);
+      _loggerHandlers.debug(...args);
     }
   },
   info(...args: unknown[]) {
     if (_logLevel === "debug" || _logLevel === "info") {
-      _loggerHandlers.info(args);
+      _loggerHandlers.info(...args);
     }
   },
   warn(...args: unknown[]) {
     if (_logLevel === "debug" || _logLevel === "info" || _logLevel === "warn") {
-      _loggerHandlers.warn(args);
+      _loggerHandlers.warn(...args);
     }
   },
   error(...args: unknown[]) {
-    _loggerHandlers.error(args);
+    _loggerHandlers.error(...args);
   },
 };
 

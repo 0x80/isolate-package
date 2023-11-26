@@ -13,7 +13,7 @@ import {
 } from "~/utils";
 import { adaptInternalPackageManifests } from "./helpers/adapt-internal-package-manifests";
 import { adaptTargetPackageManifest } from "./helpers/adapt-target-package-manifest";
-import type { IsolateConfig, LogLevel } from "./helpers/config";
+import type { IsolateConfig } from "./helpers/config";
 import {
   getUserDefinedConfig,
   resolveConfig,
@@ -36,12 +36,6 @@ const __dirname = getDirname(import.meta.url);
 export async function isolate(
   options: { config?: IsolateConfig; logger?: Logger } = {}
 ) {
-  setLogLevel(
-    options.config?.logLevel ??
-      (process.env.ISOLATE_CONFIG_LOG_LEVEL as LogLevel) ??
-      "info"
-  );
-
   if (options.logger) {
     setLogger(options.logger);
   }
@@ -51,6 +45,8 @@ export async function isolate(
   }
 
   const config = resolveConfig();
+
+  setLogLevel(config.logLevel);
 
   const log = useLogger();
 

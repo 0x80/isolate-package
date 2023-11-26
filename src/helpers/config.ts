@@ -76,6 +76,8 @@ export function resolveConfig(): IsolateConfigResolved {
     return _resolvedConfig;
   }
 
+  setLogLevel(process.env.DEBUG_ISOLATE_CONFIG ? "debug" : "info");
+
   const log = useLogger();
 
   const configFilePath = path.join(process.cwd(), CONFIG_FILE_NAME);
