@@ -233,6 +233,8 @@ export async function isolate(
   await fs.remove(tmpDir);
 
   log.info("Isolate completed at", isolateDir);
+
+  return isolateDir;
 }
 
 // process.on("unhandledRejection", log.error);
