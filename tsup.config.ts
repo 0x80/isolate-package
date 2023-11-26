@@ -10,12 +10,13 @@ export default defineConfig({
     index: "src/index.ts",
     "isolate-bin": "src/isolate-bin.ts",
   },
-  format: ["esm"],
+  format: ["esm", "cjs"],
   target: "node18",
   sourcemap: true,
   splitting: false,
   dts: true,
   clean: true,
+  shims: true, // replaces use of import.meta
   /**
    * The `isolate` binary is an ES module. The file is required to have the
    * `.mjs` file extension, otherwise a non-ESM workspace will try to execute it
@@ -26,9 +27,9 @@ export default defineConfig({
    *
    * Js-esm-modules-as-standalone-shell-scripts-on-unix)
    */
-  outExtension() {
-    return {
-      js: `.mjs`,
-    };
-  },
+  // outExtension() {
+  //   return {
+  //     js: `.mjs`,
+  //   };
+  // },
 });
