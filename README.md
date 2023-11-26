@@ -9,9 +9,7 @@ that includes internal dependencies and a compatible lockfile.
 - [Motivation](#motivation)
 - [Install](#install)
 - [Usage as binary](#usage-as-binary)
-- [Usage in code](#usage-in-code)
-- [Prerequisites](#prerequisites)
-  - [Define shared dependencies in the package manifest](#define-shared-dependencies-in-the-package-manifest)
+- [Usage as function](#usage-as-function)
   - [Define "version" field in each package manifest](#define-version-field-in-each-package-manifest)
   - [Define "files" field in each package manifest](#define-files-field-in-each-package-manifest)
   - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
@@ -98,29 +96,17 @@ If you are here to simplify and improve your Firebase deployments check out the
 
 ## Usage as function
 
-Alternatively, `isolate` can be integrated in other programs as an imported
-function. You optional pass it a some user configuration and a logger to
-intercept any logging messages if you need to.
+Alternatively, `isolate` can be integrated in other programs by importing it as
+a function. You optionally pass it a some user configuration and possibly a
+logger to handle any output messages should you need to write them to a
+different location as the standard `node:console`.
 
 ```ts
 import { isolate } from "isolate-package";
 
 await isolate({
   config: { logLevel: "debug" },
-});
-
-/**
- * If you want to override the default console logger with your own handlers you
- * can do something like
- */
-await isolate({
-  config: { logLevel: "debug" },
-  logger: {
-    debug: console.log,
-    info: console.log,
-    warn: console.warn,
-    error: console.error,
-  },
+  logger: customLogger,
 });
 ```
 
