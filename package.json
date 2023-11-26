@@ -18,16 +18,15 @@
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.js"
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
     }
   },
   "files": [
     "dist"
   ],
   "bin": {
-    "isolate": "dist/isolate-bin.cjs"
+    "isolate": "dist/isolate-bin.mjs"
   },
   "scripts": {
     "build": "tsup-node",
