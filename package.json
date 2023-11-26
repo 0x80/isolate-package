@@ -15,12 +15,18 @@
     "ci"
   ],
   "type": "module",
-  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
   "files": [
     "dist"
   ],
   "bin": {
-    "isolate": "dist/index.mjs"
+    "isolate": "dist/isolate-bin.mjs"
   },
   "scripts": {
     "build": "tsup-node",

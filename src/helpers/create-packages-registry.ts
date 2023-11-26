@@ -2,8 +2,7 @@ import type { PackageManifest as PnpmPackageManifest } from "@pnpm/types";
 import fs from "fs-extra";
 import { globSync } from "glob";
 import path from "node:path";
-import { createLogger, readTypedJson } from "~/utils";
-import { getConfig } from "./config";
+import { readTypedJson, useLogger } from "~/utils";
 import { findPackagesGlobs } from "./find-packages-globs";
 
 export type PackageManifest = PnpmPackageManifest & {
@@ -32,7 +31,7 @@ export async function createPackagesRegistry(
   workspaceRootDir: string,
   workspacePackagesOverride: string[] | undefined
 ): Promise<PackagesRegistry> {
-  const log = createLogger(getConfig().logLevel);
+  const log = useLogger();
 
   if (workspacePackagesOverride) {
     log.debug(

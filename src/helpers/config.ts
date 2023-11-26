@@ -1,7 +1,13 @@
 import fs from "fs-extra";
 import { isEmpty } from "lodash-es";
+import assert from "node:assert";
 import path from "node:path";
-import { createLogger, inspectValue, readTypedJsonSync } from "~/utils";
+import {
+  inspectValue,
+  readTypedJsonSync,
+  setLogLevel,
+  useLogger,
+} from "~/utils";
 
 export type IsolateConfigResolved = {
   buildDirName?: string;
@@ -35,38 +41,58 @@ const configDefaults: IsolateConfigResolved = {
  * Only initialize the configuration once, and keeping it here for subsequent
  * calls to getConfig.
  */
-let __config: IsolateConfigResolved | undefined;
+let _resolvedConfig: IsolateConfigResolved | undefined;
+
+let _user_defined_config: IsolateConfig | undefined;
 
 const validConfigKeys = Object.keys(configDefaults);
 
 const CONFIG_FILE_NAME = "isolate.config.json";
 
-type LogLevel = IsolateConfigResolved["logLevel"];
+export type LogLevel = IsolateConfigResolved["logLevel"];
 
-export function getConfig(): IsolateConfigResolved {
-  if (__config) {
-    return __config;
+export function setUserConfig(config: IsolateConfig) {
+  _user_defined_config = config;
+
+  if (config.logLevel) {
+    setLogLevel(config.logLevel);
+  }
+}
+
+export function useConfig() {
+  if (_resolvedConfig) {
+    return _resolvedConfig;
+  } else {
+    throw new Error("Called useConfig before config was made available");
+  }
+}
+
+/**
+ * Resolve configuration based on user config and defaults. If setConfig was
+ * called before this, it does not attempt to read a config file from disk.
+ */
+export function resolveConfig(): IsolateConfigResolved {
+  if (_resolvedConfig) {
+    return _resolvedConfig;
   }
 
-  /**
-   * Since the logLevel is set via config we can't use it to determine if we
-   * should output verbose logging as part of the config loading process. Using
-   * the env var ISOLATE_CONFIG_LOG_LEVEL you have the option to log debug
-   * output.
-   */
-  const log = createLogger(
-    (process.env.ISOLATE_CONFIG_LOG_LEVEL as LogLevel) ?? "warn"
-  );
+  setLogLevel(process.env.DEBUG_ISOLATE_CONFIG ? "debug" : "info");
+
+  const log = useLogger();
 
   const configFilePath = path.join(process.cwd(), CONFIG_FILE_NAME);
 
-  log.debug(`Attempting to load config from ${configFilePath}`);
+  if (_user_defined_config) {
+    log.debug(`Using user defined config:`, inspectValue(_user_defined_config));
+  } else {
+    log.debug(`Attempting to load config from ${configFilePath}`);
 
-  const configFromFile = fs.existsSync(configFilePath)
-    ? readTypedJsonSync<IsolateConfig>(configFilePath)
-    : {};
+    _user_defined_config = fs.existsSync(configFilePath)
+      ? readTypedJsonSync<IsolateConfig>(configFilePath)
+      : {};
+  }
 
-  const foreignKeys = Object.keys(configFromFile).filter(
+  const foreignKeys = Object.keys(_user_defined_config).filter(
     (key) => !validConfigKeys.includes(key)
   );
 
@@ -77,22 +103,24 @@ export function getConfig(): IsolateConfigResolved {
   const config = Object.assign(
     {},
     configDefaults,
-    configFromFile
+    _user_defined_config
   ) satisfies IsolateConfigResolved;
 
   log.debug("Using configuration:", inspectValue(config));
 
-  __config = config;
+  _resolvedConfig = config;
   return config;
 }
 
-/** Get only the configuration that the user set explicitly in the config file */
+/**
+ * Get only the configuration that the user set explicitly in the config file or
+ * passed via arguments to isolate().
+ */
 export function getUserDefinedConfig(): IsolateConfig {
-  const configFilePath = path.join(process.cwd(), CONFIG_FILE_NAME);
+  assert(
+    _user_defined_config,
+    "Called getUserDefinedConfig before user config was made available"
+  );
 
-  const configFromFile = fs.existsSync(configFilePath)
-    ? readTypedJsonSync<IsolateConfig>(configFilePath)
-    : {};
-
-  return configFromFile;
+  return _user_defined_config;
 }

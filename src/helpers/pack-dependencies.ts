@@ -1,6 +1,6 @@
 import assert from "node:assert";
-import { createLogger, pack } from "~/utils";
-import { getConfig } from "./config";
+import { pack, useLogger } from "~/utils";
+import { useConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
 import { usePackageManager } from "./detect-package-manager";
 
@@ -27,8 +27,8 @@ export async function packDependencies({
   internalPackageNames: string[];
   packDestinationDir: string;
 }) {
-  const config = getConfig();
-  const log = createLogger(config.logLevel);
+  const config = useConfig();
+  const log = useLogger();
 
   const packedFileByName: Record<string, string> = {};
 

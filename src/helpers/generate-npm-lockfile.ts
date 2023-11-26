@@ -1,8 +1,7 @@
 import Arborist from "@npmcli/arborist";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createLogger } from "~/utils";
-import { getConfig } from "./config";
+import { useLogger } from "~/utils";
 import type { PackagesRegistry } from "./create-packages-registry";
 
 /**
@@ -21,8 +20,7 @@ export async function generateNpmLockfile({
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
 }) {
-  const config = getConfig();
-  const log = createLogger(config.logLevel);
+  const log = useLogger();
 
   log.warn("Generating NPM lockfile NOT IMPLEMENTED YET");
 

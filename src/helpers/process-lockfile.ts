@@ -5,8 +5,7 @@ import type {
 import fs from "fs-extra";
 import { mapValues } from "lodash-es";
 import path from "node:path";
-import { createLogger } from "~/utils";
-import { getConfig } from "./config";
+import { useLogger } from "~/utils";
 import type { PackagesRegistry } from "./create-packages-registry";
 import type { PackageManagerName } from "./detect-package-manager";
 import { usePackageManager } from "./detect-package-manager";
@@ -80,7 +79,7 @@ export async function processLockfile({
   targetPackageDir: string;
   targetPackageName: string;
 }) {
-  const log = createLogger(getConfig().logLevel);
+  const log = useLogger();
 
   const { name } = usePackageManager();
 

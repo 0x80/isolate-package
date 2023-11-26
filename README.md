@@ -8,7 +8,8 @@ that includes internal dependencies and a compatible lockfile.
 - [Features](#features)
 - [Motivation](#motivation)
 - [Install](#install)
-- [Usage](#usage)
+- [Usage as binary](#usage-as-binary)
+- [Usage as function](#usage-as-function)
 - [Prerequisites](#prerequisites)
   - [Define shared dependencies in the package manifest](#define-shared-dependencies-in-the-package-manifest)
   - [Define "version" field in each package manifest](#define-version-field-in-each-package-manifest)
@@ -76,10 +77,12 @@ Run `pnpm install isolate-package --dev` or the equivalent for `yarn` or `npm`.
 
 I recommend using `pnpm` for
 [a number of reasons](https://pnpm.io/feature-comparison). Also, at the time of
-writing it is the only package manger that isolate-package can generate a
-[lockfile](#lockfiles) for.
+writing it is the only package manager for which isolate-package can generate a
+lockfile. For more information see [lockfiles](#lockfiles).
 
-## Usage
+## Usage as binary
+
+This package exposes a binary called `isolate`.
 
 Run `npx isolate` from the root of the package you want to isolate. Make sure
 you build the package first.
@@ -91,7 +94,26 @@ are not using Typescript.
 By default the isolated output will become available at `./isolate`.
 
 If you are here to simplify and improve your Firebase deployments check out the
-[Firebase quick start guide](#a-quick-start) .
+[Firebase quick start guide](#a-quick-start).
+
+## Usage as function
+
+Alternatively, `isolate` can be integrated in other programs by importing it as
+a function. You optionally pass it a some user configuration and possibly a
+logger to handle any output messages should you need to write them to a
+different location as the standard `node:console`.
+
+```ts
+import { isolate } from "isolate-package";
+
+await isolate({
+  config: { logLevel: "debug" },
+  logger: customLogger,
+});
+```
+
+If you do not pass in any configuration, the function will try to read a
+`isolate.config.json` file from disk. You can set
 
 ## Prerequisites
 
@@ -328,7 +350,7 @@ Type: `"info" | "debug" | "warn" | "error"`, default: `"info"`.
 
 Because the configuration loader depends on this setting, its output is not
 affected by this setting. If you want to debug the configuration set
-`ISOLATE_CONFIG_LOG_LEVEL=debug` before you run `isolate`
+`DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
 
 ### targetPackagePath
 
@@ -399,11 +421,11 @@ set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
 console.
 
 In addition define an environment variable to debug the configuration being used
-by setting `ISOLATE_CONFIG_LOG_LEVEL=debug` before you execute `isolate`
+by setting `DEBUG_ISOLATE_CONFIG=true` before you execute `isolate`.
 
 When debugging Firebase deployment issues it might be convenient to trigger the
 isolate process manually with `npx isolate` and possibly
-`ISOLATE_CONFIG_LOG_LEVEL=debug npx isolate`
+`DEBUG_ISOLATE_CONFIG=true npx isolate`
 
 ## Lockfiles
 
@@ -412,15 +434,15 @@ biggest challenge of this solution.
 
 A lockfile in a monorepo describes the dependencies of all packages, and does
 not necessarily translate to the isolated output without altering it. Different
-package managers use very different formats, and it is not enough to just go in
-and change some paths.
+package managers use very different formats, and it might not be enough to do a
+find/replace on some paths.
 
-It is also not enough to simply generate a brand new lockfile from the isolated
-code, because the versions in that lockfile are likely to diverge from what you
-have in your monorepo lockfile.
+It is also not possibly to generate a brand new lockfile from the isolated code
+by mimicking a fresh install, because versions would be able to diverge and thus
+it would negate the whole point of having a lockfile in the first place.
 
 What we need is to re-generate a lockfile for the isolated output based on the
-versions that were locked in the monorepo lockfile.
+versions that are currently installed and locked in the monorepo lockfile.
 
 ### PNPM
 

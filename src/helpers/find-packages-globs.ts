@@ -1,12 +1,11 @@
 import assert from "node:assert";
 import path from "node:path";
 import {
-  createLogger,
   inspectValue,
   readTypedJsonSync,
   readTypedYamlSync,
+  useLogger,
 } from "~/utils";
-import { getConfig } from "./config";
 import { usePackageManager } from "./detect-package-manager";
 
 /**
@@ -15,7 +14,7 @@ import { usePackageManager } from "./detect-package-manager";
  * don't know if we're covering all cases yet...
  */
 export function findPackagesGlobs(workspaceRootDir: string) {
-  const log = createLogger(getConfig().logLevel);
+  const log = useLogger();
 
   const packageManager = usePackageManager();
 

@@ -1,6 +1,5 @@
 import path from "node:path";
-import { createLogger } from "~/utils";
-import { getConfig } from "./config";
+import { useLogger } from "~/utils";
 import type { PackagesRegistry } from "./create-packages-registry";
 
 export function patchInternalEntries(
@@ -8,7 +7,7 @@ export function patchInternalEntries(
   packagesRegistry: PackagesRegistry,
   parentRootRelativeDir?: string
 ) {
-  const log = createLogger(getConfig().logLevel);
+  const log = useLogger();
   const allWorkspacePackageNames = Object.keys(packagesRegistry);
 
   return Object.fromEntries(

@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import { omit } from "lodash-es";
 import path from "node:path";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
-import { getConfig } from "./config";
+import { useConfig } from "./config";
 import type {
   PackageManifest,
   PackagesRegistry,
@@ -22,8 +22,7 @@ export async function adaptTargetPackageManifest(
   isolateDir: string
 ) {
   const packageManager = usePackageManager();
-
-  const includeDevDependencies = getConfig().includeDevDependencies;
+  const { includeDevDependencies } = useConfig();
 
   const outputManifest =
     packageManager.name === "pnpm"
@@ -37,7 +36,7 @@ export async function adaptTargetPackageManifest(
             manifest,
             packagesRegistry,
           },
-          { includeDevDependencies: getConfig().includeDevDependencies }
+          { includeDevDependencies }
         );
 
   await fs.writeFile(
