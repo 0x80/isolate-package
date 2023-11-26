@@ -14,6 +14,10 @@
     "firebase",
     "ci"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0x80/isolate-package.git"
+  },
   "type": "module",
   "exports": {
     ".": {
