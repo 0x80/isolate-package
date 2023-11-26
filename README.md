@@ -10,6 +10,8 @@ that includes internal dependencies and a compatible lockfile.
 - [Install](#install)
 - [Usage as binary](#usage-as-binary)
 - [Usage as function](#usage-as-function)
+- [Prerequisites](#prerequisites)
+  - [Define shared dependencies in the package manifest](#define-shared-dependencies-in-the-package-manifest)
   - [Define "version" field in each package manifest](#define-version-field-in-each-package-manifest)
   - [Define "files" field in each package manifest](#define-files-field-in-each-package-manifest)
   - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
