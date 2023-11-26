@@ -36,7 +36,7 @@
     "isolate": "dist/isolate-bin.mjs"
   },
   "scripts": {
-    "build": "tsup-node && mv dist/isolate-bin.js dist/isolate-bin.mjs && mv dist/isolate-bin.map.js dist/isolate-bin.map.mjs",
+    "build": "tsup-node && mv dist/isolate-bin.js dist/isolate-bin.mjs && mv dist/isolate-bin.js.map dist/isolate-bin.mjs.map",
     "build:watch": "tsup-node --watch",
     "test": "vitest",
     "format": "prettier --write .",
