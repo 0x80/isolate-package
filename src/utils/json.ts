@@ -2,9 +2,7 @@ import fs from "fs-extra";
 import stripJsonComments from "strip-json-comments";
 import { getErrorMessage } from "./get-error-message";
 
-/**
- * @TODO pass in zod schema and validate
- */
+/** @todo Pass in zod schema and validate */
 export function readTypedJsonSync<T>(filePath: string) {
   try {
     const rawContent = fs.readFileSync(filePath, "utf-8");
