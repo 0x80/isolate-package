@@ -1,26 +1,17 @@
+import type {
+  ProjectSnapshot,
+  ResolvedDependencies,
+} from "@pnpm/lockfile-file";
 import fs from "fs-extra";
-import assert from "node:assert";
+import { mapValues } from "lodash-es";
 import path from "node:path";
-import { createLogger, readTypedYamlSync, writeTypedYamlSync } from "~/utils";
+import { createLogger } from "~/utils";
 import { getConfig } from "./config";
-import { PackagesRegistry } from "./create-packages-registry";
-import {
-  PackageManagerName,
-  usePackageManager,
-} from "./detect-package-manager";
-
-type PackagePath = string;
-
-type PnpmLockfile = {
-  lockfileVersion: string;
-  importers: Record<
-    PackagePath,
-    {
-      dependencies?: Record<string, unknown>;
-      devDependencies?: Record<string, unknown>;
-    }
-  >;
-};
+import type { PackagesRegistry } from "./create-packages-registry";
+import type { PackageManagerName } from "./detect-package-manager";
+import { usePackageManager } from "./detect-package-manager";
+import { generateNpmLockfile } from "./generate-npm-lockfile";
+import { generatePnpmLockfile } from "./generate-pnpm-lockfile";
 
 export function getLockfileFileName(name: PackageManagerName) {
   switch (name) {
@@ -33,6 +24,40 @@ export function getLockfileFileName(name: PackageManagerName) {
   }
 }
 
+/** Convert dependency links */
+export function pnpmMapImporter(
+  { dependencies, devDependencies, ...rest }: ProjectSnapshot,
+  {
+    includeDevDependencies,
+    directoryByPackageName,
+  }: {
+    includeDevDependencies: boolean;
+    directoryByPackageName: { [packageName: string]: string };
+  }
+): ProjectSnapshot {
+  return {
+    dependencies: dependencies
+      ? pnpmMapDependenciesLinks(dependencies, directoryByPackageName)
+      : undefined,
+    devDependencies:
+      includeDevDependencies && devDependencies
+        ? pnpmMapDependenciesLinks(devDependencies, directoryByPackageName)
+        : undefined,
+    ...rest,
+  };
+}
+
+function pnpmMapDependenciesLinks(
+  def: ResolvedDependencies,
+  directoryByPackageName: { [packageName: string]: string }
+): ResolvedDependencies {
+  return mapValues(def, (version, name) =>
+    version.startsWith("link:")
+      ? `link:./${directoryByPackageName[name]}`
+      : version
+  );
+}
+
 /**
  * Adapt the lockfile and write it to the isolate directory. Because we keep the
  * structure of packages in the isolate directory the same as they were in the
@@ -40,21 +65,22 @@ export function getLockfileFileName(name: PackageManagerName) {
  * be done is to remove the root dependencies and devDependencies, and rename
  * the path to the target package to act as the new root.
  */
-export function processLockfile({
+export async function processLockfile({
   workspaceRootDir,
-  targetPackageName,
   packagesRegistry,
   isolateDir,
+  internalDepPackageNames,
+  targetPackageDir,
+  targetPackageName,
 }: {
   workspaceRootDir: string;
-  targetPackageName: string;
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
+  internalDepPackageNames: string[];
+  targetPackageDir: string;
+  targetPackageName: string;
 }) {
   const log = createLogger(getConfig().logLevel);
-
-  const targetPackageRelativeDir =
-    packagesRegistry[targetPackageName].rootRelativeDir;
 
   const { name } = usePackageManager();
 
@@ -65,9 +91,7 @@ export function processLockfile({
 
   switch (name) {
     case "npm": {
-      /**
-       * If there is a shrinkwrap file we copy that instead of the lockfile
-       */
+      /** If there is a shrinkwrap file we copy that instead of the lockfile */
       const shrinkwrapSrcPath = path.join(
         workspaceRootDir,
         "npm-shrinkwrap.json"
@@ -82,42 +106,34 @@ export function processLockfile({
         log.debug("Copied lockfile to", lockfileDstPath);
       }
 
-      return;
+      if (false) {
+        /** Generate the lockfile */
+        await generateNpmLockfile({
+          workspaceRootDir,
+          targetPackageName,
+          isolateDir,
+          packagesRegistry,
+        });
+      }
+
+      break;
     }
     case "yarn": {
       fs.copyFileSync(lockfileSrcPath, lockfileDstPath);
       log.debug("Copied lockfile to", lockfileDstPath);
-      return;
+      break;
     }
     case "pnpm": {
-      const origLockfile = readTypedYamlSync<PnpmLockfile>(lockfileSrcPath);
-
-      log.debug("Read PNPM lockfile, version:", origLockfile.lockfileVersion);
-
-      const adaptedLockfile = structuredClone(origLockfile);
-
-      const targetPackageDef =
-        adaptedLockfile.importers[targetPackageRelativeDir];
-
-      assert(
-        targetPackageDef,
-        `Failed to find target package in lockfile at importers[${targetPackageRelativeDir}]`
-      );
-      /**
-       * Overwrite the root importer with the target package importer contents
-       */
-      adaptedLockfile.importers["."] = targetPackageDef;
-
-      /**
-       * Delete the target package original importer. Not really necessary.
-       */
-      delete adaptedLockfile.importers[targetPackageRelativeDir];
-
-      writeTypedYamlSync(lockfileDstPath, adaptedLockfile);
-
-      log.debug("Stored adapted lockfile at", lockfileDstPath);
-
-      return;
+      await generatePnpmLockfile({
+        workspaceRootDir,
+        targetPackageDir,
+        isolateDir,
+        internalDepPackageNames,
+        packagesRegistry,
+      });
+      break;
     }
+    default:
+      log.warn(`Unexpected package manager ${name}`);
   }
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { createLogger, pack } from "~/utils";
 import { getConfig } from "./config";
-import { PackagesRegistry } from "./create-packages-registry";
+import type { PackagesRegistry } from "./create-packages-registry";
 import { usePackageManager } from "./detect-package-manager";
 
 /**
@@ -11,14 +11,10 @@ import { usePackageManager } from "./detect-package-manager";
  * @returns A map of package names to the path of the packed file
  */
 export async function packDependencies({
-  /**
-   * All packages found in the monorepo by workspaces declaration
-   */
+  /** All packages found in the monorepo by workspaces declaration */
   packagesRegistry,
-  /**
-   * The package names that appear to be local dependencies
-   */
-  localDependencies,
+  /** The dependencies that appear to be internal packages */
+  internalPackageNames,
   /**
    * The directory where the isolated package and all its dependencies will end
    * up. This is also the directory from where the package will be deployed. By
@@ -28,7 +24,7 @@ export async function packDependencies({
   packDestinationDir,
 }: {
   packagesRegistry: PackagesRegistry;
-  localDependencies: string[];
+  internalPackageNames: string[];
   packDestinationDir: string;
 }) {
   const config = getConfig();
@@ -47,7 +43,7 @@ export async function packDependencies({
     log.debug("Using PNPM pack instead of NPM pack");
   }
 
-  for (const dependency of localDependencies) {
+  for (const dependency of internalPackageNames) {
     const def = packagesRegistry[dependency];
 
     assert(dependency, `Failed to find package definition for ${dependency}`);

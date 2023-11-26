@@ -4,7 +4,7 @@ import { execSync } from "node:child_process";
 import path from "node:path";
 import { createLogger, readTypedJsonSync } from "~/utils";
 import { getConfig } from "./config";
-import { PackageManifest } from "./create-packages-registry";
+import type { PackageManifest } from "./create-packages-registry";
 import { getLockfileFileName } from "./process-lockfile";
 
 const supportedPackageManagerNames = ["pnpm", "yarn", "npm"] as const;
@@ -28,10 +28,9 @@ export function detectPackageManager(workspaceRoot: string): PackageManager {
    * Disable infer from manifest for now. I doubt it is useful after all but
    * I'll keep the code as a reminder.
    */
-  // packageManager =
-  //   inferFromManifest(workspaceRoot) ?? inferFromFiles(workspaceRoot);
+  packageManager =
+    inferFromManifest(workspaceRoot) ?? inferFromFiles(workspaceRoot);
 
-  packageManager = inferFromFiles(workspaceRoot);
   return packageManager;
 }
 
@@ -76,9 +75,7 @@ function inferFromFiles(workspaceRoot: string): PackageManager {
     }
   }
 
-  /**
-   * If no lockfile was found, it could be that there is an npm shrinkwrap file.
-   */
+  /** If no lockfile was found, it could be that there is an npm shrinkwrap file. */
   if (fs.existsSync(path.join(workspaceRoot, "npm-shrinkwrap.json"))) {
     return { name: "npm", version: getVersion("npm") };
   }

@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { IsolateConfigResolved } from "~/helpers";
+import type { IsolateConfigResolved } from "~/helpers/config";
 
 export type Logger = {
   debug(...args: any[]): void;

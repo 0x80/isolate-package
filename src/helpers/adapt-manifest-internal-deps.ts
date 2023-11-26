@@ -1,8 +1,17 @@
 import { omit } from "lodash-es";
 import { filterObjectUndefined } from "~/utils";
-import { PackageManifest, PackagesRegistry, patchWorkspaceEntries } from ".";
+import type {
+  PackageManifest,
+  PackagesRegistry,
+} from "./create-packages-registry";
+import { patchInternalEntries } from "./patch-internal-entries";
 
-export function adaptManifestWorkspaceDeps(
+/**
+ * Replace the workspace version specifiers for internal dependency with file:
+ * paths. Not needed for PNPM (because we configure the isolated output as a
+ * workspace), but maybe still for NPM and Yarn.
+ */
+export function adaptManifestInternalDeps(
   {
     manifest,
     packagesRegistry,
@@ -18,7 +27,7 @@ export function adaptManifestWorkspaceDeps(
     omit(manifest, ["devDependencies"]),
     filterObjectUndefined({
       dependencies: manifest.dependencies
-        ? patchWorkspaceEntries(
+        ? patchInternalEntries(
             manifest.dependencies,
             packagesRegistry,
             parentRootRelativeDir
@@ -26,7 +35,7 @@ export function adaptManifestWorkspaceDeps(
         : undefined,
       devDependencies:
         opts.includeDevDependencies && manifest.devDependencies
-          ? patchWorkspaceEntries(
+          ? patchInternalEntries(
               manifest.devDependencies,
               packagesRegistry,
               parentRootRelativeDir

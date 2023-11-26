@@ -3,42 +3,36 @@
  * For PNPM the hash bang at the top of the script was not required, but Yarn 3
  * did not seem to execute without it.
  */
-
-/**
- * A word about used terminology:
- *
- * The various package managers, while being very similar, seem to use a
- * different definition for the term "workspace". If you want to read the code
- * it might be good to know that I consider the workspace to be the monorepo
- * itself, in other words, the overall structure that holds all the packages.
- */
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
 import sourceMaps from "source-map-support";
 import {
-  PackageManifest,
-  adaptManifestFiles,
-  adaptTargetPackageManifest,
-  createPackagesRegistry,
-  detectPackageManager,
-  getBuildOutputDir,
-  getConfig,
-  listLocalDependencies,
-  packDependencies,
-  processBuildOutputFiles,
-  processLockfile,
-  unpackDependencies,
-} from "~/helpers";
-import {
   createLogger,
   getDirname,
   getRootRelativePath,
+  isDefined,
   readTypedJson,
 } from "~/utils";
+import { adaptInternalPackageManifests } from "./helpers/adapt-internal-package-manifests";
+import { adaptTargetPackageManifest } from "./helpers/adapt-target-package-manifest";
+import { getConfig, getUserDefinedConfig } from "./helpers/config";
+import {
+  createPackagesRegistry,
+  type PackageManifest,
+} from "./helpers/create-packages-registry";
+import { detectPackageManager } from "./helpers/detect-package-manager";
+import { getBuildOutputDir } from "./helpers/get-build-output-dir";
+import { listInternalPackages } from "./helpers/list-internal-packages";
+import { packDependencies } from "./helpers/pack-dependencies";
+import { processBuildOutputFiles } from "./helpers/process-build-output-files";
+import { processLockfile } from "./helpers/process-lockfile";
+import { unpackDependencies } from "./helpers/unpack-dependencies";
 
 const config = getConfig();
 const log = createLogger(config.logLevel);
+
+const userDefinedConfig = getUserDefinedConfig();
 
 sourceMaps.install();
 
@@ -111,13 +105,6 @@ async function start() {
   );
 
   /**
-   * Disable lock files for PNPM because they are not yet supported.
-   */
-  if (packageManager.name === "pnpm") {
-    config.excludeLockfile = true;
-  }
-
-  /**
    * Build a packages registry so we can find the workspace packages by name and
    * have access to their manifest files and relative paths.
    */
@@ -126,7 +113,7 @@ async function start() {
     config.workspacePackages
   );
 
-  const localDependencies = listLocalDependencies(
+  const internalPackageNames = listInternalPackages(
     targetPackageManifest,
     packagesRegistry,
     {
@@ -135,7 +122,7 @@ async function start() {
   );
 
   const packedFilesByName = await packDependencies({
-    localDependencies,
+    internalPackageNames,
     packagesRegistry,
     packDestinationDir: tmpDir,
   });
@@ -147,14 +134,14 @@ async function start() {
     isolateDir
   );
 
-  /**
-   * Adapt the manifest files for all the unpacked local dependencies
-   */
-  await adaptManifestFiles(localDependencies, packagesRegistry, isolateDir);
+  /** Adapt the manifest files for all the unpacked local dependencies */
+  await adaptInternalPackageManifests(
+    internalPackageNames,
+    packagesRegistry,
+    isolateDir
+  );
 
-  /**
-   * Pack the target package directory, and unpack it in the isolate location
-   */
+  /** Pack the target package directory, and unpack it in the isolate location */
   await processBuildOutputFiles({
     targetPackageDir,
     tmpDir,
@@ -171,24 +158,47 @@ async function start() {
     isolateDir
   );
 
+  /**
+   * If the user has not explicitly set the excludeLockfile option, we will
+   * exclude the lockfile for NPM and Yarn, because we still need to figure out
+   * how to generate the lockfile for those package managers.
+   */
+  if (!isDefined(userDefinedConfig.excludeLockfile)) {
+    if (packageManager.name === "npm" || packageManager.name === "yarn") {
+      config.excludeLockfile = true;
+    }
+  }
+
   if (config.excludeLockfile) {
     log.warn("Excluding the lockfile from the isolate output");
   } else {
-    /**
-     * Copy and adapt the lockfile
-     */
+    /** Copy and adapt the lockfile */
     await processLockfile({
       workspaceRootDir,
-      targetPackageName: targetPackageManifest.name,
       isolateDir,
       packagesRegistry,
+      internalDepPackageNames: internalPackageNames,
+      targetPackageDir,
+      targetPackageName: targetPackageManifest.name,
     });
   }
 
+  if (packageManager.name === "pnpm") {
+    /**
+     * PNPM doesn't install dependencies of packages that are linked via link:
+     * or file: specifiers. It requires the directory to be configured as a
+     * workspace, so we copy the workspace config file to the isolate output.
+     */
+
+    fs.copyFileSync(
+      path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+      path.join(isolateDir, "pnpm-workspace.yaml")
+    );
+  }
   /**
-   * If there is an .npmrc file in the workspace root, copy it to the
-   * isolate because the settings there could affect how the lockfile is
-   * resolved. Note that .npmrc is used by both NPM and PNPM for configuration.
+   * If there is an .npmrc file in the workspace root, copy it to the isolate
+   * because the settings there could affect how the lockfile is resolved. Note
+   * that .npmrc is used by both NPM and PNPM for configuration.
    *
    * See also: https://pnpm.io/npmrc
    */
@@ -221,4 +231,4 @@ start().catch((err) => {
   }
 });
 
-process.on("unhandledRejection", log.error);
+// process.on("unhandledRejection", log.error);
