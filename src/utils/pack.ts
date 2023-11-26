@@ -1,8 +1,7 @@
 import fs from "fs-extra";
 import { exec } from "node:child_process";
 import path from "node:path";
-import { getConfig } from "~/helpers/config";
-import { createLogger } from "./logger";
+import { useLogger } from "./logger";
 
 export async function pack(
   srcDir: string,
@@ -13,7 +12,7 @@ export async function pack(
     maxBuffer: 10 * 1024 * 1024,
   };
 
-  const log = createLogger(getConfig().logLevel);
+  const log = useLogger();
 
   const previousCwd = process.cwd();
   process.chdir(srcDir);

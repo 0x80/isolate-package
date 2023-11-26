@@ -8,7 +8,8 @@ that includes internal dependencies and a compatible lockfile.
 - [Features](#features)
 - [Motivation](#motivation)
 - [Install](#install)
-- [Usage](#usage)
+- [Usage as binary](#usage-as-binary)
+- [Usage in code](#usage-in-code)
 - [Prerequisites](#prerequisites)
   - [Define shared dependencies in the package manifest](#define-shared-dependencies-in-the-package-manifest)
   - [Define "version" field in each package manifest](#define-version-field-in-each-package-manifest)
@@ -76,10 +77,12 @@ Run `pnpm install isolate-package --dev` or the equivalent for `yarn` or `npm`.
 
 I recommend using `pnpm` for
 [a number of reasons](https://pnpm.io/feature-comparison). Also, at the time of
-writing it is the only package manger that isolate-package can generate a
-[lockfile](#lockfiles) for.
+writing it is the only package manager for which isolate-package can generate a
+lockfile. For more information see [lockfiles](#lockfiles).
 
-## Usage
+## Usage as binary
+
+This package exposes a binary called `isolate`.
 
 Run `npx isolate` from the root of the package you want to isolate. Make sure
 you build the package first.
@@ -91,7 +94,35 @@ are not using Typescript.
 By default the isolated output will become available at `./isolate`.
 
 If you are here to simplify and improve your Firebase deployments check out the
-[Firebase quick start guide](#a-quick-start) .
+[Firebase quick start guide](#a-quick-start).
+
+## Usage as function
+
+Alternatively, `isolate` can be integrated in other programs as an imported
+function. You optional pass it a some user configuration and a logger to
+intercept any logging messages if you need to.
+
+```ts
+import { isolate } from "isolate-package";
+
+await isolate({
+  config: { logLevel: "debug" },
+});
+
+/**
+ * If you want to override the default console logger with your own handlers you
+ * can do something like
+ */
+await isolate({
+  config: { logLevel: "debug" },
+  logger: {
+    debug: console.log,
+    info: console.log,
+    warn: console.warn,
+    error: console.error,
+  },
+});
+```
 
 ## Prerequisites
 

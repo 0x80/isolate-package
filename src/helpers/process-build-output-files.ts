@@ -1,7 +1,6 @@
 import fs from "fs-extra";
 import path from "node:path";
-import { createLogger, pack, unpack } from "~/utils";
-import { getConfig } from "./config";
+import { pack, unpack, useLogger } from "~/utils";
 
 const TIMEOUT_MS = 5000;
 
@@ -14,7 +13,7 @@ export async function processBuildOutputFiles({
   tmpDir: string;
   isolateDir: string;
 }) {
-  const log = createLogger(getConfig().logLevel);
+  const log = useLogger();
   const packedFilePath = await pack(targetPackageDir, tmpDir);
   const unpackDir = path.join(tmpDir, "target");
 

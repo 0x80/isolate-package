@@ -6,8 +6,8 @@ import {
 import { pick } from "lodash-es";
 import assert from "node:assert";
 import path from "node:path";
-import { createLogger } from "~/utils";
-import { getConfig } from "./config";
+import { useLogger } from "~/utils";
+import { useConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
 import { pnpmMapImporter } from "./process-lockfile";
 
@@ -24,8 +24,8 @@ export async function generatePnpmLockfile({
   internalDepPackageNames: string[];
   packagesRegistry: PackagesRegistry;
 }) {
-  const { logLevel, includeDevDependencies } = getConfig();
-  const log = createLogger(logLevel);
+  const { includeDevDependencies } = useConfig();
+  const log = useLogger();
 
   log.debug("Generating PNPM lockfile");
 

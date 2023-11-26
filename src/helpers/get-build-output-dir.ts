@@ -1,12 +1,12 @@
 import fs from "fs-extra";
 import path from "node:path";
 import outdent from "outdent";
-import { createLogger, readTypedJson } from "~/utils";
-import { getConfig } from "./config";
+import { readTypedJson, useLogger } from "~/utils";
+import { useConfig } from "./config";
 
 export async function getBuildOutputDir(targetPackageDir: string) {
-  const config = getConfig();
-  const log = createLogger(getConfig().logLevel);
+  const config = useConfig();
+  const log = useLogger();
 
   if (config.buildDirName) {
     log.debug("Using buildDirName from config:", config.buildDirName);

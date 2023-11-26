@@ -1,9 +1,7 @@
 import fs from "fs-extra";
 import path, { join } from "node:path";
-import { getIsolateRelativePath } from "~/utils";
-import { createLogger } from "~/utils/logger";
+import { getIsolateRelativePath, useLogger } from "~/utils";
 import { unpack } from "../utils/unpack";
-import { getConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
 
 export async function unpackDependencies(
@@ -12,7 +10,7 @@ export async function unpackDependencies(
   tmpDir: string,
   isolateDir: string
 ) {
-  const log = createLogger(getConfig().logLevel);
+  const log = useLogger();
 
   await Promise.all(
     Object.entries(packedFilesByName).map(async ([packageName, filePath]) => {

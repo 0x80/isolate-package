@@ -3,7 +3,7 @@ import { omit } from "lodash-es";
 import path from "node:path";
 import type { PackagesRegistry } from "~/helpers/create-packages-registry";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
-import { getConfig } from "./config";
+import { useConfig } from "./config";
 import { usePackageManager } from "./detect-package-manager";
 
 /**
@@ -17,7 +17,7 @@ export async function adaptInternalPackageManifests(
   isolateDir: string
 ) {
   const packageManager = usePackageManager();
-  const includeDevDependencies = getConfig().includeDevDependencies;
+  const { includeDevDependencies } = useConfig();
 
   await Promise.all(
     internalPackageNames.map(async (packageName) => {
