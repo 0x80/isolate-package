@@ -6,7 +6,7 @@ import {
 import assert from "node:assert";
 import path from "node:path";
 import { pick } from "ramda";
-import { useLogger } from "~/utils";
+import { useLogger } from "../utils";
 import { useConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
 import { pnpmMapImporter } from "./process-lockfile";

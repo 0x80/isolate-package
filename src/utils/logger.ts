@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import type { IsolateConfigResolved, LogLevel } from "~/helpers/config";
+import type { IsolateConfigResolved, LogLevel } from "../helpers/config";
 /**
  * The Logger defines an interface that can be used to pass in a different
  * logger object in order to intercept all the logging output. We keep the

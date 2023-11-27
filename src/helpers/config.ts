@@ -7,7 +7,7 @@ import {
   readTypedJsonSync,
   setLogLevel,
   useLogger,
-} from "~/utils";
+} from "../utils";
 
 export type IsolateConfigResolved = {
   buildDirName?: string;

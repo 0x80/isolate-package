@@ -1,6 +1,6 @@
 import fs from "fs-extra";
 import path from "node:path";
-import { pack, unpack, useLogger } from "~/utils";
+import { pack, unpack, useLogger } from "../utils";
 
 const TIMEOUT_MS = 5000;
 

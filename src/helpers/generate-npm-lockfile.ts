@@ -1,7 +1,7 @@
 import Arborist from "@npmcli/arborist";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { useLogger } from "~/utils";
+import { useLogger } from "../utils";
 import type { PackagesRegistry } from "./create-packages-registry";
 
 /**

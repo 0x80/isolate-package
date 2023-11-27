@@ -5,7 +5,7 @@ import type {
 import fs from "fs-extra";
 import path from "node:path";
 import { mapObjIndexed } from "ramda";
-import { useLogger } from "~/utils";
+import { useLogger } from "../utils";
 import type { PackagesRegistry } from "./create-packages-registry";
 import type { PackageManagerName } from "./detect-package-manager";
 import { usePackageManager } from "./detect-package-manager";

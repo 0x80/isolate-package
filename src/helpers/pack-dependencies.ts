@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { pack, useLogger } from "~/utils";
+import { pack, useLogger } from "../utils";
 import { useConfig } from "./config";
 import type { PackagesRegistry } from "./create-packages-registry";
 import { usePackageManager } from "./detect-package-manager";

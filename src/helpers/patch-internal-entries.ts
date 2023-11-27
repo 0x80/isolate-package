@@ -1,5 +1,5 @@
 import path from "node:path";
-import { useLogger } from "~/utils";
+import { useLogger } from "../utils";
 import type { PackagesRegistry } from "./create-packages-registry";
 
 export function patchInternalEntries(

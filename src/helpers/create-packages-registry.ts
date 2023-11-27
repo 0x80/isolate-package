@@ -2,7 +2,7 @@ import type { PackageManifest as PnpmPackageManifest } from "@pnpm/types";
 import fs from "fs-extra";
 import { globSync } from "glob";
 import path from "node:path";
-import { readTypedJson, useLogger } from "~/utils";
+import { readTypedJson, useLogger } from "../utils";
 import { findPackagesGlobs } from "./find-packages-globs";
 
 export type PackageManifest = PnpmPackageManifest & {

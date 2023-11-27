@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import path from "node:path";
 import { omit } from "ramda";
-import type { PackagesRegistry } from "~/helpers/create-packages-registry";
+import type { PackagesRegistry } from "../helpers/create-packages-registry";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
 import { useConfig } from "./config";
 import { usePackageManager } from "./detect-package-manager";
