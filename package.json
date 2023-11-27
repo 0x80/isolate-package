@@ -19,13 +19,9 @@
     "url": "git+https://github.com/0x80/isolate-package.git"
   },
   "type": "module",
-  "main": "./dist/index.cjs",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "require": "./dist/index.cjs",
-      "import": "./dist/index.mjs"
-    }
+    ".": "./dist/index.mjs"
   },
   "files": [
     "dist"
@@ -34,8 +30,9 @@
     "isolate": "dist/isolate-bin.mjs"
   },
   "scripts": {
-    "build": "unbuild",
-    "x:build": "tsup-node && mv dist/isolate-bin.js dist/isolate-bin.mjs && mv dist/isolate-bin.js.map dist/isolate-bin.mjs.map",
+    "?": "TSUP is currently unable to generate mjs + cjs files, so we need to output js + cjs and rename the bin files so as they require mjs extension",
+    "xbuild": "tsup-node && mv dist/isolate-bin.js dist/isolate-bin.mjs && mv dist/isolate-bin.js.map dist/isolate-bin.mjs.map",
+    "build": "tsup-node",
     "build:watch": "tsup-node --watch",
     "test": "vitest",
     "format": "prettier --write .",
