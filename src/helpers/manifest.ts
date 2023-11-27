@@ -1,5 +1,5 @@
 import path from "node:path";
-import { readTypedJson } from "~/utils";
+import { readTypedJson } from "../utils";
 import type { PackageManifest } from "./create-packages-registry";
 
 export async function importManifest(packageDir: string) {

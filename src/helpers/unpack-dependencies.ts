@@ -1,6 +1,6 @@
 import fs from "fs-extra";
 import path, { join } from "node:path";
-import { getIsolateRelativePath, useLogger } from "~/utils";
+import { getIsolateRelativePath, useLogger } from "../utils";
 import { unpack } from "../utils/unpack";
 import type { PackagesRegistry } from "./create-packages-registry";
 

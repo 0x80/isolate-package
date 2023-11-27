@@ -1,4 +1,4 @@
-import { uniq } from "lodash-es";
+import { uniq } from "ramda";
 import type {
   PackageManifest,
   PackagesRegistry,

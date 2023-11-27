@@ -3,9 +3,9 @@ import type {
   ResolvedDependencies,
 } from "@pnpm/lockfile-file";
 import fs from "fs-extra";
-import { mapValues } from "lodash-es";
 import path from "node:path";
-import { useLogger } from "~/utils";
+import { mapObjIndexed } from "ramda";
+import { useLogger } from "../utils";
 import type { PackagesRegistry } from "./create-packages-registry";
 import type { PackageManagerName } from "./detect-package-manager";
 import { usePackageManager } from "./detect-package-manager";
@@ -50,10 +50,12 @@ function pnpmMapDependenciesLinks(
   def: ResolvedDependencies,
   directoryByPackageName: { [packageName: string]: string }
 ): ResolvedDependencies {
-  return mapValues(def, (version, name) =>
-    version.startsWith("link:")
-      ? `link:./${directoryByPackageName[name]}`
-      : version
+  return mapObjIndexed(
+    (version, name) =>
+      version.startsWith("link:")
+        ? `link:./${directoryByPackageName[name]}`
+        : version,
+    def
   );
 }
 

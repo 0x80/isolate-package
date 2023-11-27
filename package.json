@@ -1,6 +1,6 @@
 {
   "name": "isolate-package",
-  "version": "1.4.0",
+  "version": "1.4.1-8",
   "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
   "author": "Thijs Koerselman",
   "license": "MIT",
@@ -19,12 +19,9 @@
     "url": "git+https://github.com/0x80/isolate-package.git"
   },
   "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
-    }
+    ".": "./dist/index.mjs"
   },
   "files": [
     "dist"
@@ -41,6 +38,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@npmcli/arborist": "^7.2.1",
     "@pnpm/exec": "^2.0.0",
     "@pnpm/exportable-manifest": "^5.0.9",
     "@pnpm/lockfile-file": "^8.1.4",
@@ -50,17 +48,16 @@
     "chalk": "^5.2.0",
     "fs-extra": "^11.1.1",
     "glob": "^10.2.2",
-    "lodash-es": "^4.17.21",
     "outdent": "^0.8.0",
     "ramda": "^0.29.1",
     "rename-overwrite": "^4.0.4",
     "source-map-support": "^0.5.21",
     "strip-json-comments": "^5.0.1",
     "tar-fs": "^2.1.1",
+    "type-fest": "^4.8.2",
     "yaml": "^2.2.2"
   },
   "devDependencies": {
-    "@npmcli/arborist": "^7.2.1",
     "@types/fs-extra": "^11.0.1",
     "@types/lodash-es": "^4.17.7",
     "@types/node": "^18.16.2",
@@ -71,8 +68,8 @@
     "prettier": "^3.0.0",
     "prettier-plugin-jsdoc": "^1.1.1",
     "tsup": "^6.7.0",
-    "type-fest": "^3.9.0",
     "typescript": "^5.0.4",
+    "unbuild": "^2.0.0",
     "vitest": "^0.30.1"
   }
 }

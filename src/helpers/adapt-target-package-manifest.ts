@@ -1,6 +1,6 @@
 import fs from "fs-extra";
-import { omit } from "lodash-es";
 import path from "node:path";
+import { omit } from "ramda";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
 import { useConfig } from "./config";
 import type {
@@ -26,7 +26,7 @@ export async function adaptTargetPackageManifest(
 
   const outputManifest =
     packageManager.name === "pnpm"
-      ? Object.assign(omit(manifest, ["devDependencies", "scripts"]), {
+      ? Object.assign(omit(["devDependencies", "scripts"], manifest), {
           devDependencies: includeDevDependencies
             ? manifest.devDependencies
             : undefined,

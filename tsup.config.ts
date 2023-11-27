@@ -8,16 +8,17 @@ export default defineConfig({
   format: ["esm"],
   target: "node18",
   sourcemap: true,
+  splitting: false,
   dts: true,
   clean: true,
+  // shims: true, // replaces use of import.meta
   /**
-   * The `isolate` binary is an ES module, because it also imports from other ES
-   * modules. For the binary is required to have the `.mjs` file extension,
-   * otherwise a non-ESM workspace will try to execute it as commonJS.
+   * The `isolate` binary is an ES module. The file is required to have the
+   * `.mjs` file extension, otherwise a non-ESM workspace will try to execute it
+   * as commonJS.
    *
    * For details see [this article from Alex
-   * Rauschmayer](https://exploringjs.com/nodejs-shell-scripting/ch_creating-shell-scripts.html#node.*
-   * js-esm-modules-as-standalone-shell-scripts-on-unix)
+   * Rauschmayer](https://exploringjs.com/nodejs-shell-scripting/ch_creating-shell-scripts.html
    */
   outExtension() {
     return {

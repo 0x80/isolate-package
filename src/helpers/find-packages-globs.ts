@@ -5,7 +5,7 @@ import {
   readTypedJsonSync,
   readTypedYamlSync,
   useLogger,
-} from "~/utils";
+} from "../utils";
 import { usePackageManager } from "./detect-package-manager";
 
 /**

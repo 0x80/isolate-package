@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
 import path from "node:path";
-import { readTypedJsonSync, useLogger } from "~/utils";
+import { readTypedJsonSync, useLogger } from "../utils";
 import type { PackageManifest } from "./create-packages-registry";
 import { getLockfileFileName } from "./process-lockfile";
 
