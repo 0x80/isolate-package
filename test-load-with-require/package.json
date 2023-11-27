@@ -1,0 +1,11 @@
+{
+  "name": "test",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./index.js"
+  },
+  "dependencies": {
+    "isolate-package": "file:../"
+  },
+  "devDependencies": {}
+}
