@@ -30,8 +30,6 @@
     "isolate": "dist/isolate-bin.mjs"
   },
   "scripts": {
-    "?": "TSUP is currently unable to generate mjs + cjs files, so we need to output js + cjs and rename the bin files so as they require mjs extension",
-    "xbuild": "tsup-node && mv dist/isolate-bin.js dist/isolate-bin.mjs && mv dist/isolate-bin.js.map dist/isolate-bin.mjs.map",
     "build": "tsup-node",
     "build:watch": "tsup-node --watch",
     "test": "vitest",
@@ -40,6 +38,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@npmcli/arborist": "^7.2.1",
     "@pnpm/exec": "^2.0.0",
     "@pnpm/exportable-manifest": "^5.0.9",
     "@pnpm/lockfile-file": "^8.1.4",
@@ -54,11 +53,10 @@
     "rename-overwrite": "^4.0.4",
     "source-map-support": "^0.5.21",
     "tar-fs": "^2.1.1",
-    "type-fest": "^3.13.1",
+    "type-fest": "^4.8.2",
     "yaml": "^2.2.2"
   },
   "devDependencies": {
-    "@npmcli/arborist": "^7.2.1",
     "@types/fs-extra": "^11.0.1",
     "@types/lodash-es": "^4.17.7",
     "@types/node": "^18.16.2",
