@@ -19,14 +19,12 @@
     "url": "git+https://github.com/0x80/isolate-package.git"
   },
   "type": "module",
-  "?//": "Use main/types to support older versions of Node for firebase-tools?",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
     }
   },
   "files": [
@@ -36,7 +34,8 @@
     "isolate": "dist/isolate-bin.mjs"
   },
   "scripts": {
-    "build": "tsup-node && mv dist/isolate-bin.js dist/isolate-bin.mjs && mv dist/isolate-bin.js.map dist/isolate-bin.mjs.map",
+    "build": "unbuild",
+    "x:build": "tsup-node && mv dist/isolate-bin.js dist/isolate-bin.mjs && mv dist/isolate-bin.js.map dist/isolate-bin.mjs.map",
     "build:watch": "tsup-node --watch",
     "test": "vitest",
     "format": "prettier --write .",
@@ -58,6 +57,7 @@
     "rename-overwrite": "^4.0.4",
     "source-map-support": "^0.5.21",
     "tar-fs": "^2.1.1",
+    "type-fest": "^3.13.1",
     "yaml": "^2.2.2"
   },
   "devDependencies": {
@@ -72,8 +72,8 @@
     "prettier": "^3.0.0",
     "prettier-plugin-jsdoc": "^1.1.1",
     "tsup": "^6.7.0",
-    "type-fest": "^3.9.0",
     "typescript": "^5.0.4",
+    "unbuild": "^2.0.0",
     "vitest": "^0.30.1"
   }
 }
