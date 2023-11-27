@@ -69,7 +69,6 @@
     "prettier-plugin-jsdoc": "^1.1.1",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
-    "unbuild": "^2.0.0",
     "vitest": "^0.30.1"
   }
 }
