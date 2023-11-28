@@ -2,7 +2,6 @@ import Arborist from "@npmcli/arborist";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { useLogger } from "../utils";
-import type { PackagesRegistry } from "./create-packages-registry";
 
 /**
  * Generate an isolated lockfile, based on the contents of node_modules in the
@@ -11,8 +10,6 @@ import type { PackagesRegistry } from "./create-packages-registry";
 export async function generateNpmLockfile({
   isolateDir,
 }: {
-  targetPackageDir: string;
-  packagesRegistry: PackagesRegistry;
   isolateDir: string;
 }) {
   const log = useLogger();

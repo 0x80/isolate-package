@@ -89,9 +89,7 @@ export async function processLockfile({
   switch (name) {
     case "npm": {
       await generateNpmLockfile({
-        targetPackageDir,
         isolateDir,
-        packagesRegistry,
       });
 
       break;
