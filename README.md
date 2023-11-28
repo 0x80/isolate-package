@@ -160,8 +160,10 @@ generate part of the packed filename. A personal preference is to set it to
 
 ### Define "files" field in each package manifest
 
-> NOTE: This step is not required if you use the
-> [internal packages strategy](#the-internal-packages-strategy)
+> NOTE: This step is not required if you use the [internal packages > > > > > >
+>
+> > strategy](#the-internal-packages-strategy but you could set it to `["src"]`
+> > instead of `["dist"]`.
 
 The isolate process uses (p)npm `pack` to extract files from package
 directories, just like publishing a package would.
@@ -180,14 +182,14 @@ directory, for example:
 }
 ```
 
-A few additional files will be included by `pack` automatically, like the
-`package.json` and `README.md` files.
+A few additional files from the root or your package will be included by `pack`
+automatically, like `package.json`, `LICENSE` and `README` files.
 
 **Tip** If you deploy to Firebase
 [2nd generation](https://firebase.google.com/docs/firestore/extend-with-functions-2nd-gen)
-functions, you might want to include some .env files in the "files" list, so
-they are packaged and deployed together with your build output (as 1st gen
-functions config is no longer supported).
+functions, you might want to include some env files in the `files` list, so they
+are packaged and deployed together with your build output (as 1st gen functions
+config is no longer supported).
 
 ### Use a flat structure inside your packages folders
 
