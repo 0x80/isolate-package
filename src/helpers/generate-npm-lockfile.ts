@@ -27,7 +27,7 @@ export async function generateNpmLockfile({
   const arborist = new Arborist({ path: targetPackageDir });
 
   const { meta } = await arborist.buildIdealTree({
-    rm: internalPackageNames,
+    // rm: internalPackageNames,
   });
   meta?.commit();
 
