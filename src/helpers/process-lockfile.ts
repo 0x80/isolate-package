@@ -72,7 +72,6 @@ export async function processLockfile({
   isolateDir,
   internalDepPackageNames,
   targetPackageDir,
-  targetPackageName,
 }: {
   workspaceRootDir: string;
   packagesRegistry: PackagesRegistry;

@@ -20,8 +20,9 @@ export async function generateNpmLockfile({
 }) {
   const log = useLogger();
 
+  log.debug("Generating NPM lockfile...");
+
   const internalPackageNames = Object.keys(packagesRegistry);
-  log.debug("Internal packages", internalPackageNames);
 
   const arborist = new Arborist({ path: targetPackageDir });
 

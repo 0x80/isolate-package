@@ -27,13 +27,13 @@ export async function generatePnpmLockfile({
   const { includeDevDependencies } = useConfig();
   const log = useLogger();
 
-  log.debug("Generating PNPM lockfile");
+  log.debug("Generating PNPM lockfile...");
 
   const lockfile = await readWantedLockfile(workspaceRootDir, {
     ignoreIncompatible: false,
   });
 
-  assert(lockfile, "No lockfile found");
+  assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
 
   const targetImporterId = getLockfileImporterId(
     workspaceRootDir,
