@@ -1,10 +1,8 @@
 # Isolate Package
 
-Isolate a monorepo workspace package to form a self-contained deployable package
-that includes internal dependencies and a compatible lockfile.
-
 <!-- TOC -->
 
+- [Introduction](#introduction)
 - [Features](#features)
 - [Motivation](#motivation)
 - [Install](#install)
@@ -31,8 +29,7 @@ that includes internal dependencies and a compatible lockfile.
   - [workspaceRoot](#workspaceroot)
 - [Troubleshooting](#troubleshooting)
 - [Lockfiles](#lockfiles)
-  - [PNPM](#pnpm)
-  - [NPM](#npm)
+  - [NPM and PNPM](#npm-and-pnpm)
   - [Yarn](#yarn)
   - [A Partial Workaround](#a-partial-workaround)
 - [Different Package Managers](#different-package-managers)
@@ -40,6 +37,12 @@ that includes internal dependencies and a compatible lockfile.
 - [The internal packages strategy](#the-internal-packages-strategy)
 
 <!-- /TOC -->
+
+## Introduction
+
+Isolate a monorepo workspace package to form a self-contained deployable package
+that includes internal dependencies and a compatible lockfile. The internal
+packages structure is preserved, so dependencies are not bundled.
 
 ## Features
 
