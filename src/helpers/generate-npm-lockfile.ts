@@ -5,13 +5,10 @@ import { useLogger } from "../utils";
 import type { PackagesRegistry } from "./create-packages-registry";
 
 /**
- * This code is probably not working yet. It should eventually do something
- * similar to generatePnpmLockfile, but my NPM install is giving me
- * non-descriptive errors and my patience and time for now is running out...
+ * Generate an isolated lockfile, based on the contents of node_modules in the
+ * monorepo plus the adapted package manifest in the isolate directory.
  */
 export async function generateNpmLockfile({
-  targetPackageDir,
-  packagesRegistry,
   isolateDir,
 }: {
   targetPackageDir: string;
@@ -22,13 +19,9 @@ export async function generateNpmLockfile({
 
   log.debug("Generating NPM lockfile...");
 
-  const internalPackageNames = Object.keys(packagesRegistry);
+  const arborist = new Arborist({ path: isolateDir });
 
-  const arborist = new Arborist({ path: targetPackageDir });
-
-  const { meta } = await arborist.buildIdealTree({
-    // rm: internalPackageNames,
-  });
+  const { meta } = await arborist.buildIdealTree();
   meta?.commit();
 
   const lockfilePath = path.join(isolateDir, "package-lock.json");
