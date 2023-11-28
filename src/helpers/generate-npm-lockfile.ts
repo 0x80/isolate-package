@@ -10,27 +10,23 @@ import type { PackagesRegistry } from "./create-packages-registry";
  * non-descriptive errors and my patience and time for now is running out...
  */
 export async function generateNpmLockfile({
-  workspaceRootDir,
-  targetPackageName,
+  targetPackageDir,
   packagesRegistry,
   isolateDir,
 }: {
-  workspaceRootDir: string;
-  targetPackageName: string;
+  targetPackageDir: string;
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
 }) {
   const log = useLogger();
 
-  log.warn("Generating NPM lockfile NOT IMPLEMENTED YET");
-
   const internalPackageNames = Object.keys(packagesRegistry);
   log.debug("Internal packages", internalPackageNames);
 
-  const arborist = new Arborist({ path: workspaceRootDir });
+  const arborist = new Arborist({ path: targetPackageDir });
 
   const { meta } = await arborist.buildIdealTree({
-    add: [targetPackageName, ...internalPackageNames],
+    rm: internalPackageNames,
   });
   meta?.commit();
 

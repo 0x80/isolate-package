@@ -87,39 +87,20 @@ export async function processLockfile({
 
   const fileName = getLockfileFileName(name);
 
-  const lockfileSrcPath = path.join(workspaceRootDir, fileName);
-  const lockfileDstPath = path.join(isolateDir, fileName);
-
   switch (name) {
     case "npm": {
-      /** If there is a shrinkwrap file we copy that instead of the lockfile */
-      const shrinkwrapSrcPath = path.join(
-        workspaceRootDir,
-        "npm-shrinkwrap.json"
-      );
-      const shrinkwrapDstPath = path.join(isolateDir, "npm-shrinkwrap.json");
-
-      if (fs.existsSync(shrinkwrapSrcPath)) {
-        fs.copyFileSync(shrinkwrapSrcPath, shrinkwrapDstPath);
-        log.debug("Copied shrinkwrap to", shrinkwrapDstPath);
-      } else {
-        fs.copyFileSync(lockfileSrcPath, lockfileDstPath);
-        log.debug("Copied lockfile to", lockfileDstPath);
-      }
-
-      if (false) {
-        /** Generate the lockfile */
-        await generateNpmLockfile({
-          workspaceRootDir,
-          targetPackageName,
-          isolateDir,
-          packagesRegistry,
-        });
-      }
+      await generateNpmLockfile({
+        targetPackageDir,
+        isolateDir,
+        packagesRegistry,
+      });
 
       break;
     }
     case "yarn": {
+      const lockfileSrcPath = path.join(workspaceRootDir, fileName);
+      const lockfileDstPath = path.join(isolateDir, fileName);
+
       fs.copyFileSync(lockfileSrcPath, lockfileDstPath);
       log.debug("Copied lockfile to", lockfileDstPath);
       break;
