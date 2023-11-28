@@ -173,11 +173,11 @@ export async function isolate(
 
   /**
    * If the user has not explicitly set the excludeLockfile option, we will
-   * exclude the lockfile for NPM and Yarn, because we still need to figure out
-   * how to generate the lockfile for those package managers.
+   * exclude the lockfile for Yarn, because we still need to figure out how to
+   * generate the isolated lockfile for it.
    */
   if (!isDefined(userDefinedConfig.excludeLockfile)) {
-    if (packageManager.name === "npm" || packageManager.name === "yarn") {
+    if (packageManager.name === "yarn") {
       config.excludeLockfile = true;
     }
   }
@@ -236,5 +236,3 @@ export async function isolate(
 
   return isolateDir;
 }
-
-// process.on("unhandledRejection", log.error);
