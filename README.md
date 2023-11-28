@@ -71,6 +71,12 @@ There is nothing Firebase-specific to this solution and there should be other
 use-cases for it, but that is why this documentation contains some instructions
 related to Firebase.
 
+> !! There is now
+> [a fork of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate),
+> where isolate-package is integrated. It is preferred because it simplifies the
+> setup and allows the isolation to run only as part of the deploy process,
+> preserving live code updates when running the local Firebase emulators.
+
 ## Install
 
 Run `pnpm install isolate-package --dev` or the equivalent for `yarn` or `npm`.
@@ -197,6 +203,12 @@ prefer to use `["packages/*", "apps/*", "services/*"]`. It is only the structure
 inside them that should be flat.
 
 ## Working with Firebase
+
+> !! There is now
+> [a fork of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate),
+> where isolate-package is integrated. It is preferred because it simplifies the
+> setup and allows the isolation to run only as part of the deploy process,
+> preserving live code updates when running the local Firebase emulators.
 
 ### A Quick Start
 
