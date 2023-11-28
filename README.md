@@ -46,8 +46,8 @@ that includes internal dependencies and a compatible lockfile.
 - Isolate a monorepo package with its internal dependencies to form a
   self-contained installable package.
 - Deterministic deployment by generating an isolated lockfile based on the
-  existing monorepo lockfile. Currently this feature is only supported for PNPM.
-  See [lockfiles](#lockfiles) for more information.
+  existing monorepo lockfile. Currently this feature is only supported for NPM
+  and PNPM. See [lockfiles](#lockfiles) for more information.
 - Zero-config for the vast majority of use-cases, with no manual steps involved.
 - Support for PNPM, NPM and Yarn.
 - Compatible with the Firebase tools CLI, incl 1st gen and 2nd gen Firebase
@@ -337,12 +337,11 @@ Type: `boolean`, default: Depends on package manager.
 
 Sets the inclusion or exclusion of the lockfile as part of the deployment.
 
-PNPM lockfiles are regenerated based on the isolated output, so they are
-included by default.
+Isolated NPM and PNPM lockfiles are generated based on the existing root
+lockfile, and they are included by default.
 
-For NPM and Yarn the lockfiles are excluded by default because they are
-currently copied as-is to the isolate output and can lead to issues during
-deployment installs. For more information see [lockfiles](#lockfiles).
+The lockfile for Yarn is excluded by default. For more information see
+[lockfiles](#lockfiles).
 
 ### includeDevDependencies
 
@@ -443,9 +442,6 @@ isolate process manually with `npx isolate` and possibly
 
 ## Lockfiles
 
-Deploying the isolated code together with a valid lockfile turned out to be the
-biggest challenge of this solution.
-
 A lockfile in a monorepo describes the dependencies of all packages, and does
 not necessarily translate to the isolated output without altering it. Different
 package managers use very different formats, and it might not be enough to do a
@@ -458,28 +454,15 @@ it would negate the whole point of having a lockfile in the first place.
 What we need is to re-generate a lockfile for the isolated output based on the
 versions that are currently installed and locked in the monorepo lockfile.
 
-### PNPM
+### NPM and PNPM
 
-For PNPM a new isolated lockfile is generated.
+For NPM and PNPM a lockfile is generated and included in the isolated output.
 
-### NPM
+@TODO write about how it works an how we got there.
 
-For now, NPM lockfiles are simply copied over to the isolated output. I have
-seen Firebase deployments work with it, but likely you are going to run into an
-error like this:
-
-> `npm ci` can only install packages when your package.json and
-> package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock
-> file with `npm install` before continuing.
-
-If you experience this issue, you can choose to exclude the lockfile from
-deployment by setting `"excludeLockfile": false` in your isolate.config.json
-file, or make the move to PNPM (recommended).
-
-A real solution, regenerating an isolated lockfile, should be possible based on
-the
-[NPM CLI Arborist](https://github.com/npm/cli/tree/latest/workspaces/arborist)
-code, so I plan to look into that in the near future.
+If you do somehow run into a problem related to the lockfile, you can opt-out of
+this by setting `excludeLockfile: true` in the `isolate.config.json`
+configuration file.
 
 ### Yarn
 
@@ -494,16 +477,16 @@ file, or make the move to PNPM (recommended).
 I am not aware of any code in the official Yarn repository for re-generating a
 lockfile, and I am reluctant to work on this feature based on user-land code.
 
-Personally, I do not think Yarn is very relevant anymore in 2023 and I recommend
-switching to PNPM.
+Personally, I do not think Yarn is very relevant anymore in 2023 and I
+personally recommend switching to PNPM.
 
 ### A Partial Workaround
 
-If you can not use a lockfile, because you depend on NPM or Yarn, a partial
-workaround would be to declare dependencies using exact versions in your package
-manifest. This doesn't prevent your dependencies-dependencies from installing
-newer versions, like a lockfile would, but at least you minimize the risk of
-things breaking.
+If you can not use a lockfile, because you depend on Yarn, a partial workaround
+would be to declare dependencies using exact versions in your package manifest.
+This doesn't prevent your dependencies-dependencies from installing newer
+versions, like a lockfile would, but at least you minimize the risk of things
+breaking.
 
 ## Different Package Managers
 
