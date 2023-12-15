@@ -23,12 +23,17 @@ export async function adaptTargetPackageManifest(
 
   const outputManifest =
     packageManager.name === "pnpm"
-      ? Object.assign(omit(["devDependencies", "scripts"], manifest), {
+      ? /**
+         * For PNPM the output itself is a workspace so we can preserve the specifiers
+         * with "workspace:*" in the output manifest.
+         */
+        Object.assign(omit(["devDependencies", "scripts"], manifest), {
           devDependencies: includeDevDependencies
             ? manifest.devDependencies
             : undefined,
         })
-      : adaptManifestInternalDeps(
+      : /** For other package managers we replace the links to internal dependencies */
+        adaptManifestInternalDeps(
           {
             manifest,
             packagesRegistry,
