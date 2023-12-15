@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import { exec } from "node:child_process";
 import path from "node:path";
-import { useLogger } from "./logger";
+import { useLogger } from "../logger";
 
 export async function pack(
   srcDir: string,

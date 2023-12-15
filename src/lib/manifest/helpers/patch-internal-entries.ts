@@ -1,6 +1,6 @@
 import path from "node:path";
-import { useLogger } from "../utils";
-import type { PackagesRegistry } from "./create-packages-registry";
+import { useLogger } from "../../logger";
+import type { PackagesRegistry } from "../../types";
 
 export function patchInternalEntries(
   dependencies: Record<string, string>,

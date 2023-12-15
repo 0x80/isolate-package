@@ -6,10 +6,10 @@ import {
 import assert from "node:assert";
 import path from "node:path";
 import { pick } from "ramda";
-import { useLogger } from "../utils";
-import { useConfig } from "./config";
-import type { PackagesRegistry } from "./create-packages-registry";
-import { pnpmMapImporter } from "./process-lockfile";
+import { useConfig } from "src/lib/config";
+import { useLogger } from "src/lib/logger";
+import type { PackagesRegistry } from "src/lib/types";
+import { pnpmMapImporter } from "../process-lockfile";
 
 export async function generatePnpmLockfile({
   workspaceRootDir,

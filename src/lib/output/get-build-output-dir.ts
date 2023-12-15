@@ -1,8 +1,9 @@
 import fs from "fs-extra";
 import path from "node:path";
 import outdent from "outdent";
-import { readTypedJson, useLogger } from "../utils";
-import { useConfig } from "./config";
+import { useConfig } from "../config";
+import { useLogger } from "../logger";
+import { readTypedJson } from "../utils";
 
 export async function getBuildOutputDir(targetPackageDir: string) {
   const config = useConfig();

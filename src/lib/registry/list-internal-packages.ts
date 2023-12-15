@@ -1,8 +1,5 @@
 import { uniq } from "ramda";
-import type {
-  PackageManifest,
-  PackagesRegistry,
-} from "./create-packages-registry";
+import type { PackageManifest, PackagesRegistry } from "../types";
 
 /**
  * Recursively list all the packages from dependencies (and optionally

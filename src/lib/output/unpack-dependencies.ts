@@ -1,8 +1,8 @@
 import fs from "fs-extra";
 import path, { join } from "node:path";
-import { getIsolateRelativePath, useLogger } from "../utils";
-import { unpack } from "../utils/unpack";
-import type { PackagesRegistry } from "./create-packages-registry";
+import { useLogger } from "../logger";
+import type { PackagesRegistry } from "../types";
+import { getIsolateRelativePath, unpack } from "../utils";
 
 export async function unpackDependencies(
   packedFilesByName: Record<string, string>,

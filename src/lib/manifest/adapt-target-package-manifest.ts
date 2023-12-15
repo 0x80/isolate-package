@@ -1,13 +1,10 @@
 import fs from "fs-extra";
 import path from "node:path";
 import { omit } from "ramda";
-import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
-import { useConfig } from "./config";
-import type {
-  PackageManifest,
-  PackagesRegistry,
-} from "./create-packages-registry";
-import { usePackageManager } from "./detect-package-manager";
+import { useConfig } from "../config";
+import { usePackageManager } from "../package-manager";
+import type { PackageManifest, PackagesRegistry } from "../types";
+import { adaptManifestInternalDeps } from "./helpers";
 
 /**
  * Change the target package manifest file, so that:

@@ -1,12 +1,12 @@
 import assert from "node:assert";
 import path from "node:path";
+import { useLogger } from "../../logger";
+import { usePackageManager } from "../../package-manager";
 import {
   inspectValue,
   readTypedJsonSync,
   readTypedYamlSync,
-  useLogger,
-} from "../utils";
-import { usePackageManager } from "./detect-package-manager";
+} from "../../utils";
 
 /**
  * Find the globs that define where the packages are located within the

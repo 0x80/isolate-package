@@ -2,12 +2,8 @@ import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
 import { isEmpty } from "ramda";
-import {
-  inspectValue,
-  readTypedJsonSync,
-  setLogLevel,
-  useLogger,
-} from "../utils";
+import { setLogLevel, useLogger } from "./logger";
+import { inspectValue, readTypedJsonSync } from "./utils";
 
 export type IsolateConfigResolved = {
   buildDirName?: string;

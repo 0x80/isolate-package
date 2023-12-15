@@ -1,26 +1,10 @@
-import type { PackageManifest as PnpmPackageManifest } from "@pnpm/types";
 import fs from "fs-extra";
 import { globSync } from "glob";
 import path from "node:path";
-import { readTypedJson, useLogger } from "../utils";
-import { findPackagesGlobs } from "./find-packages-globs";
-
-export type PackageManifest = PnpmPackageManifest & {
-  packageManager?: string;
-};
-
-export type WorkspacePackageInfo = {
-  absoluteDir: string;
-  /**
-   * The path of the package relative to the workspace root. This is the path
-   * referenced in the lock file.
-   */
-  rootRelativeDir: string;
-  /** The package.json file contents */
-  manifest: PackageManifest;
-};
-
-export type PackagesRegistry = Record<string, WorkspacePackageInfo>;
+import { useLogger } from "../logger";
+import type { PackageManifest, PackagesRegistry } from "../types";
+import { readTypedJson } from "../utils";
+import { findPackagesGlobs } from "./helpers/find-packages-globs";
 
 /**
  * Build a list of all packages in the workspace, depending on the package

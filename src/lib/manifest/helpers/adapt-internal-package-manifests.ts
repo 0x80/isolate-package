@@ -1,10 +1,10 @@
 import fs from "fs-extra";
 import path from "node:path";
 import { omit } from "ramda";
-import type { PackagesRegistry } from "../helpers/create-packages-registry";
+import { useConfig } from "src/lib/config";
+import { usePackageManager } from "src/lib/package-manager";
+import type { PackagesRegistry } from "src/lib/types";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
-import { useConfig } from "./config";
-import { usePackageManager } from "./detect-package-manager";
 
 /**
  * Adapt the manifest files of all the isolated internal packages (excluding the

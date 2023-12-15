@@ -5,23 +5,11 @@ import type {
 import fs from "fs-extra";
 import path from "node:path";
 import { mapObjIndexed } from "ramda";
-import { useLogger } from "../utils";
-import type { PackagesRegistry } from "./create-packages-registry";
-import type { PackageManagerName } from "./detect-package-manager";
-import { usePackageManager } from "./detect-package-manager";
-import { generateNpmLockfile } from "./generate-npm-lockfile";
-import { generatePnpmLockfile } from "./generate-pnpm-lockfile";
-
-export function getLockfileFileName(name: PackageManagerName) {
-  switch (name) {
-    case "pnpm":
-      return "pnpm-lock.yaml";
-    case "yarn":
-      return "yarn.lock";
-    case "npm":
-      return "package-lock.json";
-  }
-}
+import { useLogger } from "../logger";
+import { getLockfileFileName, usePackageManager } from "../package-manager";
+import type { PackagesRegistry } from "../types";
+import { generateNpmLockfile } from "./helpers/generate-npm-lockfile";
+import { generatePnpmLockfile } from "./helpers/generate-pnpm-lockfile";
 
 /** Convert dependency links */
 export function pnpmMapImporter(

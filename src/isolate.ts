@@ -1,35 +1,34 @@
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
-import { adaptInternalPackageManifests } from "./helpers/adapt-internal-package-manifests";
-import { adaptTargetPackageManifest } from "./helpers/adapt-target-package-manifest";
-import type { IsolateConfig } from "./helpers/config";
+import type { IsolateConfig } from "./lib/config";
 import {
   getUserDefinedConfig,
   resolveConfig,
   setUserConfig,
-} from "./helpers/config";
+} from "./lib/config";
+import { processLockfile } from "./lib/lockfile";
+import type { Logger } from "./lib/logger";
+import { setLogLevel, setLogger, useLogger } from "./lib/logger";
 import {
-  createPackagesRegistry,
-  type PackageManifest,
-} from "./helpers/create-packages-registry";
-import { detectPackageManager } from "./helpers/detect-package-manager";
-import { getBuildOutputDir } from "./helpers/get-build-output-dir";
-import { listInternalPackages } from "./helpers/list-internal-packages";
-import { packDependencies } from "./helpers/pack-dependencies";
-import { processBuildOutputFiles } from "./helpers/process-build-output-files";
-import { processLockfile } from "./helpers/process-lockfile";
-import { unpackDependencies } from "./helpers/unpack-dependencies";
-import type { Logger } from "./utils";
+  adaptInternalPackageManifests,
+  adaptTargetPackageManifest,
+} from "./lib/manifest";
+import {
+  getBuildOutputDir,
+  packDependencies,
+  processBuildOutputFiles,
+  unpackDependencies,
+} from "./lib/output";
+import { detectPackageManager } from "./lib/package-manager";
+import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
+import type { PackageManifest } from "./lib/types";
 import {
   getDirname,
   getRootRelativePath,
   isDefined,
   readTypedJson,
-  setLogLevel,
-  setLogger,
-  useLogger,
-} from "./utils";
+} from "./lib/utils";
 
 const __dirname = getDirname(import.meta.url);
 
