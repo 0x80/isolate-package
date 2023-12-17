@@ -1,29 +1,70 @@
 import Arborist from "@npmcli/arborist";
-import fs from "node:fs/promises";
+import fs from "fs-extra";
 import path from "node:path";
 import { useLogger } from "~/lib/logger";
+import type { PackagesRegistry } from "~/lib/types";
+import { getErrorMessage } from "~/lib/utils";
 
 /**
- * Generate an isolated lockfile, based on the contents of node_modules in the
- * monorepo plus the adapted package manifest in the isolate directory.
+ * Generate an isolated / pruned lockfile, based on the contents of installed
+ * node_modules from the monorepo root plus the adapted package manifest in the
+ * isolate directory.
  */
 export async function generateNpmLockfile({
+  workspaceRootDir,
   isolateDir,
+  packagesRegistry,
 }: {
+  workspaceRootDir: string;
   isolateDir: string;
+  packagesRegistry: PackagesRegistry;
 }) {
   const log = useLogger();
 
-  log.debug("Generating NPM lockfile...");
+  log.info("Generating NPM lockfile...");
 
-  const arborist = new Arborist({ path: isolateDir });
+  const origRootNodeModulesPath = path.join(workspaceRootDir, "node_modules");
+  const tempRootNodeModulesPath = path.join(isolateDir, "node_modules");
 
-  const { meta } = await arborist.buildIdealTree();
-  meta?.commit();
+  if (!fs.existsSync(origRootNodeModulesPath)) {
+    throw new Error(
+      `Failed to find node_modules at ${origRootNodeModulesPath}`
+    );
+  }
 
-  const lockfilePath = path.join(isolateDir, "package-lock.json");
+  /** @todo Make option to move instead of copy */
+  log.debug(`Temporarily moving node_modules to the isolate output`);
 
-  await fs.writeFile(lockfilePath, String(meta));
+  let hasMovedNodeModules = false;
+  try {
+    await fs.move(origRootNodeModulesPath, tempRootNodeModulesPath);
+    hasMovedNodeModules = true;
 
-  log.debug("Created lockfile at", lockfilePath);
+    const internalPackageNames = Object.keys(packagesRegistry);
+
+    const arborist = new Arborist({ path: isolateDir });
+
+    const { meta } = await arborist.buildIdealTree({
+      rm: internalPackageNames,
+    });
+
+    meta?.commit();
+
+    const lockfilePath = path.join(isolateDir, "package-lock.json");
+
+    await fs.writeFile(lockfilePath, String(meta));
+
+    log.debug("Created lockfile at", lockfilePath);
+  } catch (err) {
+    log.error(getErrorMessage(err));
+    /**
+     * If lockfile creation fails we can technically still continue with the
+     * rest. Not sure if that is desirable.
+     */
+  } finally {
+    if (hasMovedNodeModules) {
+      log.debug(`Restoring node_modules to the workspace root`);
+      await fs.move(tempRootNodeModulesPath, origRootNodeModulesPath);
+    }
+  }
 }
