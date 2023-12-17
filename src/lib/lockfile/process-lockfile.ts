@@ -79,7 +79,6 @@ export async function processLockfile({
       await generateNpmLockfile({
         workspaceRootDir,
         isolateDir,
-        packagesRegistry,
       });
 
       break;

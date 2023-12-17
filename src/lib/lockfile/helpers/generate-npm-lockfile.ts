@@ -2,7 +2,6 @@ import Arborist from "@npmcli/arborist";
 import fs from "fs-extra";
 import path from "node:path";
 import { useLogger } from "~/lib/logger";
-import type { PackagesRegistry } from "~/lib/types";
 import { getErrorMessage } from "~/lib/utils";
 
 /**
@@ -13,11 +12,9 @@ import { getErrorMessage } from "~/lib/utils";
 export async function generateNpmLockfile({
   workspaceRootDir,
   isolateDir,
-  packagesRegistry,
 }: {
   workspaceRootDir: string;
   isolateDir: string;
-  packagesRegistry: PackagesRegistry;
 }) {
   const log = useLogger();
 
@@ -32,7 +29,6 @@ export async function generateNpmLockfile({
     );
   }
 
-  /** @todo Make option to move instead of copy */
   log.debug(`Temporarily moving node_modules to the isolate output`);
 
   let hasMovedNodeModules = false;
@@ -40,13 +36,9 @@ export async function generateNpmLockfile({
     await fs.move(origRootNodeModulesPath, tempRootNodeModulesPath);
     hasMovedNodeModules = true;
 
-    const internalPackageNames = Object.keys(packagesRegistry);
-
     const arborist = new Arborist({ path: isolateDir });
 
-    const { meta } = await arborist.buildIdealTree({
-      rm: internalPackageNames,
-    });
+    const { meta } = await arborist.buildIdealTree();
 
     meta?.commit();
 
