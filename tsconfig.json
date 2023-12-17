@@ -10,7 +10,10 @@
     "skipLibCheck": true,
     "rootDir": "src",
     "outDir": "dist",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/*"]
+    }
   },
   "include": ["src"],
   "exclude": ["dist", "node_modules"]

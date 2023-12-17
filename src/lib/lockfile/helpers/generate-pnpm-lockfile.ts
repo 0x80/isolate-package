@@ -6,9 +6,9 @@ import {
 import assert from "node:assert";
 import path from "node:path";
 import { pick } from "ramda";
-import { useConfig } from "src/lib/config";
-import { useLogger } from "src/lib/logger";
-import type { PackagesRegistry } from "src/lib/types";
+import { useConfig } from "~/lib/config";
+import { useLogger } from "~/lib/logger";
+import type { PackagesRegistry } from "~/lib/types";
 import { pnpmMapImporter } from "../process-lockfile";
 
 export async function generatePnpmLockfile({
@@ -27,7 +27,7 @@ export async function generatePnpmLockfile({
   const { includeDevDependencies } = useConfig();
   const log = useLogger();
 
-  log.debug("Generating PNPM lockfile...");
+  log.info("Generating PNPM lockfile...");
 
   const lockfile = await readWantedLockfile(workspaceRootDir, {
     ignoreIncompatible: false,

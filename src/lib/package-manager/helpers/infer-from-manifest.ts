@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
-import { useLogger } from "src/lib/logger";
+import { useLogger } from "~/lib/logger";
 import type { PackageManifest } from "../../types";
 import { readTypedJsonSync } from "../../utils";
 import type { PackageManagerName } from "../names";

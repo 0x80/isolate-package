@@ -1,6 +1,6 @@
 import { omit } from "ramda";
-import type { PackageManifest, PackagesRegistry } from "src/lib/types";
-import { filterObjectUndefined } from "src/lib/utils";
+import type { PackageManifest, PackagesRegistry } from "~/lib/types";
+import { filterObjectUndefined } from "~/lib/utils";
 import { patchInternalEntries } from "./patch-internal-entries";
 
 /**
