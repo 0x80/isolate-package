@@ -5,7 +5,6 @@ import type {
 import fs from "fs-extra";
 import path from "node:path";
 import { mapObjIndexed } from "ramda";
-import semver from "semver";
 import { useLogger } from "../logger";
 import { getLockfileFileName, usePackageManager } from "../package-manager";
 import type { PackagesRegistry } from "../types";
@@ -85,7 +84,9 @@ export async function processLockfile({
       break;
     }
     case "yarn": {
-      if (semver.gt(version, "1")) {
+      const versionMajor = parseInt(version.split(".")[0], 10);
+
+      if (versionMajor > 1) {
         log.warn(
           `Only Yarn classic (v1) is currently supported. Omitting lockfile from isolate output.`
         );
