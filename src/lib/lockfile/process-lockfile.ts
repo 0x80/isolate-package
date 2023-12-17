@@ -2,14 +2,13 @@ import type {
   ProjectSnapshot,
   ResolvedDependencies,
 } from "@pnpm/lockfile-file";
-import fs from "fs-extra";
-import path from "node:path";
 import { mapObjIndexed } from "ramda";
 import { useLogger } from "../logger";
-import { getLockfileFileName, usePackageManager } from "../package-manager";
+import { usePackageManager } from "../package-manager";
 import type { PackagesRegistry } from "../types";
 import { generateNpmLockfile } from "./helpers/generate-npm-lockfile";
 import { generatePnpmLockfile } from "./helpers/generate-pnpm-lockfile";
+import { generateYarnLockfile } from "./helpers/generate-yarn-lockfile";
 
 /** Convert dependency links */
 export function pnpmMapImporter(
@@ -72,8 +71,6 @@ export async function processLockfile({
 
   const { name, version } = usePackageManager();
 
-  const fileName = getLockfileFileName(name);
-
   switch (name) {
     case "npm": {
       await generateNpmLockfile({
@@ -93,11 +90,10 @@ export async function processLockfile({
         break;
       }
 
-      const lockfileSrcPath = path.join(workspaceRootDir, fileName);
-      const lockfileDstPath = path.join(isolateDir, fileName);
-
-      fs.copyFileSync(lockfileSrcPath, lockfileDstPath);
-      log.debug("Copied lockfile to", lockfileDstPath);
+      await generateYarnLockfile({
+        workspaceRootDir,
+        isolateDir,
+      });
 
       break;
     }
