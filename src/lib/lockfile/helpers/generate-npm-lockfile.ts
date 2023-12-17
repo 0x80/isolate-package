@@ -23,16 +23,17 @@ export async function generateNpmLockfile({
   const origRootNodeModulesPath = path.join(workspaceRootDir, "node_modules");
   const tempRootNodeModulesPath = path.join(isolateDir, "node_modules");
 
-  if (!fs.existsSync(origRootNodeModulesPath)) {
-    throw new Error(
-      `Failed to find node_modules at ${origRootNodeModulesPath}`
-    );
-  }
-
-  log.debug(`Temporarily moving node_modules to the isolate output`);
-
   let hasMovedNodeModules = false;
+
   try {
+    if (!fs.existsSync(origRootNodeModulesPath)) {
+      throw new Error(
+        `Failed to find node_modules at ${origRootNodeModulesPath}`
+      );
+    }
+
+    log.debug(`Temporarily moving node_modules to the isolate output`);
+
     await fs.move(origRootNodeModulesPath, tempRootNodeModulesPath);
     hasMovedNodeModules = true;
 
@@ -48,7 +49,7 @@ export async function generateNpmLockfile({
 
     log.debug("Created lockfile at", lockfilePath);
   } catch (err) {
-    log.error(getErrorMessage(err));
+    log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
     /**
      * If lockfile creation fails we can technically still continue with the
      * rest. Not sure if that is desirable.

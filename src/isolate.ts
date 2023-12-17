@@ -2,11 +2,7 @@ import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
 import type { IsolateConfig } from "./lib/config";
-import {
-  getUserDefinedConfig,
-  resolveConfig,
-  setUserConfig,
-} from "./lib/config";
+import { resolveConfig, setUserConfig } from "./lib/config";
 import { processLockfile } from "./lib/lockfile";
 import type { Logger } from "./lib/logger";
 import { setLogLevel, setLogger, useLogger } from "./lib/logger";
@@ -23,12 +19,7 @@ import {
 import { detectPackageManager } from "./lib/package-manager";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
-import {
-  getDirname,
-  getRootRelativePath,
-  isDefined,
-  readTypedJson,
-} from "./lib/utils";
+import { getDirname, getRootRelativePath, readTypedJson } from "./lib/utils";
 
 const __dirname = getDirname(import.meta.url);
 
@@ -168,18 +159,18 @@ export async function isolate(
     isolateDir
   );
 
-  const userDefinedConfig = getUserDefinedConfig();
+  // const userDefinedConfig = getUserDefinedConfig();
 
-  /**
-   * If the user has not explicitly set the excludeLockfile option, we will
-   * exclude the lockfile for Yarn, because we still need to figure out how to
-   * generate the isolated lockfile for it.
-   */
-  if (!isDefined(userDefinedConfig.excludeLockfile)) {
-    if (packageManager.name === "yarn") {
-      config.excludeLockfile = true;
-    }
-  }
+  // /**
+  //  * If the user has not explicitly set the excludeLockfile option, we will
+  //  * exclude the lockfile for Yarn, because we still need to figure out how to
+  //  * generate the isolated lockfile for it.
+  //  */
+  // if (!isDefined(userDefinedConfig.excludeLockfile)) {
+  //   if (packageManager.name === "yarn") {
+  //     config.excludeLockfile = true;
+  //   }
+  // }
 
   if (config.excludeLockfile) {
     log.warn("Excluding the lockfile from the isolate output");

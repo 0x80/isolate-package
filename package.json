@@ -1,6 +1,6 @@
 {
   "name": "isolate-package",
-  "version": "1.7.1",
+  "version": "1.8.0-1",
   "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
   "author": "Thijs Koerselman",
   "license": "MIT",
@@ -52,6 +52,7 @@
     "outdent": "^0.8.0",
     "ramda": "^0.29.1",
     "rename-overwrite": "^4.0.4",
+    "semver": "^7.5.4",
     "source-map-support": "^0.5.21",
     "strip-json-comments": "^5.0.1",
     "tar-fs": "^2.1.1",
@@ -63,6 +64,7 @@
     "@types/lodash-es": "^4.17.7",
     "@types/node": "^18.16.2",
     "@types/ramda": "^0.29.9",
+    "@types/semver": "^7.5.6",
     "@types/source-map-support": "^0.5.6",
     "@types/tar-fs": "^2.0.1",
     "eslint-config-0x80": "^0.0.0",

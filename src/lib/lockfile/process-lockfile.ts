@@ -5,6 +5,7 @@ import type {
 import fs from "fs-extra";
 import path from "node:path";
 import { mapObjIndexed } from "ramda";
+import semver from "semver";
 import { useLogger } from "../logger";
 import { getLockfileFileName, usePackageManager } from "../package-manager";
 import type { PackagesRegistry } from "../types";
@@ -70,7 +71,7 @@ export async function processLockfile({
 }) {
   const log = useLogger();
 
-  const { name } = usePackageManager();
+  const { name, version } = usePackageManager();
 
   const fileName = getLockfileFileName(name);
 
@@ -84,11 +85,19 @@ export async function processLockfile({
       break;
     }
     case "yarn": {
+      if (semver.gt(version, "1")) {
+        log.warn(
+          `Only Yarn classic (v1) is currently supported. Omitting lockfile from isolate output.`
+        );
+        break;
+      }
+
       const lockfileSrcPath = path.join(workspaceRootDir, fileName);
       const lockfileDstPath = path.join(isolateDir, fileName);
 
       fs.copyFileSync(lockfileSrcPath, lockfileDstPath);
       log.debug("Copied lockfile to", lockfileDstPath);
+
       break;
     }
     case "pnpm": {
