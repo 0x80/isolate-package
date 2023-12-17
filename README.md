@@ -105,7 +105,7 @@ If you are here to simplify and improve your Firebase deployments check out the
 
 ## Troubleshooting
 
-If something is not working as expected, add a `isolate.config.json` file, and
+If something is not working as expected, add an `isolate.config.json` file, and
 set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
 console.
 
@@ -114,10 +114,7 @@ by setting `DEBUG_ISOLATE_CONFIG=true` before you execute `isolate`.
 
 When debugging Firebase deployment issues it might be convenient to trigger the
 isolate process manually with `npx isolate` and possibly
-`DEBUG_ISOLATE_CONFIG=true npx isolate`
-
-If you do not pass in any configuration, the function will try to read a
-`isolate.config.json` file from disk. You can set
+`DEBUG_ISOLATE_CONFIG=true npx isolate`.
 
 ## Prerequisites
 
@@ -224,16 +221,11 @@ setting to specify where the build output files are located.
 
 ### excludeLockfile
 
-Type: `boolean`, default: Depends on package manager.
+Type: `boolean`, default: Depends on package manager. Forces exclusion of the
+lockfile as part of the deployment.
 
-**Deprecated** This option exists from the time that lockfiles were not
-supported for all package managers. You should not need this escape hatch
-anymore.
-
-Sets the inclusion or exclusion of the lockfile as part of the deployment.
-
-Isolated / pruned lockfiles are generated for NPM, PNPM and Yarn v1 (classic)
-based on the existing root lockfile, and they are included by default.
+**Deprecated** This option exists from a time where lockfiles were not supported
+for all package managers. You should not need this escape hatch anymore.
 
 For more information see [lockfiles](#lockfiles).
 
@@ -364,6 +356,9 @@ await isolate({
   logger: customLogger,
 });
 ```
+
+If no configuration is passed in, the process will try to read
+`isolate.config.json` from the current working directory.
 
 ## The internal packages strategy
 
