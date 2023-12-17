@@ -24,7 +24,8 @@
     ".": "./dist/index.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "bin": {
     "isolate": "dist/isolate-bin.mjs"
