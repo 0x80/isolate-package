@@ -2,21 +2,18 @@
 
 <!-- TOC -->
 
+- [TLDR](#tldr)
 - [Introduction](#introduction)
 - [Features](#features)
 - [Motivation](#motivation)
-- [Install](#install)
-- [Usage as binary](#usage-as-binary)
-- [Usage as function](#usage-as-function)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Troubleshooting](#troubleshooting)
 - [Prerequisites](#prerequisites)
   - [Define shared dependencies in the package manifest](#define-shared-dependencies-in-the-package-manifest)
   - [Define "version" field in each package manifest](#define-version-field-in-each-package-manifest)
   - [Define "files" field in each package manifest](#define-files-field-in-each-package-manifest)
   - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
-- [Working with Firebase](#working-with-firebase)
-  - [A Quick Start](#a-quick-start)
-  - [Deploying from multiple packages](#deploying-from-multiple-packages)
-  - [Deploying from the root](#deploying-from-the-root)
 - [Configuration Options](#configuration-options)
   - [buildDirName](#builddirname)
   - [excludeLockfile](#excludelockfile)
@@ -27,36 +24,38 @@
   - [tsconfigPath](#tsconfigpath)
   - [workspacePackages](#workspacepackages)
   - [workspaceRoot](#workspaceroot)
-- [Troubleshooting](#troubleshooting)
 - [Lockfiles](#lockfiles)
-  - [NPM and PNPM](#npm-and-pnpm)
-  - [Yarn](#yarn)
-  - [A Partial Workaround](#a-partial-workaround)
-- [Different Package Managers](#different-package-managers)
-- [Using the Firebase Functions Emulator](#using-the-firebase-functions-emulator)
+- [API](#api)
 - [The internal packages strategy](#the-internal-packages-strategy)
+- [Working with Firebase](#working-with-firebase)
+  - [A Quick Start](#a-quick-start)
+  - [Deploying from multiple packages](#deploying-from-multiple-packages)
+  - [Deploying from the root](#deploying-from-the-root)
+  - [Using the Firebase Functions Emulator](#using-the-firebase-functions-emulator)
 
 <!-- /TOC -->
+
+## TLDR
+
+Run `npx isolate-package isolate` from the monorepo package you would like to
+isolate.
 
 ## Introduction
 
 Isolate a monorepo workspace package to form a self-contained deployable package
 that includes internal dependencies and a compatible lockfile. The internal
-packages structure is preserved, so dependencies are not bundled.
+packages structure is preserved. Code is not bundled.
 
 ## Features
 
-- Isolate a monorepo package with its internal dependencies to form a
-  self-contained installable package.
-- Deterministic deployment by generating an isolated lockfile based on the
-  existing monorepo lockfile. Currently this feature is only supported for NPM
-  and PNPM. See [lockfiles](#lockfiles) for more information.
+- Isolates a monorepo package with its internal dependencies to form a
+  self-contained deployable directory.
+- Generates an isolated / pruned lockfile based on the existing monorepo
+  lockfile. See [lockfiles](#lockfiles) for more information.
 - Zero-config for the vast majority of use-cases, with no manual steps involved.
 - Support for PNPM, NPM and Yarn.
-- Compatible with the Firebase tools CLI, incl 1st gen and 2nd gen Firebase
-  functions deployments.
-- Uses a pack/unpack approach to isolate only those files that would have been
-  part of a published NPM package.
+- Compatible with the Firebase tools CLI, incl 1st and 2nd gen Firebase
+  functions.
 - Isolates internal workspace dependencies recursively. If package A depends on
   internal package B which depends on internal package C, all of them will be
   included.
@@ -65,7 +64,7 @@ packages structure is preserved, so dependencies are not bundled.
 ## Motivation
 
 This solution was born from a desire to deploy to
-[Firebase](https://firebase.google.com/) from a monorepo without requiring
+[Firebase](https://firebase.google.com/) from a monorepo without resorting to
 custom shell scripts and other hacks. Here is
 [an article](https://thijs-koerselman.medium.com/deploy-to-firebase-without-the-hacks-e685de39025e)
 explaining the issue in more detail.
@@ -76,20 +75,19 @@ related to Firebase.
 
 > !! There is now
 > [a fork of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate),
-> where isolate-package is integrated. It is preferred because it simplifies the
-> setup and allows the isolation to run only as part of the deploy process,
+> where isolate-package is integrated. This is preferred because it simplifies
+> the setup and allows the isolation to run only as part of the deploy process,
 > preserving live code updates when running the local Firebase emulators.
 
-## Install
+## Installation
 
-Run `pnpm install isolate-package --dev` or the equivalent for `yarn` or `npm`.
+Run `pnpm install isolate-package --dev` or the equivalent for `npm` or `yarn`.
 
 I recommend using `pnpm` for
-[a number of reasons](https://pnpm.io/feature-comparison). Also, at the time of
-writing it is the only package manager for which isolate-package can generate a
-lockfile. For more information see [lockfiles](#lockfiles).
+[a number of reasons](https://pnpm.io/feature-comparison). In my experience it
+is the best package manager, especially for monorepo setups.
 
-## Usage as binary
+## Usage
 
 This package exposes a binary called `isolate`.
 
@@ -105,21 +103,18 @@ By default the isolated output will become available at `./isolate`.
 If you are here to simplify and improve your Firebase deployments check out the
 [Firebase quick start guide](#a-quick-start).
 
-## Usage as function
+## Troubleshooting
 
-Alternatively, `isolate` can be integrated in other programs by importing it as
-a function. You optionally pass it a some user configuration and possibly a
-logger to handle any output messages should you need to write them to a
-different location as the standard `node:console`.
+If something is not working as expected, add a `isolate.config.json` file, and
+set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
+console.
 
-```ts
-import { isolate } from "isolate-package";
+In addition define an environment variable to debug the configuration being used
+by setting `DEBUG_ISOLATE_CONFIG=true` before you execute `isolate`.
 
-await isolate({
-  config: { logLevel: "debug" },
-  logger: customLogger,
-});
-```
+When debugging Firebase deployment issues it might be convenient to trigger the
+isolate process manually with `npx isolate` and possibly
+`DEBUG_ISOLATE_CONFIG=true npx isolate`
 
 If you do not pass in any configuration, the function will try to read a
 `isolate.config.json` file from disk. You can set
@@ -163,10 +158,9 @@ generate part of the packed filename. A personal preference is to set it to
 
 ### Define "files" field in each package manifest
 
-> NOTE: This step is not required if you use the [internal packages > > > > > >
->
-> > strategy](#the-internal-packages-strategy but you could set it to `["src"]`
-> > instead of `["dist"]`.
+> NOTE: This step is not required if you use the
+> [internal packages strategy](#the-internal-packages-strategy) but you could
+> set it to `["src"]` instead of `["dist"]`.
 
 The isolate process uses (p)npm `pack` to extract files from package
 directories, just like publishing a package would.
@@ -207,12 +201,210 @@ You can, however, declare multiple workspace packages directories. Personally, I
 prefer to use `["packages/*", "apps/*", "services/*"]`. It is only the structure
 inside them that should be flat.
 
+## Configuration Options
+
+For most users no configuration should be necessary.
+
+You can configure the isolate process by placing a `isolate.config.json` file in
+the package that you want to isolate, except when you're
+[deploying to Firebase from the root of the workspace](#deploying-firebase-from-the-root).
+
+For the config file to be picked up, you will have to execute `isolate` from the
+same location, as it uses the current working directory.
+
+Below you will find a description of every available option.
+
+### buildDirName
+
+Type: `string | undefined`, default: `undefined`
+
+The name of the build output directory name. When undefined it is automatically
+detected via `tsconfig.json`. When you are not using Typescript you can use this
+setting to specify where the build output files are located.
+
+### excludeLockfile
+
+Type: `boolean`, default: Depends on package manager.
+
+**Deprecated** This option exists from the time that lockfiles were not
+supported for all package managers. You should not need this escape hatch
+anymore.
+
+Sets the inclusion or exclusion of the lockfile as part of the deployment.
+
+Isolated / pruned lockfiles are generated for NPM, PNPM and Yarn v1 (classic)
+based on the existing root lockfile, and they are included by default.
+
+For more information see [lockfiles](#lockfiles).
+
+### includeDevDependencies
+
+Type: `boolean`, default: `false`
+
+By default devDependencies are ignored and stripped from the isolated output
+`package.json` files. If you enable this the devDependencies will be included
+and isolated just like the production dependencies.
+
+### isolateDirName
+
+Type: `string`, default: `"isolate"`
+
+The name of the isolate output directory.
+
+### logLevel
+
+Type: `"info" | "debug" | "warn" | "error"`, default: `"info"`.
+
+Because the configuration loader depends on this setting, its output is not
+affected by this setting. If you want to debug the configuration set
+`DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
+
+### targetPackagePath
+
+Type: `string`, default: `undefined`
+
+Only when you decide to place the isolate configuration in the root of the
+monorepo, you use this setting to point it to the target you want to isolate,
+e.g. `./packages/my-firebase-package`.
+
+If this option is used the `workspaceRoot` setting will be ignored and assumed
+to be the current working directory.
+
+### tsconfigPath
+
+Type: `string`, default: `"./tsconfig.json"`
+
+The path to the `tsconfig.json` file relative to the package you want to
+isolate. The tsconfig is only used for reading the `compilerOptions.outDir`
+setting. If no tsconfig is found, possibly because you are not using Typescript
+in your project, the process will fall back to the `buildDirName` setting.
+
+### workspacePackages
+
+Type: `string[] | undefined`, default: `undefined`
+
+When workspacePackages is not defined, `isolate` will try to find the packages
+in the workspace by looking up the settings in `pnpm-workspace.yaml` or
+`package.json` files depending on the detected package manager.
+
+In case this fails, you can override this process by specifying globs manually.
+For example `"workspacePackages": ["packages/*", "apps/*"]`. Paths are relative
+from the root of the workspace.
+
+### workspaceRoot
+
+Type: `string`, default: `"../.."`
+
+The relative path to the root of the workspace / monorepo. In a typical setup
+you will have a `packages` directory and possibly also an `apps` and a
+`services` directory, all of which contain packages. So any package you would
+want to isolate is located 2 levels up from the root.
+
+For example
+
+```
+packages
+├─ backend
+│  └─ package.json
+└─ ui
+   └─ package.json
+apps
+├─ admin
+│  └─ package.json
+└─ web
+   └─ package.json
+services
+└─ api
+   └─ package.json
+
+```
+
+When you use the `targetPackagePath` option, this setting will be ignored.
+
+## Lockfiles
+
+A lockfile in a monorepo describes the dependencies of all packages, and does
+not translate to the isolated output without altering it.
+
+If you copying the original lockfile and deploy it with the isolated code, a CI
+environment will not accept the lockfile. It is also not possibly to generate a
+brand new lockfile from the isolated code by mimicking a fresh install, because
+versions would be able to diverge and thus negate the whole point of having a
+lockfile in the first place.
+
+For this to work, we need to re-generate or prune the original lockfile to keep
+the versions of the original but only describe the dependencies of the code in
+the isolated output.
+
+Since every package manager works completely different in this regard, this part
+of the puzzle had to be solved in a different ways for each of them, and not all
+are supported yet.
+
+At the moment lockfiles for the following package managers are supported:
+
+- NPM
+- PNPM
+- Yarn Classic (v1)
+
+More detailed information on the implementation can be found in the
+[additional docs](./docs/lockfiles.md).
+
+## API
+
+Alternatively, `isolate` can be integrated in other programs by importing it as
+a function. You optionally pass it a some user configuration and possibly a
+logger to handle any output messages should you need to write them to a
+different location as the standard `node:console`.
+
+```ts
+import { isolate } from "isolate-package";
+
+await isolate({
+  config: { logLevel: "debug" },
+  logger: customLogger,
+});
+```
+
+## The internal packages strategy
+
+An alternative approach to using internal dependencies in a Typescript monorepo
+is
+[the internal packages strategy](https://turbo.build/blog/you-might-not-need-typescript-project-references),
+in which the package manifest entries point directly to Typescript source files,
+to omit intermediate build steps. The approach is compatible with
+isolate-package and showcased in
+[my example monorepo setup](https://github.com/0x80/mono-ts)
+
+In summary this is how it works:
+
+1. The package to be deployed lists its internal dependencies as usual, but the
+   package manifests of those dependencies point directly to the Typescript
+   source (and types).
+2. You configure the bundler of your target package to include the source code
+   for those internal packages in its output bundle. In the case of TSUP for the
+   [API service in the mono-ts](https://github.com/0x80/mono-ts/blob/main/services/api/tsup.config.ts)
+   that configuration is: `noExternal: ["@mono/common"]`
+3. When `isolate` runs, it does the same thing as always. It detects the
+   internal packages, copies them to the isolate output folder and adjusts any
+   links.
+4. When deploying to Firebase, the cloud pipeline will treat the package
+   manifest as usual, which installs the listed dependencies and any
+   dependencies listed in the linked internal package manifests.
+
+Steps 3 and 4 are no different from a traditional setup.
+
+Note that the manifests for the internal packages in the output will still point
+to the Typescript source files, but since the shared code was embedded in the
+bundle, they will never be referenced via import statements. So the manifest the
+entry declarations are never used. The reason the packages are included in the
+isolated output is to instruct package manager to install their dependencies.
+
 ## Working with Firebase
 
 > !! There is now
 > [a fork of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate),
-> where isolate-package is integrated. It is preferred because it simplifies the
-> setup and allows the isolation to run only as part of the deploy process,
+> where isolate-package is integrated. This is preferred because it simplifies
+> the setup and allows the isolation to run only as part of the deploy process,
 > preserving live code updates when running the local Firebase emulators.
 
 ### A Quick Start
@@ -313,200 +505,7 @@ The Firebase configuration should then look something like this:
 }
 ```
 
-## Configuration Options
-
-For most users no configuration should be necessary.
-
-You can configure the isolate process by placing a `isolate.config.json` file in
-the package that you want to isolate, except when you're
-[deploying to Firebase from the root of the workspace](#deploying-firebase-from-the-root).
-
-For the config file to be picked up, you will have to execute `isolate` from the
-same location, as it uses the current working directory.
-
-Below you will find a description of every available option.
-
-### buildDirName
-
-Type: `string | undefined`, default: `undefined`
-
-The name of the build output directory name. When undefined it is automatically
-detected via `tsconfig.json`. When you are not using Typescript you can use this
-setting to specify where the build output files are located.
-
-### excludeLockfile
-
-Type: `boolean`, default: Depends on package manager.
-
-Sets the inclusion or exclusion of the lockfile as part of the deployment.
-
-Isolated NPM and PNPM lockfiles are generated based on the existing root
-lockfile, and they are included by default.
-
-The lockfile for Yarn is excluded by default. For more information see
-[lockfiles](#lockfiles).
-
-### includeDevDependencies
-
-Type: `boolean`, default: `false`
-
-By default devDependencies are ignored and stripped from the isolated output
-`package.json` files. If you enable this the devDependencies will be included
-and isolated just like the production dependencies.
-
-### isolateDirName
-
-Type: `string`, default: `"isolate"`
-
-The name of the isolate output directory.
-
-### logLevel
-
-Type: `"info" | "debug" | "warn" | "error"`, default: `"info"`.
-
-Because the configuration loader depends on this setting, its output is not
-affected by this setting. If you want to debug the configuration set
-`DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
-
-### targetPackagePath
-
-Type: `string`, default: `undefined`
-
-Only when you decide to place the isolate configuration in the root of the
-monorepo, you use this setting to point it to the target you want to isolate,
-e.g. `./packages/my-firebase-package`.
-
-If this option is used the `workspaceRoot` setting will be ignored and assumed
-to be the current working directory.
-
-### tsconfigPath
-
-Type: `string`, default: `"./tsconfig.json"`
-
-The path to the `tsconfig.json` file relative to the package you want to
-isolate. The tsconfig is only used for reading the `compilerOptions.outDir`
-setting. If no tsconfig is found, possibly because you are not using Typescript
-in your project, the process will fall back to the `buildDirName` setting.
-
-### workspacePackages
-
-Type: `string[] | undefined`, default: `undefined`
-
-When workspacePackages is not defined, `isolate` will try to find the packages
-in the workspace by looking up the settings in `pnpm-workspace.yaml` or
-`package.json` files depending on the detected package manager.
-
-In case this fails, you can override this process by specifying globs manually.
-For example `"workspacePackages": ["packages/*", "apps/*"]`. Paths are relative
-from the root of the workspace.
-
-### workspaceRoot
-
-Type: `string`, default: `"../.."`
-
-The relative path to the root of the workspace / monorepo. In a typical setup
-you will have a `packages` directory and possibly also an `apps` and a
-`services` directory, all of which contain packages. So any package you would
-want to isolate is located 2 levels up from the root.
-
-For example
-
-```
-packages
-├─ backend
-│  └─ package.json
-└─ ui
-   └─ package.json
-apps
-├─ admin
-│  └─ package.json
-└─ web
-   └─ package.json
-services
-└─ api
-   └─ package.json
-
-```
-
-When you use the `targetPackagePath` option, this setting will be ignored.
-
-## Troubleshooting
-
-If something is not working as expected, add a `isolate.config.json` file, and
-set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
-console.
-
-In addition define an environment variable to debug the configuration being used
-by setting `DEBUG_ISOLATE_CONFIG=true` before you execute `isolate`.
-
-When debugging Firebase deployment issues it might be convenient to trigger the
-isolate process manually with `npx isolate` and possibly
-`DEBUG_ISOLATE_CONFIG=true npx isolate`
-
-## Lockfiles
-
-A lockfile in a monorepo describes the dependencies of all packages, and does
-not necessarily translate to the isolated output without altering it. Different
-package managers use very different formats, and it might not be enough to do a
-find/replace on some paths.
-
-It is also not possibly to generate a brand new lockfile from the isolated code
-by mimicking a fresh install, because versions would be able to diverge and thus
-it would negate the whole point of having a lockfile in the first place.
-
-What we need is to re-generate a lockfile for the isolated output based on the
-versions that are currently installed and locked in the monorepo lockfile.
-
-### NPM and PNPM
-
-For NPM and PNPM a lockfile is generated and included in the isolated output.
-
-@TODO write about how it works an how we got there.
-
-If you do somehow run into a problem related to the lockfile, you can opt-out of
-this by setting `excludeLockfile: true` in the `isolate.config.json`
-configuration file.
-
-### Yarn
-
-For now, Yarn lockfiles are simply copied over to the isolated output. I believe
-I have seen Firebase deployments work with it, but it is likely you will run
-into an error.
-
-If you experience an issue, you can choose to exclude the lockfile from
-deployment by setting `"excludeLockfile": false` in your isolate.config.json
-file, or make the move to PNPM (recommended).
-
-I am not aware of any code in the official Yarn repository for re-generating a
-lockfile, and I am reluctant to work on this feature based on user-land code.
-
-Personally, I do not think Yarn is very relevant anymore in 2023 and I
-personally recommend switching to PNPM.
-
-### A Partial Workaround
-
-If you can not use a lockfile, because you depend on Yarn, a partial workaround
-would be to declare dependencies using exact versions in your package manifest.
-This doesn't prevent your dependencies-dependencies from installing newer
-versions, like a lockfile would, but at least you minimize the risk of things
-breaking.
-
-## Different Package Managers
-
-Isolate package has been designed to work with all package managers, although
-[PNPM is recommended](https://pnpm.io/feature-comparison), especially for
-monorepo environments.
-
-The isolation process will infer the package manager name and version from the
-type of lockfile found and the version that the OS reports for the installed
-executable. This information is then used to change some of its behavior. For
-example, the PNPM `pack` process is preferred over the default NPM `pack` if
-PNPM in used, simply because it seems to be much faster.
-
-The Firebase cloud deploy pipeline will use the package manager that matches
-lockfile that was found in the deployed package.
-
-## Using the Firebase Functions Emulator
+### Using the Firebase Functions Emulator
 
 The Firebase functions emulator runs on the code that firebase.json `source`
 points to. Unfortunately, this is the same field as is used for declaring the
@@ -531,37 +530,3 @@ deployment process and the `source` property can still point to the original
 code.
 
 I plan to work on this once isolate-package is bit more mature.
-
-## The internal packages strategy
-
-Recently I changed [my example monorepo setup](https://github.com/0x80/mono-ts)
-to include
-[the internal packages strategy](https://turbo.build/blog/you-might-not-need-typescript-project-references),
-(in which the package manifest entries point directly to TS source files, to
-omit the build step), and I was pleased to discover that the approach is
-compatible with `isolate-packages` with only a single change in configuration.
-
-In summary this is how it works:
-
-1. The package to be deployed lists its internal dependencies as usual, but the
-   package manifests of those dependencies point directly to the Typescript
-   source (and types).
-2. You configure the bundler of your target package to include the source code
-   for those internal packages in its output bundle. In the case of TSUP for the
-   [API service in the mono-ts](https://github.com/0x80/mono-ts/blob/main/services/api/tsup.config.ts)
-   that configuration is: `noExternal: ["@mono/common"]`
-3. When `isolate` runs, it does the exact same thing as always. It will detect
-   the internal packages, copies them to the isolate output folder and adjusts
-   any links.
-4. When deploying to Firebase, the cloud pipeline will treat the package
-   manifest as usual, which installs the listed dependencies and any
-   dependencies listed in the linked internal package manifests.
-
-Steps 3 and 4 are no different from a traditional setup.
-
-Note that the manifests for the internal packages will still point to the
-Typescript source files, but since the shared code was embedded in the deployed
-bundle, they will never be referenced via import statements and as a result the
-entry points remain unused. The only reason the packages are included in the
-isolated output is so that the package manager knows what dependencies to
-install.

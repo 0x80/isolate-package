@@ -2,14 +2,13 @@ import type {
   ProjectSnapshot,
   ResolvedDependencies,
 } from "@pnpm/lockfile-file";
-import fs from "fs-extra";
-import path from "node:path";
 import { mapObjIndexed } from "ramda";
 import { useLogger } from "../logger";
-import { getLockfileFileName, usePackageManager } from "../package-manager";
+import { usePackageManager } from "../package-manager";
 import type { PackagesRegistry } from "../types";
 import { generateNpmLockfile } from "./helpers/generate-npm-lockfile";
 import { generatePnpmLockfile } from "./helpers/generate-pnpm-lockfile";
+import { generateYarnLockfile } from "./helpers/generate-yarn-lockfile";
 
 /** Convert dependency links */
 export function pnpmMapImporter(
@@ -70,9 +69,7 @@ export async function processLockfile({
 }) {
   const log = useLogger();
 
-  const { name } = usePackageManager();
-
-  const fileName = getLockfileFileName(name);
+  const { name, version } = usePackageManager();
 
   switch (name) {
     case "npm": {
@@ -84,11 +81,20 @@ export async function processLockfile({
       break;
     }
     case "yarn": {
-      const lockfileSrcPath = path.join(workspaceRootDir, fileName);
-      const lockfileDstPath = path.join(isolateDir, fileName);
+      const versionMajor = parseInt(version.split(".")[0], 10);
 
-      fs.copyFileSync(lockfileSrcPath, lockfileDstPath);
-      log.debug("Copied lockfile to", lockfileDstPath);
+      if (versionMajor > 1) {
+        log.warn(
+          `Only Yarn classic (v1) is currently supported. Omitting lockfile from isolate output.`
+        );
+        break;
+      }
+
+      await generateYarnLockfile({
+        workspaceRootDir,
+        isolateDir,
+      });
+
       break;
     }
     case "pnpm": {

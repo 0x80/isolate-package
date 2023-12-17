@@ -1,6 +1,6 @@
 {
   "name": "isolate-package",
-  "version": "1.7.1",
+  "version": "1.8.0-3",
   "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
   "author": "Thijs Koerselman",
   "license": "MIT",
@@ -24,7 +24,8 @@
     ".": "./dist/index.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "bin": {
     "isolate": "dist/isolate-bin.mjs"
