@@ -31,8 +31,8 @@ export async function adaptInternalPackageManifests(
        * contains something that is not referenced in the lockfile.
        */
       const inputManifest = includeDevDependencies
-        ? omit(["peerDependencies"], manifest)
-        : omit(["devDependencies", "peerDependencies"], manifest);
+        ? omit(["xxpeerDependencies"], manifest)
+        : omit(["devDependencies", "xxpeerDependencies"], manifest);
 
       const outputManifest =
         packageManager.name === "pnpm"
