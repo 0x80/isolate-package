@@ -1,5 +1,16 @@
 # Firebase
 
+<!-- TOC -->
+
+- [Motivation](#motivation)
+- [Example](#example)
+- [Quick Start](#quick-start)
+- [Firebase Tools With Isolate](#firebase-tools-with-isolate)
+- [Deploying from multiple packages](#deploying-from-multiple-packages)
+- [Deploying from the root](#deploying-from-the-root)
+
+<!-- /TOC -->
+
 > !! There is
 > [a fork of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate),
 > where isolate-package is integrated.
@@ -16,28 +27,14 @@ There is nothing Firebase-specific to this solution and there should be other
 use-cases for it, but that is why this documentation contains some instructions
 related to Firebase.
 
-## Firebase Tools With Isolate
-
-I recommend using
-[the fork](https://github.com/0x80/firebase-tools-with-isolate) for monorepos
-until it is officially integrated. It not only simplifies the setup but more
-importantly allows `isolate` to run as an integral part of the deployment
-process, so it doesn't affect anything prior to deployment. Because of this, you
-preserve live code updates when running the local Firebase emulators, which I
-think is highly desirable.
-
-The fork is almost identical, and the integration with isolate-package does not
-affect any existing functionality, so I do not think there's reason to worry
-about things breaking. I will sync the fork with the upstream firebase-tools on
-a regular basis. The fork versions will match the firebase-tools versions for
-clarity.
-
-## A Quick Start
+## Example
 
 If you are not completely confident that your monorepo setup is solid, I advise
 you to check out my in-dept boilerplate at
 [mono-ts](https://github.com/0x80/mono-ts) where many different aspects are
 discussed and `isolate-package` is used to demonstrate Firebase deployments.
+
+## Quick Start
 
 This section describes the steps required for Firebase deployment, assuming:
 
@@ -46,7 +43,7 @@ This section describes the steps required for Firebase deployment, assuming:
   deploy to Firebase, hereafter referred to as the "target package".
 
 If your setup diverges from a traditional one, please continue reading the
-[Prerequisites](#prerequisites) section.
+[Prerequisites](../README.md#prerequisites) section.
 
 1. In the target package, install `isolate-package` and `firebase-tools` by
    running `pnpm add isolate-package firebase-tools -D` or the Yarn / NPM
@@ -65,6 +62,22 @@ independent packages. It makes it easy to deploy 1st gen functions next to 2nd
 gen functions, deploy different node versions, and decrease the built output
 size and dependency lists for each package, improving deployment and cold-start
 times.
+
+## Firebase Tools With Isolate
+
+I recommend using
+[the fork](https://github.com/0x80/firebase-tools-with-isolate) for monorepos
+until it is officially integrated. It not only simplifies the setup but more
+importantly allows `isolate` to run as an integral part of the deployment
+process, so it doesn't affect anything prior to deployment. Because of this, you
+preserve live code updates when running the local Firebase emulators, which I
+think is highly desirable.
+
+The fork is almost identical, and the integration with isolate-package does not
+affect any existing functionality, so I do not think there's reason to worry
+about things breaking. I will sync the fork with the upstream firebase-tools on
+a regular basis. The fork versions will match the firebase-tools versions for
+clarity.
 
 ## Deploying from multiple packages
 
@@ -101,9 +114,9 @@ information,
 [read this](https://firebase.google.com/docs/functions/beta/organize-functions).
 
 Make sure your Firebase package adheres to the things mentioned in
-[prerequisites](#prerequisites) and its package manifest contains the field
-`"main"`, or `"module"` if you set `"type": "module"`, so Firebase knows the
-entry point to your source code.
+[prerequisites](../README.md#prerequisites) and its package manifest contains
+the field `"main"`, or `"module"` if you set `"type": "module"`, so Firebase
+knows the entry point to your source code.
 
 ## Deploying from the root
 

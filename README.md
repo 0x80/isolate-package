@@ -31,6 +31,7 @@
   - [Modern Yarn](#modern-yarn)
 - [API](#api)
 - [The internal packages strategy](#the-internal-packages-strategy)
+- [Firebase](#firebase)
 
 <!-- /TOC -->
 
@@ -435,3 +436,8 @@ to the Typescript source files, but since the shared code was embedded in the
 bundle, they will never be referenced via import statements. So the manifest the
 entry declarations are never used. The reason the packages are included in the
 isolated output is to instruct package manager to install their dependencies.
+
+## Firebase
+
+For detailed information on how to use isolate-package in combination with
+Firebase [see this documentation](./docs/firebase.md#firebase)
