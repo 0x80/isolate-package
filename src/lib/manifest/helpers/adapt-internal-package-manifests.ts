@@ -23,32 +23,29 @@ export async function adaptInternalPackageManifests(
     internalPackageNames.map(async (packageName) => {
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
+      /**
+       * Dev dependencies are omitted by default. And also, for internal
+       * dependencies we want to omit the peerDependencies, because installing
+       * these is the responsibility of the consuming app / service, and
+       * otherwise the frozen lockfile install will error since the package file
+       * contains something that is not referenced in the lockfile.
+       */
+      const inputManifest = includeDevDependencies
+        ? omit(["peerDependencies"], manifest)
+        : omit(["devDependencies", "peerDependencies"], manifest);
+
       const outputManifest =
         packageManager.name === "pnpm"
-          ? Object.assign(
-              /**
-               * For internal dependencies we want to omit the peerDependencies,
-               * because installing these is the responsibility of the consuming
-               * app / service, and otherwise the frozen lockfile install will
-               * error since the package file contains something that is not
-               * referenced in the lockfile.
-               */
-              omit(["devDependencies", "peerDependencies"], manifest),
-              {
-                dependencies: manifest.dependencies,
-                devDependencies: includeDevDependencies
-                  ? manifest.devDependencies
-                  : undefined,
-              }
-            )
-          : adaptManifestInternalDeps(
-              {
-                manifest,
-                packagesRegistry,
-                parentRootRelativeDir: rootRelativeDir,
-              },
-              { includeDevDependencies }
-            );
+          ? /**
+             * For PNPM the output itself is a workspace so we can preserve the specifiers
+             * with "workspace:*" in the output manifest.
+             */
+            inputManifest
+          : adaptManifestInternalDeps({
+              manifest,
+              packagesRegistry,
+              parentRootRelativeDir: rootRelativeDir,
+            });
 
       await writeManifest(
         path.join(isolateDir, rootRelativeDir),
