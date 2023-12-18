@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
+import { omit } from "ramda";
 import type { IsolateConfig } from "./lib/config";
 import { resolveConfig, setUserConfig } from "./lib/config";
 import { processLockfile } from "./lib/lockfile";
@@ -9,6 +10,8 @@ import { setLogLevel, setLogger, useLogger } from "./lib/logger";
 import {
   adaptInternalPackageManifests,
   adaptTargetPackageManifest,
+  readManifest,
+  writeManifest,
 } from "./lib/manifest";
 import {
   getBuildOutputDir,
@@ -159,24 +162,11 @@ export async function isolate(
     isolateDir
   );
 
-  // const userDefinedConfig = getUserDefinedConfig();
-
-  // /**
-  //  * If the user has not explicitly set the excludeLockfile option, we will
-  //  * exclude the lockfile for Yarn, because we still need to figure out how to
-  //  * generate the isolated lockfile for it.
-  //  */
-  // if (!isDefined(userDefinedConfig.excludeLockfile)) {
-  //   if (packageManager.name === "yarn") {
-  //     config.excludeLockfile = true;
-  //   }
-  // }
-
   if (config.excludeLockfile) {
     log.warn("Excluding the lockfile from the isolate output");
   } else {
-    /** Copy and adapt the lockfile */
-    await processLockfile({
+    /** Generate an isolated lockfile based on the original one */
+    const usedFallbackToNpm = await processLockfile({
       workspaceRootDir,
       isolateDir,
       packagesRegistry,
@@ -184,6 +174,14 @@ export async function isolate(
       targetPackageDir,
       targetPackageName: targetPackageManifest.name,
     });
+
+    if (usedFallbackToNpm) {
+      const inputManifest = await readManifest(isolateDir);
+
+      const outputManifest = omit(["packageManager"], inputManifest);
+
+      await writeManifest(isolateDir, outputManifest);
+    }
   }
 
   if (packageManager.name === "pnpm") {

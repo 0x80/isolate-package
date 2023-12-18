@@ -1,9 +1,9 @@
-import fs from "fs-extra";
 import path from "node:path";
 import { omit } from "ramda";
 import { useConfig } from "~/lib/config";
 import { usePackageManager } from "~/lib/package-manager";
 import type { PackagesRegistry } from "~/lib/types";
+import { writeManifest } from "../io";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
 
 /**
@@ -50,9 +50,9 @@ export async function adaptInternalPackageManifests(
               { includeDevDependencies }
             );
 
-      await fs.writeFile(
-        path.join(isolateDir, rootRelativeDir, "package.json"),
-        JSON.stringify(outputManifest, null, 2)
+      await writeManifest(
+        path.join(isolateDir, rootRelativeDir),
+        outputManifest
       );
     })
   );

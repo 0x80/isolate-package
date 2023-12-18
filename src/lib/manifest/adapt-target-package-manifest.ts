@@ -1,10 +1,9 @@
-import fs from "fs-extra";
-import path from "node:path";
 import { omit } from "ramda";
 import { useConfig } from "../config";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
 import { adaptManifestInternalDeps } from "./helpers";
+import { writeManifest } from "./io";
 
 /**
  * Change the target package manifest file, so that:
@@ -41,8 +40,5 @@ export async function adaptTargetPackageManifest(
           { includeDevDependencies }
         );
 
-  await fs.writeFile(
-    path.join(isolateDir, "package.json"),
-    JSON.stringify(outputManifest, null, 2)
-  );
+  await writeManifest(isolateDir, outputManifest);
 }

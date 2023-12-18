@@ -71,6 +71,8 @@ export async function processLockfile({
 
   const { name, version } = usePackageManager();
 
+  let usedFallbackToNpm = false;
+
   switch (name) {
     case "npm": {
       await generateNpmLockfile({
@@ -83,17 +85,23 @@ export async function processLockfile({
     case "yarn": {
       const versionMajor = parseInt(version.split(".")[0], 10);
 
-      if (versionMajor > 1) {
-        log.warn(
-          `Only Yarn classic (v1) is currently supported. Omitting lockfile from isolate output.`
+      if (versionMajor === 1) {
+        await generateYarnLockfile({
+          workspaceRootDir,
+          isolateDir,
+        });
+      } else {
+        log.info(
+          "Detected modern version of Yarn. Using NPM lockfile fallback."
         );
-        break;
-      }
 
-      await generateYarnLockfile({
-        workspaceRootDir,
-        isolateDir,
-      });
+        await generateNpmLockfile({
+          workspaceRootDir,
+          isolateDir,
+        });
+
+        usedFallbackToNpm = true;
+      }
 
       break;
     }
@@ -110,4 +118,6 @@ export async function processLockfile({
     default:
       log.warn(`Unexpected package manager ${name}`);
   }
+
+  return usedFallbackToNpm;
 }
