@@ -2,7 +2,7 @@ import Arborist from "@npmcli/arborist";
 import fs from "fs-extra";
 import path from "node:path";
 import { useLogger } from "~/lib/logger";
-import { getErrorMessage } from "~/lib/utils";
+import { getErrorMessage, inspectValue } from "~/lib/utils";
 
 /**
  * Generate an isolated / pruned lockfile, based on the contents of installed
@@ -51,7 +51,7 @@ export async function generateNpmLockfile({
 
     log.debug("Created lockfile at", lockfilePath);
   } catch (err: any) {
-    log.error(err.stack);
+    console.error(inspectValue(err));
     log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
     /**
      * If lockfile creation fails we can technically still continue with the
