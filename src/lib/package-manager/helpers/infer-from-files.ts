@@ -20,7 +20,8 @@ export function inferFromFiles(workspaceRoot: string): PackageManager {
 
   throw new Error(`Failed to detect package manager`);
 }
-function getVersion(packageManagerName: PackageManagerName): string {
+
+export function getVersion(packageManagerName: PackageManagerName): string {
   const buffer = execSync(`${packageManagerName} --version`);
   return buffer.toString().trim();
 }
