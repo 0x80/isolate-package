@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
+import { omit } from "ramda";
 import type { IsolateConfig } from "./lib/config";
 import { resolveConfig, setUserConfig } from "./lib/config";
 import { processLockfile } from "./lib/lockfile";
@@ -9,6 +10,8 @@ import { setLogLevel, setLogger, useLogger } from "./lib/logger";
 import {
   adaptInternalPackageManifests,
   adaptTargetPackageManifest,
+  readManifest,
+  writeManifest,
 } from "./lib/manifest";
 import {
   getBuildOutputDir,
@@ -159,34 +162,30 @@ export async function isolate(
     isolateDir
   );
 
-  // const userDefinedConfig = getUserDefinedConfig();
+  /** Generate an isolated lockfile based on the original one */
+  const usedFallbackToNpm = await processLockfile({
+    workspaceRootDir,
+    isolateDir,
+    packagesRegistry,
+    internalDepPackageNames: internalPackageNames,
+    targetPackageDir,
+    targetPackageName: targetPackageManifest.name,
+  });
 
-  // /**
-  //  * If the user has not explicitly set the excludeLockfile option, we will
-  //  * exclude the lockfile for Yarn, because we still need to figure out how to
-  //  * generate the isolated lockfile for it.
-  //  */
-  // if (!isDefined(userDefinedConfig.excludeLockfile)) {
-  //   if (packageManager.name === "yarn") {
-  //     config.excludeLockfile = true;
-  //   }
-  // }
+  if (usedFallbackToNpm) {
+    /**
+     * When we fall back to NPM, we strip the package manager declaration from
+     * the manifest, so the default NPM version from the host environment can be
+     * used.
+     */
+    const inputManifest = await readManifest(isolateDir);
 
-  if (config.excludeLockfile) {
-    log.warn("Excluding the lockfile from the isolate output");
-  } else {
-    /** Copy and adapt the lockfile */
-    await processLockfile({
-      workspaceRootDir,
-      isolateDir,
-      packagesRegistry,
-      internalDepPackageNames: internalPackageNames,
-      targetPackageDir,
-      targetPackageName: targetPackageManifest.name,
-    });
+    const outputManifest = omit(["packageManager"], inputManifest);
+
+    await writeManifest(isolateDir, outputManifest);
   }
 
-  if (packageManager.name === "pnpm") {
+  if (packageManager.name === "pnpm" && !config.forceNpm) {
     /**
      * PNPM doesn't install dependencies of packages that are linked via link:
      * or file: specifiers. It requires the directory to be configured as a

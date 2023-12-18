@@ -1,17 +1,16 @@
-import fs from "fs-extra";
-import path from "node:path";
-import { omit } from "ramda";
+import { omit, pick } from "ramda";
 import { useConfig } from "../config";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
 import { adaptManifestInternalDeps } from "./helpers";
+import { writeManifest } from "./io";
 
 /**
- * Change the target package manifest file, so that:
+ * Adapt the output package manifest, so that:
  *
  * - Its internal dependencies point to the isolated ./packages/* directory.
- * - DevDependencies are possibly removed
- * - Scripts are possibly removed
+ * - The devDependencies are possibly removed
+ * - Scripts are picked or omitted and otherwise removed
  */
 export async function adaptTargetPackageManifest(
   manifest: PackageManifest,
@@ -19,30 +18,39 @@ export async function adaptTargetPackageManifest(
   isolateDir: string
 ) {
   const packageManager = usePackageManager();
-  const { includeDevDependencies } = useConfig();
+  const { includeDevDependencies, forceNpm, pickFromScripts, omitFromScripts } =
+    useConfig();
 
-  const outputManifest =
-    packageManager.name === "pnpm"
+  /** Dev dependencies are omitted by default */
+  const inputManifest = includeDevDependencies
+    ? manifest
+    : omit(["devDependencies"], manifest);
+
+  const adaptedManifest =
+    packageManager.name === "pnpm" && !forceNpm
       ? /**
          * For PNPM the output itself is a workspace so we can preserve the specifiers
          * with "workspace:*" in the output manifest.
          */
-        Object.assign(omit(["devDependencies", "scripts"], manifest), {
-          devDependencies: includeDevDependencies
-            ? manifest.devDependencies
-            : undefined,
-        })
+        inputManifest
       : /** For other package managers we replace the links to internal dependencies */
-        adaptManifestInternalDeps(
-          {
-            manifest,
-            packagesRegistry,
-          },
-          { includeDevDependencies }
-        );
+        adaptManifestInternalDeps({
+          manifest: inputManifest,
+          packagesRegistry,
+        });
 
-  await fs.writeFile(
-    path.join(isolateDir, "package.json"),
-    JSON.stringify(outputManifest, null, 2)
-  );
+  const outputManifest = {
+    ...adaptedManifest,
+    /**
+     * Scripts are removed by default if not explicitly picked or omitted via
+     * config.
+     */
+    scripts: pickFromScripts
+      ? pick(pickFromScripts as never[], manifest.scripts)
+      : omitFromScripts
+        ? omit(omitFromScripts as never[], manifest.scripts)
+        : undefined,
+  };
+
+  await writeManifest(isolateDir, outputManifest);
 }

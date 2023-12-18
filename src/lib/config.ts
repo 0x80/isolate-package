@@ -14,8 +14,9 @@ export type IsolateConfigResolved = {
   tsconfigPath: string;
   workspacePackages?: string[];
   workspaceRoot: string;
-  excludeLockfile: boolean;
-  avoidPnpmPack: boolean;
+  forceNpm: boolean;
+  pickFromScripts?: string[];
+  omitFromScripts?: string[];
 };
 
 export type IsolateConfig = Partial<IsolateConfigResolved>;
@@ -29,8 +30,9 @@ const configDefaults: IsolateConfigResolved = {
   tsconfigPath: "./tsconfig.json",
   workspacePackages: undefined,
   workspaceRoot: "../..",
-  excludeLockfile: false,
-  avoidPnpmPack: false,
+  forceNpm: false,
+  pickFromScripts: undefined,
+  omitFromScripts: undefined,
 };
 
 /**

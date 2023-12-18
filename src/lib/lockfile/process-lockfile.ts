@@ -3,6 +3,7 @@ import type {
   ResolvedDependencies,
 } from "@pnpm/lockfile-file";
 import { mapObjIndexed } from "ramda";
+import { useConfig } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
 import type { PackagesRegistry } from "../types";
@@ -69,7 +70,21 @@ export async function processLockfile({
 }) {
   const log = useLogger();
 
+  const { forceNpm } = useConfig();
+
+  if (forceNpm) {
+    log.info("Forcing to use NPM for isolate output");
+
+    await generateNpmLockfile({
+      workspaceRootDir,
+      isolateDir,
+    });
+
+    return true;
+  }
+
   const { name, version } = usePackageManager();
+  let usedFallbackToNpm = false;
 
   switch (name) {
     case "npm": {
@@ -83,17 +98,23 @@ export async function processLockfile({
     case "yarn": {
       const versionMajor = parseInt(version.split(".")[0], 10);
 
-      if (versionMajor > 1) {
-        log.warn(
-          `Only Yarn classic (v1) is currently supported. Omitting lockfile from isolate output.`
+      if (versionMajor === 1) {
+        await generateYarnLockfile({
+          workspaceRootDir,
+          isolateDir,
+        });
+      } else {
+        log.info(
+          "Detected modern version of Yarn. Using NPM lockfile fallback."
         );
-        break;
-      }
 
-      await generateYarnLockfile({
-        workspaceRootDir,
-        isolateDir,
-      });
+        await generateNpmLockfile({
+          workspaceRootDir,
+          isolateDir,
+        });
+
+        usedFallbackToNpm = true;
+      }
 
       break;
     }
@@ -108,6 +129,14 @@ export async function processLockfile({
       break;
     }
     default:
-      log.warn(`Unexpected package manager ${name}`);
+      log.warn(`Unexpected package manager ${name}. Using NPM for output`);
+      await generateNpmLockfile({
+        workspaceRootDir,
+        isolateDir,
+      });
+
+      usedFallbackToNpm = true;
   }
+
+  return usedFallbackToNpm;
 }

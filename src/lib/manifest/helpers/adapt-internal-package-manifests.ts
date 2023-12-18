@@ -1,9 +1,9 @@
-import fs from "fs-extra";
 import path from "node:path";
 import { omit } from "ramda";
 import { useConfig } from "~/lib/config";
 import { usePackageManager } from "~/lib/package-manager";
 import type { PackagesRegistry } from "~/lib/types";
+import { writeManifest } from "../io";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
 
 /**
@@ -17,42 +17,39 @@ export async function adaptInternalPackageManifests(
   isolateDir: string
 ) {
   const packageManager = usePackageManager();
-  const { includeDevDependencies } = useConfig();
+  const { includeDevDependencies, forceNpm } = useConfig();
 
   await Promise.all(
     internalPackageNames.map(async (packageName) => {
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
-      const outputManifest =
-        packageManager.name === "pnpm"
-          ? Object.assign(
-              /**
-               * For internal dependencies we want to omit the peerDependencies,
-               * because installing these is the responsibility of the consuming
-               * app / service, and otherwise the frozen lockfile install will
-               * error since the package file contains something that is not
-               * referenced in the lockfile.
-               */
-              omit(["devDependencies", "peerDependencies"], manifest),
-              {
-                dependencies: manifest.dependencies,
-                devDependencies: includeDevDependencies
-                  ? manifest.devDependencies
-                  : undefined,
-              }
-            )
-          : adaptManifestInternalDeps(
-              {
-                manifest,
-                packagesRegistry,
-                parentRootRelativeDir: rootRelativeDir,
-              },
-              { includeDevDependencies }
-            );
+      /**
+       * Dev dependencies are omitted by default. And also, for internal
+       * dependencies we want to omit the peerDependencies, because installing
+       * these is the responsibility of the consuming app / service, and
+       * otherwise the frozen lockfile install will error since the package file
+       * contains something that is not referenced in the lockfile.
+       */
+      const inputManifest = includeDevDependencies
+        ? omit(["peerDependencies"], manifest)
+        : omit(["devDependencies", "peerDependencies"], manifest);
 
-      await fs.writeFile(
-        path.join(isolateDir, rootRelativeDir, "package.json"),
-        JSON.stringify(outputManifest, null, 2)
+      const outputManifest =
+        packageManager.name === "pnpm" && !forceNpm
+          ? /**
+             * For PNPM the output itself is a workspace so we can preserve the specifiers
+             * with "workspace:*" in the output manifest.
+             */
+            inputManifest
+          : adaptManifestInternalDeps({
+              manifest,
+              packagesRegistry,
+              parentRootRelativeDir: rootRelativeDir,
+            });
+
+      await writeManifest(
+        path.join(isolateDir, rootRelativeDir),
+        outputManifest
       );
     })
   );

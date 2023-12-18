@@ -3,7 +3,6 @@
 <!-- TOC -->
 
 - [TLDR](#tldr)
-- [Introduction](#introduction)
 - [Features](#features)
 - [Motivation](#motivation)
 - [Installation](#installation)
@@ -40,26 +39,22 @@
 Run `npx isolate-package isolate` from the monorepo package you would like to
 isolate.
 
-## Introduction
-
-Isolate a monorepo workspace package to form a self-contained deployable package
-that includes internal dependencies and a compatible lockfile. The internal
-packages structure is preserved. Code is not bundled.
-
 ## Features
 
-- Isolates a monorepo package with its internal dependencies to form a
-  self-contained deployable directory.
-- Generates an isolated / pruned lockfile based on the existing monorepo
-  lockfile. See [lockfiles](#lockfiles) for more information.
-- Zero-config for the vast majority of use-cases, with no manual steps involved.
-- Support for PNPM, NPM and Yarn.
-- Compatible with the Firebase tools CLI, incl 1st and 2nd gen Firebase
-  functions.
-- Isolates internal workspace dependencies recursively. If package A depends on
-  internal package B which depends on internal package C, all of them will be
-  included.
-- Optionally include devDependencies in the isolated output.
+- Isolate a monorepo workspace package to form a self-contained package that
+  includes internal dependencies and an adapted lockfile for deterministic
+  deployments.
+- Preserve packages file structure, without code bundling
+- Should work with any package manager, and tested with NPM, PNPM, and Yarn
+  (both classic and modern)
+- Zero-config for the vast majority of use-cases
+- Isolates dependencies recursively. If package A depends on internal package B
+  which depends on internal package C, all of them will be included
+- Optionally force output to use NPM with matching versions
+- Optionally include devDependencies in the isolated output
+- Optionally pick or omit scripts from the manifest
+- Compatible with the Firebase tools CLI, including 1st and 2nd generation
+  Firebase Functions
 
 ## Motivation
 
@@ -85,7 +80,8 @@ Run `pnpm install isolate-package --dev` or the equivalent for `npm` or `yarn`.
 
 I recommend using `pnpm` for
 [a number of reasons](https://pnpm.io/feature-comparison). In my experience it
-is the best package manager, especially for monorepo setups.
+is the best package manager, especially for monorepo setups, but any other
+package manager should work.
 
 ## Usage
 
@@ -211,6 +207,33 @@ same location, as it uses the current working directory.
 
 Below you will find a description of every available option.
 
+### logLevel
+
+Type: `"info" | "debug" | "warn" | "error"`, default: `"info"`.
+
+Because the configuration loader depends on this setting, its output is not
+affected by this setting. If you want to debug the configuration set
+`DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
+
+### forceNpm
+
+Type: `boolean`, default: `false`
+
+By default the isolate process will generate output based on the package manager
+that you are using for your monorepo. But your deployment target might not be
+compatible with that package manager, or it might not be the best choice given
+the available tooling.
+
+Also, it should not really matter what package manager is used in de deployment
+as long as the versions match your original lockfile.
+
+By setting this option to `true` you are forcing the isolate output to use NPM.
+A package-lock file will be generated based on the contents of node_modules and
+therefore should match the versions in your original lockfile.
+
+This way you can enjoy using PNPM or Yarn for your monorepo, while your
+deployment uses NPM with modules locked to the same versions.
+
 ### buildDirName
 
 Type: `string | undefined`, default: `undefined`
@@ -218,16 +241,6 @@ Type: `string | undefined`, default: `undefined`
 The name of the build output directory name. When undefined it is automatically
 detected via `tsconfig.json`. When you are not using Typescript you can use this
 setting to specify where the build output files are located.
-
-### excludeLockfile
-
-Type: `boolean`, default: Depends on package manager. Forces exclusion of the
-lockfile as part of the deployment.
-
-**Deprecated** This option exists from a time where lockfiles were not supported
-for all package managers. You should not need this escape hatch anymore.
-
-For more information see [lockfiles](#lockfiles).
 
 ### includeDevDependencies
 
@@ -237,19 +250,31 @@ By default devDependencies are ignored and stripped from the isolated output
 `package.json` files. If you enable this the devDependencies will be included
 and isolated just like the production dependencies.
 
+### pickFromScripts
+
+Type: `string[]`, default: `undefined`
+
+Select which scripts to include in the output manifest `scripts` field. For
+example if you want your test script included set it to `["test"]`.
+
+By default, all scripts are omitted.
+
+### omitFromScripts
+
+Type: `string[]`, default: `undefined`
+
+Select which scripts to omit from the output manifest `scripts` field. For
+example if you want the build script interferes with your deployment target, but
+you want to preserve all of the other scripts, set it to `["build"]`.
+
+By default, all scripts are omitted, and the [pickFromScripts](#pickfromscripts)
+configuration overrules this configuration.
+
 ### isolateDirName
 
 Type: `string`, default: `"isolate"`
 
 The name of the isolate output directory.
-
-### logLevel
-
-Type: `"info" | "debug" | "warn" | "error"`, default: `"info"`.
-
-Because the configuration loader depends on this setting, its output is not
-affected by this setting. If you want to debug the configuration set
-`DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
 
 ### targetPackagePath
 
@@ -315,31 +340,62 @@ When you use the `targetPackagePath` option, this setting will be ignored.
 
 ## Lockfiles
 
-A lockfile in a monorepo describes the dependencies of all packages, and does
-not translate to the isolated output without altering it.
+The isolate process tries to generate an isolated / pruned lockfile for the
+package manager that you use in your monorepo. If the package manager is not
+supported (modern Yarn versions), it can still generate a matching NPM lockfile
+based on the installed versions in node_modules.
 
-If you copying the original lockfile and deploy it with the isolated code, a CI
-environment will not accept the lockfile. It is also not possibly to generate a
-brand new lockfile from the isolated code by mimicking a fresh install, because
-versions would be able to diverge and thus negate the whole point of having a
-lockfile in the first place.
+In case your package manager is not supported by your deployment target you can
+also choose NPM to be used by setting the `makeNpmLockfile` to `true` in your
+configuration.
 
-For this to work, we need to re-generate or prune the original lockfile to keep
-the versions of the original but only describe the dependencies of the code in
-the isolated output.
+### NPM
 
-Since every package manager works completely different in this regard, this part
-of the puzzle had to be solved in a different ways for each of them, and not all
-are supported yet.
+For NPM we use a tool called Arborist which is an integral part of the NPM
+codebase. It is executed in the isolate output directory and requires the
+adapted lockfile and the `node_modules` directory from the root of the
+repository. As this directory is typically quite large, copying it over as part
+of the isolate flow is not very desirable.
 
-At the moment lockfiles for the following package managers are supported:
+To work around this, we move it to the isolate output and then move it back
+after Arborist has finished doing its thing. Luckily it doesn't take long and
+hopefully this doesn't create any unwanted side effects for IDEs and other tools
+that depend on the content of the directory.
 
-- NPM
-- PNPM
-- Yarn Classic (v1)
+When errors occur in this process, the folder should still be moved back.
 
-More detailed information on the implementation can be found in the
-[additional docs](./docs/lockfiles.md).
+### PNPM
+
+The PNPM lockfile format is very readable (YAML) but getting it adapted to the
+isolate output was a bit of a trip.
+
+It turns out, at least up to v10, that the isolated output has to be formatted
+as a workspace itself, otherwise dependencies of internally linked packages are
+not installed by PNPM. Therefore, the output looks a bit different from other
+package managers:
+
+- Links are preserved
+- Versions specifiers like "workspace:\*" are preserved
+- A pnpm-workspace.yaml file is added to the output
+
+### Classic Yarn
+
+For Yarn v1 we can simply copy the root lockfile to the isolate output, and run
+a `yarn install` to prune that lockfile. The command finds the installed node
+modules in the root of the monorepo so versions are preserved.
+
+> Note: I expect this to break down if you configure the isolate output
+> directory to be located outside the monorepo tree.
+
+### Modern Yarn
+
+For modern Yarn versions we fall back to using NPM for the output lockfile,
+because the strategy of running `yarn install` does not seem to apply here.
+
+Based on the installed node_modules we generate an NPM lockfile that matches the
+versions in the Yarn lockfile. It should not really matter what package manager
+your deployed code uses, as long as the lockfile versions match with the
+original lockfile.
 
 ## API
 
