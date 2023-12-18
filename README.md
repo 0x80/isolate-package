@@ -39,6 +39,9 @@
 Run `npx isolate-package isolate` from the monorepo package you would like to
 isolate.
 
+If you would like to see an example of a modern monorepo with this tool
+integrated, check out [mono-ts](https://github.com/0x80/mono-ts)
+
 ## Features
 
 - Isolate a monorepo workspace package to form a self-contained package that
@@ -460,7 +463,7 @@ isolated output is to instruct package manager to install their dependencies.
 
 ### A Quick Start
 
-If you are not confident that your monorepo setup is solid, please check out my
+If you are not confident that your monorepo setup is solid, you can check out my
 in-dept example at [mono-ts](https://github.com/0x80/mono-ts) where many
 different aspects are discussed and `isolate-package` is used to demonstrate
 Firebase deployments.
