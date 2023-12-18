@@ -177,16 +177,12 @@ export async function isolate(
      * When we fall back to NPM, we set the manifest package manager to the
      * available NPM version.
      */
-    const inputManifest = await readManifest(isolateDir);
+    const manifest = await readManifest(isolateDir);
 
-    const systemNpmVersion = getVersion("npm");
+    const npmVersion = getVersion("npm");
+    manifest.packageManager = `npm@${npmVersion}`;
 
-    const outputManifest = {
-      ...inputManifest,
-      packageManager: systemNpmVersion,
-    };
-
-    await writeManifest(isolateDir, outputManifest);
+    await writeManifest(isolateDir, manifest);
   }
 
   if (packageManager.name === "pnpm" && !config.forceNpm) {
