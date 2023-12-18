@@ -18,12 +18,8 @@ export async function adaptTargetPackageManifest(
   isolateDir: string
 ) {
   const packageManager = usePackageManager();
-  const {
-    includeDevDependencies,
-    useNpmOutput,
-    pickFromScripts,
-    omitFromScripts,
-  } = useConfig();
+  const { includeDevDependencies, useNpm, pickFromScripts, omitFromScripts } =
+    useConfig();
 
   /** Dev dependencies are omitted by default */
   const inputManifest = includeDevDependencies
@@ -31,7 +27,7 @@ export async function adaptTargetPackageManifest(
     : omit(["devDependencies"], manifest);
 
   const adaptedManifest =
-    packageManager.name === "pnpm" && !useNpmOutput
+    packageManager.name === "pnpm" && !useNpm
       ? /**
          * For PNPM the output itself is a workspace so we can preserve the specifiers
          * with "workspace:*" in the output manifest.

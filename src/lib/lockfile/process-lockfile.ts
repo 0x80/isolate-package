@@ -3,6 +3,7 @@ import type {
   ResolvedDependencies,
 } from "@pnpm/lockfile-file";
 import { mapObjIndexed } from "ramda";
+import { useConfig } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
 import type { PackagesRegistry } from "../types";
@@ -69,8 +70,20 @@ export async function processLockfile({
 }) {
   const log = useLogger();
 
-  const { name, version } = usePackageManager();
+  const { useNpm } = useConfig();
 
+  if (useNpm) {
+    log.info("Using NPM for isolate output");
+
+    await generateNpmLockfile({
+      workspaceRootDir,
+      isolateDir,
+    });
+
+    return true;
+  }
+
+  const { name, version } = usePackageManager();
   let usedFallbackToNpm = false;
 
   switch (name) {

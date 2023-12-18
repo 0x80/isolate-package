@@ -37,12 +37,16 @@ export async function generateNpmLockfile({
     await fs.move(origRootNodeModulesPath, tempRootNodeModulesPath);
     hasMovedNodeModules = true;
 
+    log.debug(`Create arborist`);
     const arborist = new Arborist({ path: isolateDir });
 
+    log.debug(`Run arborist`);
     const { meta } = await arborist.buildIdealTree();
 
+    log.debug(`Commit arborist`);
     meta?.commit();
 
+    log.debug(`Writing lockfile`);
     const lockfilePath = path.join(isolateDir, "package-lock.json");
 
     await fs.writeFile(lockfilePath, String(meta));

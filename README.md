@@ -211,6 +211,33 @@ same location, as it uses the current working directory.
 
 Below you will find a description of every available option.
 
+### logLevel
+
+Type: `"info" | "debug" | "warn" | "error"`, default: `"info"`.
+
+Because the configuration loader depends on this setting, its output is not
+affected by this setting. If you want to debug the configuration set
+`DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
+
+### useNpm
+
+Type: `boolean`, default: `false`
+
+By default the isolate process will generate output based on the package manager
+that you are using for your monorepo. But your deployment target might not be
+compatible with that package manager, or it might not be the best choice given
+the available tooling.
+
+Also, it should not really matter what package manager is used in de deployment
+as long as the versions match your original lockfile.
+
+By setting this option to `true` you are forcing the isolate output to use NPM.
+A package-lock file will be generated based on the installed node modules and
+therefore should match the versions in your original lockfile.
+
+This way you can enjoy using PNPM for your monorepo, while your deployment uses
+NPM locked to the same versions.
+
 ### buildDirName
 
 Type: `string | undefined`, default: `undefined`
@@ -218,16 +245,6 @@ Type: `string | undefined`, default: `undefined`
 The name of the build output directory name. When undefined it is automatically
 detected via `tsconfig.json`. When you are not using Typescript you can use this
 setting to specify where the build output files are located.
-
-### excludeLockfile
-
-Type: `boolean`, default: Depends on package manager. Forces exclusion of the
-lockfile as part of the deployment.
-
-**Deprecated** This option exists from a time where lockfiles were not supported
-for all package managers. You should not need this escape hatch anymore.
-
-For more information see [lockfiles](#lockfiles).
 
 ### includeDevDependencies
 
@@ -237,19 +254,31 @@ By default devDependencies are ignored and stripped from the isolated output
 `package.json` files. If you enable this the devDependencies will be included
 and isolated just like the production dependencies.
 
+### pickFromScripts
+
+Type: `string[]`, default: `undefined`
+
+Select which scripts to include in the output manifest `scripts` field. For
+example if you want your test script included set it to `["test"]`.
+
+By default, all scripts are omitted.
+
+### omitFromScripts
+
+Type: `string[]`, default: `undefined`
+
+Select which scripts to omit from the output manifest `scripts` field. For
+example if you want the build script interferes with your deployment target, but
+you want to preserve all of the other scripts, set it to `["build"]`.
+
+By default, all scripts are omitted, and the [pickFromScripts](#pickfromscripts)
+configuration overrules this configuration.
+
 ### isolateDirName
 
 Type: `string`, default: `"isolate"`
 
 The name of the isolate output directory.
-
-### logLevel
-
-Type: `"info" | "debug" | "warn" | "error"`, default: `"info"`.
-
-Because the configuration loader depends on this setting, its output is not
-affected by this setting. If you want to debug the configuration set
-`DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
 
 ### targetPackagePath
 

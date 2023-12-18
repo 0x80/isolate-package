@@ -162,29 +162,25 @@ export async function isolate(
     isolateDir
   );
 
-  if (config.excludeLockfile) {
-    log.warn("Excluding the lockfile from the isolate output");
-  } else {
-    /** Generate an isolated lockfile based on the original one */
-    const usedFallbackToNpm = await processLockfile({
-      workspaceRootDir,
-      isolateDir,
-      packagesRegistry,
-      internalDepPackageNames: internalPackageNames,
-      targetPackageDir,
-      targetPackageName: targetPackageManifest.name,
-    });
+  /** Generate an isolated lockfile based on the original one */
+  const usedFallbackToNpm = await processLockfile({
+    workspaceRootDir,
+    isolateDir,
+    packagesRegistry,
+    internalDepPackageNames: internalPackageNames,
+    targetPackageDir,
+    targetPackageName: targetPackageManifest.name,
+  });
 
-    if (usedFallbackToNpm) {
-      const inputManifest = await readManifest(isolateDir);
+  if (usedFallbackToNpm) {
+    const inputManifest = await readManifest(isolateDir);
 
-      const outputManifest = omit(["packageManager"], inputManifest);
+    const outputManifest = omit(["packageManager"], inputManifest);
 
-      await writeManifest(isolateDir, outputManifest);
-    }
+    await writeManifest(isolateDir, outputManifest);
   }
 
-  if (packageManager.name === "pnpm" && !config.useNpmOutput) {
+  if (packageManager.name === "pnpm" && !config.useNpm) {
     /**
      * PNPM doesn't install dependencies of packages that are linked via link:
      * or file: specifiers. It requires the directory to be configured as a
