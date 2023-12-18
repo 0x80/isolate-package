@@ -52,7 +52,8 @@ export async function generateNpmLockfile({
     await fs.writeFile(lockfilePath, String(meta));
 
     log.debug("Created lockfile at", lockfilePath);
-  } catch (err) {
+  } catch (err: any) {
+    log.error(err.stack);
     log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
     /**
      * If lockfile creation fails we can technically still continue with the
