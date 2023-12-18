@@ -8,11 +8,15 @@
     "monorepo",
     "turborepo",
     "workspaces",
+    "workspace",
     "isolate",
     "package",
     "deploy",
     "firebase",
-    "ci"
+    "ci",
+    "docker",
+    "prune",
+    "lockfile"
   ],
   "repository": {
     "type": "git",
