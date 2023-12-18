@@ -26,11 +26,6 @@
 - [Lockfiles](#lockfiles)
 - [API](#api)
 - [The internal packages strategy](#the-internal-packages-strategy)
-- [Working with Firebase](#working-with-firebase)
-  - [A Quick Start](#a-quick-start)
-  - [Deploying from multiple packages](#deploying-from-multiple-packages)
-  - [Deploying from the root](#deploying-from-the-root)
-  - [Using the Firebase Functions Emulator](#using-the-firebase-functions-emulator)
 
 <!-- /TOC -->
 
@@ -57,25 +52,8 @@ integrated, check out [mono-ts](https://github.com/0x80/mono-ts)
 - Optionally include devDependencies in the isolated output
 - Optionally pick or omit scripts from the manifest
 - Compatible with the Firebase tools CLI, including 1st and 2nd generation
-  Firebase Functions
-
-## Motivation
-
-This solution was born from a desire to deploy to
-[Firebase](https://firebase.google.com/) from a monorepo without resorting to
-custom shell scripts and other hacks. Here is
-[an article](https://thijs-koerselman.medium.com/deploy-to-firebase-without-the-hacks-e685de39025e)
-explaining the issue in more detail.
-
-There is nothing Firebase-specific to this solution and there should be other
-use-cases for it, but that is why this documentation contains some instructions
-related to Firebase.
-
-> !! There is now
-> [a fork of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate),
-> where isolate-package is integrated. This is preferred because it simplifies
-> the setup and allows the isolation to run only as part of the deploy process,
-> preserving live code updates when running the local Firebase emulators.
+  Firebase Functions. For more information see
+  [the Firebase instructions](./docs/firebase.md).
 
 ## Installation
 
@@ -99,8 +77,8 @@ are not using Typescript.
 
 By default the isolated output will become available at `./isolate`.
 
-If you are here to simplify and improve your Firebase deployments check out the
-[Firebase quick start guide](#a-quick-start).
+If you are here to improve your Firebase deployments check out the
+[Firebase quick start guide](./docs/firebase.md#a-quick-start).
 
 ## Troubleshooting
 
@@ -452,135 +430,3 @@ to the Typescript source files, but since the shared code was embedded in the
 bundle, they will never be referenced via import statements. So the manifest the
 entry declarations are never used. The reason the packages are included in the
 isolated output is to instruct package manager to install their dependencies.
-
-## Working with Firebase
-
-> !! There is now
-> [a fork of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate),
-> where isolate-package is integrated. This is preferred because it simplifies
-> the setup and allows the isolation to run only as part of the deploy process,
-> preserving live code updates when running the local Firebase emulators.
-
-### A Quick Start
-
-If you are not confident that your monorepo setup is solid, you can check out my
-in-dept example at [mono-ts](https://github.com/0x80/mono-ts) where many
-different aspects are discussed and `isolate-package` is used to demonstrate
-Firebase deployments.
-
-This section describes the steps required for Firebase deployment, assuming:
-
-- You use a fairly typical monorepo setup
-- Your `firebase.json` config lives in the root of the package that you like to
-  deploy to Firebase, hereafter referred to as the "target package".
-
-If your setup diverges from a traditional one, please continue reading the
-[Prerequisites](#prerequisites) section.
-
-1. In the target package, install `isolate-package` and `firebase-tools` by
-   running `pnpm add isolate-package firebase-tools -D` or the Yarn / NPM
-   equivalent. I tend to install firebase-tools as a devDependency in every
-   Firebase package, but you could also use a global install if you prefer that.
-2. In the `firebase.json` config set `"source"` to `"./isolate"` and
-   `"predeploy"` to `["turbo build", "isolate"]` or whatever suits your build
-   tool. The important part here is that isolate is being executed after the
-   build stage.
-3. From the target package folder, you should now be able to deploy with
-   `npx firebase deploy`.
-
-I recommend keeping a `firebase.json` file inside each Firebase package (as
-opposed to the monorepo root), because it allows you to deploy from multiple
-independent packages. It makes it easy to deploy 1st gen functions next to 2nd
-gen functions, deploy different node versions, and decrease the built output
-size and dependency lists for each package, improving deployment and cold-start
-times.
-
-### Deploying from multiple packages
-
-You can deploy to Firebase from multiple packages in your monorepo, in which
-case you co-locate your `firebase.json` file with the source code, and not in
-the root of the monorepo. If you do want to keep the firebase config in the
-root, read the instructions for
-[deploying to Firebase from the root](#deploying-to-firebase-from-the-root).
-
-In order to deploy to Firebase, the `functions.source` setting in
-`firebase.json` needs to point to the isolated output folder, which would be
-`./isolate` when using the default configuration.
-
-The `predeploy` phase should first build and then isolate the output.
-
-Here's an example using [Turborepo](https://turbo.build/):
-
-```cjson
-// firebase.json
-{
-  "functions": {
-    "source": "./isolate",
-    "predeploy": ["turbo build", "isolate"]
-  }
-}
-```
-
-With this configuration you can then run `npx firebase deploy --only functions`
-from the package.
-
-If you like to deploy to Firebase Functions from multiple packages you will also
-need to configure a unique `codebase` identifier for each of them. For more
-information,
-[read this](https://firebase.google.com/docs/functions/beta/organize-functions).
-
-Make sure your Firebase package adheres to the things mentioned in
-[prerequisites](#prerequisites) and its package manifest contains the field
-`"main"`, or `"module"` if you set `"type": "module"`, so Firebase knows the
-entry point to your source code.
-
-### Deploying from the root
-
-If, for some reason, you choose to keep the `firebase.json` file in the root of
-the monorepo you will have to place a configuration file called
-`isolate.config.json` in the root with the following content:
-
-```cjson
-// isolate.config.json
-{
-  "targetPackagePath": "./packages/your-firebase-package"
-}
-```
-
-The Firebase configuration should then look something like this:
-
-```cjson
-// firebase.json
-{
-  "functions": {
-    "source": "./packages/your-firebase-package/isolate",
-    "predeploy": ["turbo build", "isolate"]
-  }
-}
-```
-
-### Using the Firebase Functions Emulator
-
-The Firebase functions emulator runs on the code that firebase.json `source`
-points to. Unfortunately, this is the same field as is used for declaring the
-code for deployment, which means the emulator is looking at the isolated output.
-
-As a result, any changes to your code have to go through the isolate process in
-order to be picked up by the emulator. In other words, changes do not propagate
-automatically while the emulator is running.
-
-The workaround I use at the moment is to create a "emulate" script in the
-package manifest which does the same as the Firebase predeploy, and then starts
-the emulator. For example:
-
-`turbo build && isolate && firebase emulators:start --only functions`
-
-You will still have to stop and restart the emulator on every code change, which
-is unfortunate of course.
-
-A real solution to this would be to integrate isolate-package into the
-firebase-tools `deploy` command, so it is only executed as part of the
-deployment process and the `source` property can still point to the original
-code.
-
-I plan to work on this once isolate-package is bit more mature.
