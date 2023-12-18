@@ -1,7 +1,6 @@
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
-import { omit } from "ramda";
 import type { IsolateConfig } from "./lib/config";
 import { resolveConfig, setUserConfig } from "./lib/config";
 import { processLockfile } from "./lib/lockfile";
@@ -20,6 +19,7 @@ import {
   unpackDependencies,
 } from "./lib/output";
 import { detectPackageManager } from "./lib/package-manager";
+import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
 import { getDirname, getRootRelativePath, readTypedJson } from "./lib/utils";
@@ -174,15 +174,15 @@ export async function isolate(
 
   if (usedFallbackToNpm) {
     /**
-     * When we fall back to NPM, we strip the package manager declaration from
-     * the manifest, so the default NPM version from the host environment can be
-     * used.
+     * When we fall back to NPM, we set the manifest package manager to the
+     * available NPM version.
      */
-    const inputManifest = await readManifest(isolateDir);
+    const manifest = await readManifest(isolateDir);
 
-    const outputManifest = omit(["packageManager"], inputManifest);
+    const npmVersion = getVersion("npm");
+    manifest.packageManager = `npm@${npmVersion}`;
 
-    await writeManifest(isolateDir, outputManifest);
+    await writeManifest(isolateDir, manifest);
   }
 
   if (packageManager.name === "pnpm" && !config.forceNpm) {

@@ -42,7 +42,6 @@ export async function generateNpmLockfile({
     log.debug(`Build tree`);
     const { meta } = await arborist.buildIdealTree();
 
-    log.debug(`Commit tree`);
     meta?.commit();
 
     const lockfilePath = path.join(isolateDir, "package-lock.json");
