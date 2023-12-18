@@ -70,10 +70,10 @@ export async function processLockfile({
 }) {
   const log = useLogger();
 
-  const { useNpm } = useConfig();
+  const { forceNpm } = useConfig();
 
-  if (useNpm) {
-    log.info("Using NPM for isolate output");
+  if (forceNpm) {
+    log.info("Forcing to use NPM for isolate output");
 
     await generateNpmLockfile({
       workspaceRootDir,
@@ -129,7 +129,13 @@ export async function processLockfile({
       break;
     }
     default:
-      log.warn(`Unexpected package manager ${name}`);
+      log.warn(`Unexpected package manager ${name}. Using NPM for output`);
+      await generateNpmLockfile({
+        workspaceRootDir,
+        isolateDir,
+      });
+
+      usedFallbackToNpm = true;
   }
 
   return usedFallbackToNpm;

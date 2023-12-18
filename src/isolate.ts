@@ -173,6 +173,11 @@ export async function isolate(
   });
 
   if (usedFallbackToNpm) {
+    /**
+     * When we fall back to NPM, we strip the package manager declaration from
+     * the manifest, so the default NPM version from the host environment can be
+     * used.
+     */
     const inputManifest = await readManifest(isolateDir);
 
     const outputManifest = omit(["packageManager"], inputManifest);
@@ -180,7 +185,7 @@ export async function isolate(
     await writeManifest(isolateDir, outputManifest);
   }
 
-  if (packageManager.name === "pnpm" && !config.useNpm) {
+  if (packageManager.name === "pnpm" && !config.forceNpm) {
     /**
      * PNPM doesn't install dependencies of packages that are linked via link:
      * or file: specifiers. It requires the directory to be configured as a

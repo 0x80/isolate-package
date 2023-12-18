@@ -3,7 +3,6 @@
 <!-- TOC -->
 
 - [TLDR](#tldr)
-- [Introduction](#introduction)
 - [Features](#features)
 - [Motivation](#motivation)
 - [Installation](#installation)
@@ -40,26 +39,22 @@
 Run `npx isolate-package isolate` from the monorepo package you would like to
 isolate.
 
-## Introduction
-
-Isolate a monorepo workspace package to form a self-contained deployable package
-that includes internal dependencies and a compatible lockfile. The internal
-packages structure is preserved. Code is not bundled.
-
 ## Features
 
-- Isolates a monorepo package with its internal dependencies to form a
-  self-contained deployable directory.
-- Generates an isolated / pruned lockfile based on the existing monorepo
-  lockfile. See [lockfiles](#lockfiles) for more information.
-- Zero-config for the vast majority of use-cases, with no manual steps involved.
-- Support for PNPM, NPM and Yarn.
-- Compatible with the Firebase tools CLI, incl 1st and 2nd gen Firebase
-  functions.
-- Isolates internal workspace dependencies recursively. If package A depends on
-  internal package B which depends on internal package C, all of them will be
-  included.
-- Optionally include devDependencies in the isolated output.
+- Isolate a monorepo workspace package to form a self-contained package that
+  includes internal dependencies and an adapted lockfile for deterministic
+  deployments.
+- Preserve packages file structure, without code bundling
+- Should work with any package manager, and tested with NPM, PNPM, and Yarn
+  (both classic and modern)
+- Zero-config for the vast majority of use-cases
+- Isolates dependencies recursively. If package A depends on internal package B
+  which depends on internal package C, all of them will be included
+- Optionally force output to use NPM with matching versions
+- Optionally include devDependencies in the isolated output
+- Optionally pick or omit scripts from the manifest
+- Compatible with the Firebase tools CLI, including 1st and 2nd generation
+  Firebase Functions
 
 ## Motivation
 
@@ -85,7 +80,8 @@ Run `pnpm install isolate-package --dev` or the equivalent for `npm` or `yarn`.
 
 I recommend using `pnpm` for
 [a number of reasons](https://pnpm.io/feature-comparison). In my experience it
-is the best package manager, especially for monorepo setups.
+is the best package manager, especially for monorepo setups, but any other
+package manager should work.
 
 ## Usage
 
@@ -219,7 +215,7 @@ Because the configuration loader depends on this setting, its output is not
 affected by this setting. If you want to debug the configuration set
 `DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
 
-### useNpm
+### forceNpm
 
 Type: `boolean`, default: `false`
 
@@ -232,11 +228,11 @@ Also, it should not really matter what package manager is used in de deployment
 as long as the versions match your original lockfile.
 
 By setting this option to `true` you are forcing the isolate output to use NPM.
-A package-lock file will be generated based on the installed node modules and
+A package-lock file will be generated based on the contents of node_modules and
 therefore should match the versions in your original lockfile.
 
-This way you can enjoy using PNPM for your monorepo, while your deployment uses
-NPM locked to the same versions.
+This way you can enjoy using PNPM or Yarn for your monorepo, while your
+deployment uses NPM with modules locked to the same versions.
 
 ### buildDirName
 

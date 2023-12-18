@@ -17,7 +17,7 @@ export async function adaptInternalPackageManifests(
   isolateDir: string
 ) {
   const packageManager = usePackageManager();
-  const { includeDevDependencies, useNpm } = useConfig();
+  const { includeDevDependencies, forceNpm } = useConfig();
 
   await Promise.all(
     internalPackageNames.map(async (packageName) => {
@@ -31,11 +31,11 @@ export async function adaptInternalPackageManifests(
        * contains something that is not referenced in the lockfile.
        */
       const inputManifest = includeDevDependencies
-        ? omit(["xxpeerDependencies"], manifest)
-        : omit(["devDependencies", "xxpeerDependencies"], manifest);
+        ? omit(["peerDependencies"], manifest)
+        : omit(["devDependencies", "peerDependencies"], manifest);
 
       const outputManifest =
-        packageManager.name === "pnpm" && !useNpm
+        packageManager.name === "pnpm" && !forceNpm
           ? /**
              * For PNPM the output itself is a workspace so we can preserve the specifiers
              * with "workspace:*" in the output manifest.
