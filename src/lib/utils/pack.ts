@@ -24,7 +24,7 @@ export async function pack(
   const stdout = usePnpmPack
     ? await new Promise<string>((resolve, reject) => {
         exec(
-          `pnpm pack --pack-destination ${dstDir}`,
+          `pnpm pack --pack-destination "${dstDir}"`,
           execOptions,
           (err, stdout, stderr) => {
             if (err) {
@@ -38,7 +38,7 @@ export async function pack(
       })
     : await new Promise<string>((resolve, reject) => {
         exec(
-          `npm pack --pack-destination ${dstDir}`,
+          `npm pack --pack-destination "${dstDir}"`,
           execOptions,
           (err, stdout) => {
             if (err) {

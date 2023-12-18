@@ -1,5 +1,4 @@
 import assert from "node:assert";
-import { useConfig } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
 import type { PackagesRegistry } from "../types";
@@ -28,7 +27,6 @@ export async function packDependencies({
   internalPackageNames: string[];
   packDestinationDir: string;
 }) {
-  const config = useConfig();
   const log = useLogger();
 
   const packedFileByName: Record<string, string> = {};
@@ -37,8 +35,7 @@ export async function packDependencies({
 
   const versionMajor = parseInt(version.split(".")[0], 10);
 
-  const usePnpmPack =
-    !config.avoidPnpmPack && name === "pnpm" && versionMajor >= 8;
+  const usePnpmPack = name === "pnpm" && versionMajor >= 8;
 
   if (usePnpmPack) {
     log.debug("Using PNPM pack instead of NPM pack");
