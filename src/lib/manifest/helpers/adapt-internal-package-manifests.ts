@@ -17,7 +17,7 @@ export async function adaptInternalPackageManifests(
   isolateDir: string
 ) {
   const packageManager = usePackageManager();
-  const { includeDevDependencies } = useConfig();
+  const { includeDevDependencies, useNpm } = useConfig();
 
   await Promise.all(
     internalPackageNames.map(async (packageName) => {
@@ -35,7 +35,7 @@ export async function adaptInternalPackageManifests(
         : omit(["devDependencies", "xxpeerDependencies"], manifest);
 
       const outputManifest =
-        packageManager.name === "pnpm"
+        packageManager.name === "pnpm" && !useNpm
           ? /**
              * For PNPM the output itself is a workspace so we can preserve the specifiers
              * with "workspace:*" in the output manifest.
