@@ -73,11 +73,11 @@ process, so it doesn't affect anything prior to deployment. Because of this, you
 preserve live code updates when running the local Firebase emulators, which I
 think is highly desirable.
 
-The fork is almost identical, and the integration with isolate-package does not
-affect any existing functionality, so I do not think there's reason to worry
-about things breaking. I will sync the fork with the upstream firebase-tools on
-a regular basis. The fork versions will match the firebase-tools versions for
-clarity.
+The fork is pretty much identical, and the integration with isolate-package does
+not affect any existing functionality, so I do not think there is a reason to
+worry about things breaking. I will sync the fork with the upstream
+firebase-tools on a regular basis. The fork versions will match the
+firebase-tools versions for clarity.
 
 ## Deploying from multiple packages
 

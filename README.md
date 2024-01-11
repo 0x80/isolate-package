@@ -60,6 +60,9 @@ integrated, check out [mono-ts](https://github.com/0x80/mono-ts)
 - Compatible with the Firebase tools CLI, including 1st and 2nd generation
   Firebase Functions. For more information see
   [the Firebase instructions](./docs/firebase.md).
+- Available in a
+  [forked version of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate)
+  to preserve live code updates when running the emulators
 
 ## Installation
 
@@ -71,6 +74,11 @@ is the best package manager, especially for monorepo setups, but any other
 package manager should work.
 
 ## Usage
+
+> !! If you plan use this for Firebase deployments, and you want to preserve
+> live code updates when running the local emulators, you will want to use
+> [firebase-tools-with-isolate](https://github.com/0x80/firebase-tools-with-isolate)
+> instead.
 
 This package exposes a binary called `isolate`.
 
