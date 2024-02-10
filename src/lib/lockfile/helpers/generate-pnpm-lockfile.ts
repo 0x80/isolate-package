@@ -5,7 +5,7 @@ import {
 } from "@pnpm/lockfile-file";
 import assert from "node:assert";
 import path from "node:path";
-import { pick } from "ramda";
+import { pick } from "remeda";
 import { useConfig } from "~/lib/config";
 import { useLogger } from "~/lib/logger";
 import type { PackagesRegistry } from "~/lib/types";
@@ -62,7 +62,7 @@ export async function generatePnpmLockfile({
     log.debug("Relevant importer ids:", relevantImporterIds);
 
     lockfile.importers = Object.fromEntries(
-      Object.entries(pick(relevantImporterIds, lockfile.importers)).map(
+      Object.entries(pick(lockfile.importers, relevantImporterIds)).map(
         ([importerId, importer]) => {
           if (importerId === targetImporterId) {
             log.debug("Setting target package importer on root");

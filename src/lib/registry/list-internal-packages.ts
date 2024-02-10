@@ -1,4 +1,4 @@
-import { uniq } from "ramda";
+import { uniq } from "remeda";
 import type { PackageManifest, PackagesRegistry } from "../types";
 
 /**

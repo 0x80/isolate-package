@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
-import { isEmpty } from "ramda";
+import { isEmpty } from "remeda";
 import { setLogLevel, useLogger } from "./logger";
 import { inspectValue, readTypedJsonSync } from "./utils";
 

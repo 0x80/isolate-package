@@ -2,7 +2,7 @@ import type {
   ProjectSnapshot,
   ResolvedDependencies,
 } from "@pnpm/lockfile-file";
-import { mapObjIndexed } from "ramda";
+import { mapValues } from "remeda";
 import { useConfig } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
@@ -54,12 +54,8 @@ function pnpmMapDependenciesLinks(
   def: ResolvedDependencies,
   directoryByPackageName: { [packageName: string]: string }
 ): ResolvedDependencies {
-  return mapObjIndexed(
-    (version, name) =>
-      version.startsWith("link:")
-        ? `link:./${directoryByPackageName[name]}`
-        : version,
-    def
+  return mapValues(def, (value, key) =>
+    value.startsWith("link:") ? `link:./${directoryByPackageName[key]}` : value
   );
 }
 
