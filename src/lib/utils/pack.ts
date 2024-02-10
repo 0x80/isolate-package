@@ -1,12 +1,13 @@
-import fs from "fs-extra";
 import { exec } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { useLogger } from "../logger";
+import { getErrorMessage } from "./get-error-message";
 
 export async function pack(
   srcDir: string,
   dstDir: string,
-  usePnpmPack = false
+  usePnpmPack?: boolean
 ) {
   const execOptions = {
     maxBuffer: 10 * 1024 * 1024,
@@ -28,7 +29,7 @@ export async function pack(
           execOptions,
           (err, stdout, stderr) => {
             if (err) {
-              log.error(stderr);
+              log.error(getErrorMessage(err));
               return reject(err);
             }
 

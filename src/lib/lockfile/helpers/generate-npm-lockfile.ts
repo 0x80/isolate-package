@@ -39,7 +39,7 @@ export async function generateNpmLockfile({
 
     const arborist = new Arborist({ path: isolateDir });
 
-    log.debug(`Build tree`);
+    log.debug(`Building tree...`);
     const { meta } = await arborist.buildIdealTree();
 
     meta?.commit();

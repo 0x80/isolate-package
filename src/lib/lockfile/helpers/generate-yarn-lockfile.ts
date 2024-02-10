@@ -32,18 +32,12 @@ export async function generateYarnLockfile({
   try {
     await fs.copyFile(origLockfilePath, newLockfilePath);
 
-    // const origWorkingDirectory = process.cwd();
-
-    // process.chdir(isolateDir);
-
     /**
      * Running install with the original lockfile in the same directory will
      * generate a pruned version of the lockfile.
      */
     log.debug(`Running local install`);
     execSync(`yarn install --cwd ${isolateDir}`);
-
-    // process.chdir(origWorkingDirectory);
 
     log.debug("Generated lockfile at", newLockfilePath);
   } catch (err) {
