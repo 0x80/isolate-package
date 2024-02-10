@@ -25,7 +25,7 @@ export async function generatePnpmLockfile({
   internalDepPackageNames: string[];
   packagesRegistry: PackagesRegistry;
 }) {
-  const { includeDevDependencies } = useConfig();
+  const { includeDevDependencies, includePatchedDependencies } = useConfig();
   const log = useLogger();
 
   log.info("Generating PNPM lockfile...");
@@ -71,6 +71,7 @@ export async function generatePnpmLockfile({
               ".",
               pnpmMapImporter(importer, {
                 includeDevDependencies,
+                includePatchedDependencies,
                 directoryByPackageName,
               }),
             ];
@@ -82,6 +83,7 @@ export async function generatePnpmLockfile({
             importerId,
             pnpmMapImporter(importer, {
               includeDevDependencies,
+              includePatchedDependencies,
               directoryByPackageName,
             }),
           ];

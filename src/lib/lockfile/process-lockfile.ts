@@ -13,12 +13,19 @@ import { generateYarnLockfile } from "./helpers/generate-yarn-lockfile";
 
 /** Convert dependency links */
 export function pnpmMapImporter(
-  { dependencies, devDependencies, ...rest }: ProjectSnapshot,
+  {
+    dependencies,
+    devDependencies,
+    patchedDependencies,
+    ...rest
+  }: ProjectSnapshot,
   {
     includeDevDependencies,
+    includePatchedDependencies,
     directoryByPackageName,
   }: {
     includeDevDependencies: boolean;
+    includePatchedDependencies: boolean;
     directoryByPackageName: { [packageName: string]: string };
   }
 ): ProjectSnapshot {
@@ -30,6 +37,15 @@ export function pnpmMapImporter(
       includeDevDependencies && devDependencies
         ? pnpmMapDependenciesLinks(devDependencies, directoryByPackageName)
         : undefined,
+    /**
+     * Don't know how to map the patched dependencies yet, so we just include
+     * them but I don't think it would work like this. The important thing for
+     * now is that they are omitted by default, because that is the most common
+     * use case.
+     */
+    patchedDependencies: includePatchedDependencies
+      ? patchedDependencies
+      : undefined,
     ...rest,
   };
 }
