@@ -26,7 +26,7 @@ export async function pack(
         exec(
           `pnpm pack --pack-destination "${dstDir}"`,
           execOptions,
-          (err, stdout, stderr) => {
+          (err, stdout) => {
             if (err) {
               log.error(stderr);
               return reject(err);

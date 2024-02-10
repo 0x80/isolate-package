@@ -1,5 +1,5 @@
 import path from "node:path";
-import { omit } from "ramda";
+import { omit } from "remeda";
 import { useConfig } from "~/lib/config";
 import { usePackageManager } from "~/lib/package-manager";
 import type { PackagesRegistry } from "~/lib/types";
@@ -31,8 +31,8 @@ export async function adaptInternalPackageManifests(
        * contains something that is not referenced in the lockfile.
        */
       const inputManifest = includeDevDependencies
-        ? omit(["peerDependencies"], manifest)
-        : omit(["devDependencies", "peerDependencies"], manifest);
+        ? omit(manifest, ["peerDependencies"])
+        : omit(manifest, ["devDependencies", "peerDependencies"]);
 
       const outputManifest =
         packageManager.name === "pnpm" && !forceNpm

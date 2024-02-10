@@ -1,4 +1,4 @@
-import { omit, pick } from "ramda";
+import { omit, pick } from "remeda";
 import { useConfig } from "../config";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
@@ -24,7 +24,7 @@ export async function adaptTargetPackageManifest(
   /** Dev dependencies are omitted by default */
   const inputManifest = includeDevDependencies
     ? manifest
-    : omit(["devDependencies"], manifest);
+    : omit(manifest, ["devDependencies"]);
 
   const adaptedManifest =
     packageManager.name === "pnpm" && !forceNpm
@@ -46,9 +46,9 @@ export async function adaptTargetPackageManifest(
      * config.
      */
     scripts: pickFromScripts
-      ? pick(pickFromScripts as never[], manifest.scripts)
+      ? pick(manifest.scripts ?? {}, pickFromScripts)
       : omitFromScripts
-        ? omit(omitFromScripts as never[], manifest.scripts)
+        ? omit(manifest.scripts ?? {}, omitFromScripts)
         : undefined,
   };
 
