@@ -47,10 +47,6 @@ export async function generateYarnLockfile({
 
     log.debug("Generated lockfile at", newLockfilePath);
   } catch (err) {
-    log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
-    /**
-     * If lockfile creation fails we can technically still continue with the
-     * rest. Not sure if that is desirable.
-     */
+    throw new Error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
   }
 }

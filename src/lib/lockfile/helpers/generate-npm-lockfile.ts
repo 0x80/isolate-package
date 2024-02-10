@@ -25,6 +25,8 @@ export async function generateNpmLockfile({
 
   let hasMovedNodeModules = false;
 
+  let hasError = false;
+
   try {
     if (!fs.existsSync(origRootNodeModulesPath)) {
       throw new Error(
@@ -49,17 +51,19 @@ export async function generateNpmLockfile({
     await fs.writeFile(lockfilePath, String(meta));
 
     log.debug("Created lockfile at", lockfilePath);
-  } catch (err: any) {
+  } catch (err) {
     console.error(inspectValue(err));
     log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
-    /**
-     * If lockfile creation fails we can technically still continue with the
-     * rest. Not sure if that is desirable.
-     */
+    hasError = true;
   } finally {
+    /** @todo We should be able to use the new "using" keyword for this I think. */
     if (hasMovedNodeModules) {
       log.debug(`Restoring node_modules to the workspace root`);
       await fs.move(tempRootNodeModulesPath, origRootNodeModulesPath);
     }
+  }
+
+  if (hasError) {
+    throw new Error("Failed to generate lockfile");
   }
 }
