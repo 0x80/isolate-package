@@ -95,6 +95,6 @@ export async function generatePnpmLockfile({
 
     log.debug("Created lockfile at", path.join(isolateDir, "pnpm-lock.yaml"));
   } catch (err) {
-    log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
+    throw new Error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
   }
 }
