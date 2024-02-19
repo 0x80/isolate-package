@@ -2,7 +2,7 @@
 
 <!-- TOC -->
 
-- [TLDR](#tldr)
+- [Quickstart](#quickstart)
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -35,7 +35,7 @@
 
 <!-- /TOC -->
 
-## TLDR
+## Quickstart
 
 Run `npx isolate-package isolate` from the monorepo package you would like to
 isolate.
@@ -157,8 +157,8 @@ For this to work it is required that you define the `files` property in each
 package manifest, as it declares what files should be included in the published
 output.
 
-Typically the value contains an array with just the name of the build output
-directory, for example:
+Typically, the value contains an array with only the name of the build output
+directory. For example:
 
 ```cjson
 // package.json
@@ -167,8 +167,8 @@ directory, for example:
 }
 ```
 
-A few additional files from the root or your package will be included by `pack`
-automatically, like `package.json`, `LICENSE` and `README` files.
+A few additional files from the root of your package will be included
+automatically, like the `package.json`, `LICENSE` and `README` files.
 
 **Tip** If you deploy to Firebase
 [2nd generation](https://firebase.google.com/docs/firestore/extend-with-functions-2nd-gen)
