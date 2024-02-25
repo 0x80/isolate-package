@@ -2,8 +2,8 @@ import { omit, pick } from "remeda";
 import { useConfig } from "../config";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
-import { adaptManifestInternalDeps } from "./helpers";
 import { writeManifest } from "./io";
+import { adaptManifestInternalDeps } from "./helpers";
 
 /**
  * Adapt the output package manifest, so that:
