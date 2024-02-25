@@ -17,22 +17,14 @@ export async function adaptInternalPackageManifests(
   isolateDir: string
 ) {
   const packageManager = usePackageManager();
-  const { includeDevDependencies, forceNpm } = useConfig();
+  const { forceNpm } = useConfig();
 
   await Promise.all(
     internalPackageNames.map(async (packageName) => {
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
-      /**
-       * Dev dependencies are omitted by default. And also, for internal
-       * dependencies we want to omit the peerDependencies, because installing
-       * these is the responsibility of the consuming app / service, and
-       * otherwise the frozen lockfile install will error since the package file
-       * contains something that is not referenced in the lockfile.
-       */
-      const inputManifest = includeDevDependencies
-        ? omit(manifest, ["peerDependencies"])
-        : omit(manifest, ["devDependencies", "peerDependencies"]);
+      /** Dev dependencies and scripts are never included for internal deps */
+      const inputManifest = omit(manifest, ["scripts", "devDependencies"]);
 
       const outputManifest =
         packageManager.name === "pnpm" && !forceNpm
@@ -41,8 +33,9 @@ export async function adaptInternalPackageManifests(
              * with "workspace:*" in the output manifest.
              */
             inputManifest
-          : adaptManifestInternalDeps({
-              manifest,
+          : /** For other package managers we replace the links to internal dependencies */
+            adaptManifestInternalDeps({
+              manifest: inputManifest,
               packagesRegistry,
               parentRootRelativeDir: rootRelativeDir,
             });
