@@ -229,6 +229,11 @@ therefore should match the versions in your original lockfile.
 This way you can enjoy using PNPM or Yarn for your monorepo, while your
 deployment uses NPM with modules locked to the same versions.
 
+> !! Warning: Generating an NPM lockfile currently requires moving the
+> node_modules from the root of the monorepo temporarily into the isolate
+> directory. This will not be compatible with setups that run multiple isolation
+> processes in parallel.
+
 ### buildDirName
 
 Type: `string | undefined`, default: `undefined`
@@ -346,18 +351,18 @@ configuration.
 
 ### NPM
 
-For NPM we use a tool called Arborist which is an integral part of the NPM
+For NPM we use a tool called Arborist, which is an integral part of the NPM
 codebase. It is executed in the isolate output directory and requires the
 adapted lockfile and the `node_modules` directory from the root of the
 repository. As this directory is typically quite large, copying it over as part
 of the isolate flow is not very desirable.
 
 To work around this, we move it to the isolate output and then move it back
-after Arborist has finished doing its thing. Luckily it doesn't take long and
-hopefully this doesn't create any unwanted side effects for IDEs and other tools
-that depend on the content of the directory.
+after Arborist has finished doing its thing.
 
-When errors occur in this process, the folder should still be moved back.
+> !! Warning: This will not be compatible with setups that run multiple
+> isolation processes in parallel. Hopefully a future update to NPM Arborist
+> (the part the generates the lockfile) will solve this.
 
 ### PNPM
 

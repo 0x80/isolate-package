@@ -25,7 +25,7 @@ export async function generatePnpmLockfile({
   internalDepPackageNames: string[];
   packagesRegistry: PackagesRegistry;
 }) {
-  const { includeDevDependencies } = useConfig();
+  const { includeDevDependencies, includePatchedDependencies } = useConfig();
   const log = useLogger();
 
   log.info("Generating PNPM lockfile...");
@@ -71,6 +71,7 @@ export async function generatePnpmLockfile({
               ".",
               pnpmMapImporter(importer, {
                 includeDevDependencies,
+                includePatchedDependencies,
                 directoryByPackageName,
               }),
             ];
@@ -82,6 +83,7 @@ export async function generatePnpmLockfile({
             importerId,
             pnpmMapImporter(importer, {
               includeDevDependencies,
+              includePatchedDependencies,
               directoryByPackageName,
             }),
           ];
@@ -89,7 +91,18 @@ export async function generatePnpmLockfile({
       )
     );
 
-    await writeWantedLockfile(isolateDir, lockfile);
+    await writeWantedLockfile(isolateDir, {
+      ...lockfile,
+      /**
+       * Don't know how to map the patched dependencies yet, so we just include
+       * them but I don't think it would work like this. The important thing for
+       * now is that they are omitted by default, because that is the most
+       * common use case.
+       */
+      patchedDependencies: includePatchedDependencies
+        ? lockfile.patchedDependencies
+        : undefined,
+    });
 
     log.debug("Created lockfile at", path.join(isolateDir, "pnpm-lock.yaml"));
   } catch (err) {
