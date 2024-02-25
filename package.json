@@ -40,7 +40,8 @@
     "test": "vitest",
     "format": "prettier --write .",
     "lint:format": "prettier --check .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prepare": "pnpm run build"
   },
   "dependencies": {
     "@npmcli/arborist": "^7.3.1",
