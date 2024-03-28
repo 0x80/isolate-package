@@ -6,7 +6,9 @@ import { getErrorMessage } from "./get-error-message";
 export function readTypedJsonSync<T>(filePath: string) {
   try {
     const rawContent = fs.readFileSync(filePath, "utf-8");
-    const data = JSON.parse(stripJsonComments(rawContent, { trailingCommas: true })) as T;
+    const data = JSON.parse(
+      stripJsonComments(rawContent, { trailingCommas: true })
+    ) as T;
     return data;
   } catch (err) {
     throw new Error(
@@ -18,7 +20,9 @@ export function readTypedJsonSync<T>(filePath: string) {
 export async function readTypedJson<T>(filePath: string) {
   try {
     const rawContent = await fs.readFile(filePath, "utf-8");
-    const data = JSON.parse(stripJsonComments(rawContent, { trailingCommas: true })) as T;
+    const data = JSON.parse(
+      stripJsonComments(rawContent, { trailingCommas: true })
+    ) as T;
     return data;
   } catch (err) {
     throw new Error(
