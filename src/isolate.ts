@@ -28,6 +28,7 @@ import {
   getRootRelativePath,
   isRushWorkspace,
   readTypedJson,
+  writeTypedYamlSync,
 } from "./lib/utils";
 
 const __dirname = getDirname(import.meta.url);
@@ -201,20 +202,18 @@ export async function isolate(
     if (isRushWorkspace(workspaceRootDir)) {
       const packagesFolderNames = unique(
         internalPackageNames.map(
-          (name) => path.parse(packagesRegistry[name].rootRelativeDir).base
+          (name) => path.parse(packagesRegistry[name].rootRelativeDir).dir
         )
       );
 
       log.debug("Generating pnpm-workspace.yaml for Rush workspace");
       log.debug("Packages folder names:", packagesFolderNames);
 
-      const workspaceConfig = {
-        packages: packagesFolderNames.map((x) => pkg.rootRelativeDir),
-      };
+      const workspaceConfig = packagesFolderNames.map((x) => x + "/*");
 
-      fs.writeFileSync(
+      await writeTypedYamlSync(
         path.join(isolateDir, "pnpm-workspace.yaml"),
-        JSON.stringify(workspaceConfig, null, 2)
+        workspaceConfig
       );
     } else {
       fs.copyFileSync(
