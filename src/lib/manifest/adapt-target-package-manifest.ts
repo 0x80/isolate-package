@@ -3,6 +3,7 @@ import { useConfig } from "../config";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
 import { adaptManifestInternalDeps } from "./helpers";
+import { adoptPnpmFieldsFromRoot } from "./helpers/adopt-pnpm-fields-from-root";
 import { writeManifest } from "./io";
 
 /**
@@ -12,11 +13,17 @@ import { writeManifest } from "./io";
  * - The devDependencies are possibly removed
  * - Scripts are picked or omitted and otherwise removed
  */
-export async function adaptTargetPackageManifest(
-  manifest: PackageManifest,
-  packagesRegistry: PackagesRegistry,
-  isolateDir: string
-) {
+export async function adaptTargetPackageManifest({
+  manifest,
+  packagesRegistry,
+  isolateDir,
+  workspaceRootDir,
+}: {
+  manifest: PackageManifest;
+  packagesRegistry: PackagesRegistry;
+  isolateDir: string;
+  workspaceRootDir: string;
+}) {
   const packageManager = usePackageManager();
   const { includeDevDependencies, forceNpm, pickFromScripts, omitFromScripts } =
     useConfig();
@@ -30,9 +37,10 @@ export async function adaptTargetPackageManifest(
     packageManager.name === "pnpm" && !forceNpm
       ? /**
          * For PNPM the output itself is a workspace so we can preserve the specifiers
-         * with "workspace:*" in the output manifest.
+         * with "workspace:*" in the output manifest, but we do want to adopt the
+         * pnpm.overrides field from the root package.json.
          */
-        inputManifest
+        await adoptPnpmFieldsFromRoot(inputManifest, workspaceRootDir)
       : /** For other package managers we replace the links to internal dependencies */
         adaptManifestInternalDeps({
           manifest: inputManifest,
