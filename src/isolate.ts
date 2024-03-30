@@ -156,12 +156,13 @@ export async function isolate(
    * Copy the target manifest file to the isolate location and adapt its
    * workspace dependencies to point to the isolated packages.
    */
-  await adaptTargetPackageManifest({
+  const outputManifest = await adaptTargetPackageManifest({
     manifest: targetPackageManifest,
     packagesRegistry,
-    isolateDir,
     workspaceRootDir,
   });
+
+  await writeManifest(isolateDir, outputManifest);
 
   /** Generate an isolated lockfile based on the original one */
   const usedFallbackToNpm = await processLockfile({
@@ -171,6 +172,7 @@ export async function isolate(
     internalDepPackageNames: internalPackageNames,
     targetPackageDir,
     targetPackageName: targetPackageManifest.name,
+    targetPackageManifest: outputManifest,
   });
 
   if (usedFallbackToNpm) {

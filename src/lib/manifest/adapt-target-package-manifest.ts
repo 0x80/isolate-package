@@ -3,7 +3,6 @@ import { useConfig } from "../config";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
 import { adaptManifestInternalDeps, adoptPnpmFieldsFromRoot } from "./helpers";
-import { writeManifest } from "./io";
 
 /**
  * Adapt the output package manifest, so that:
@@ -15,12 +14,10 @@ import { writeManifest } from "./io";
 export async function adaptTargetPackageManifest({
   manifest,
   packagesRegistry,
-  isolateDir,
   workspaceRootDir,
 }: {
   manifest: PackageManifest;
   packagesRegistry: PackagesRegistry;
-  isolateDir: string;
   workspaceRootDir: string;
 }) {
   const packageManager = usePackageManager();
@@ -46,7 +43,7 @@ export async function adaptTargetPackageManifest({
           packagesRegistry,
         });
 
-  const outputManifest = {
+  return {
     ...adaptedManifest,
     /**
      * Scripts are removed by default if not explicitly picked or omitted via
@@ -58,6 +55,4 @@ export async function adaptTargetPackageManifest({
         ? omit(manifest.scripts ?? {}, omitFromScripts)
         : undefined,
   };
-
-  await writeManifest(isolateDir, outputManifest);
 }
