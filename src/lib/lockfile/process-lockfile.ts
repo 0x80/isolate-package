@@ -1,8 +1,3 @@
-import type {
-  ProjectSnapshot,
-  ResolvedDependencies,
-} from "@pnpm/lockfile-file";
-import { mapValues } from "remeda";
 import { useConfig } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
@@ -10,39 +5,6 @@ import type { PackagesRegistry } from "../types";
 import { generateNpmLockfile } from "./helpers/generate-npm-lockfile";
 import { generatePnpmLockfile } from "./helpers/generate-pnpm-lockfile";
 import { generateYarnLockfile } from "./helpers/generate-yarn-lockfile";
-
-/** Convert dependency links */
-export function pnpmMapImporter(
-  { dependencies, devDependencies, ...rest }: ProjectSnapshot,
-  {
-    includeDevDependencies,
-    directoryByPackageName,
-  }: {
-    includeDevDependencies: boolean;
-    includePatchedDependencies: boolean;
-    directoryByPackageName: { [packageName: string]: string };
-  }
-): ProjectSnapshot {
-  return {
-    dependencies: dependencies
-      ? pnpmMapDependenciesLinks(dependencies, directoryByPackageName)
-      : undefined,
-    devDependencies:
-      includeDevDependencies && devDependencies
-        ? pnpmMapDependenciesLinks(devDependencies, directoryByPackageName)
-        : undefined,
-    ...rest,
-  };
-}
-
-function pnpmMapDependenciesLinks(
-  def: ResolvedDependencies,
-  directoryByPackageName: { [packageName: string]: string }
-): ResolvedDependencies {
-  return mapValues(def, (value, key) =>
-    value.startsWith("link:") ? `link:./${directoryByPackageName[key]}` : value
-  );
-}
 
 /**
  * Adapt the lockfile and write it to the isolate directory. Because we keep the

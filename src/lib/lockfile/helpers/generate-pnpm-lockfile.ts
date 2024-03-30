@@ -10,7 +10,7 @@ import { useConfig } from "~/lib/config";
 import { useLogger } from "~/lib/logger";
 import type { PackagesRegistry } from "~/lib/types";
 import { getErrorMessage } from "~/lib/utils";
-import { pnpmMapImporter } from "../process-lockfile";
+import { pnpmMapImporter } from "./pnpm-map-importer";
 
 export async function generatePnpmLockfile({
   workspaceRootDir,
