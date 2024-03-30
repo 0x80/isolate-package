@@ -2,8 +2,7 @@ import { omit, pick } from "remeda";
 import { useConfig } from "../config";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
-import { adaptManifestInternalDeps } from "./helpers";
-import { adoptPnpmFieldsFromRoot } from "./helpers/adopt-pnpm-fields-from-root";
+import { adaptManifestInternalDeps, adoptPnpmFieldsFromRoot } from "./helpers";
 import { writeManifest } from "./io";
 
 /**

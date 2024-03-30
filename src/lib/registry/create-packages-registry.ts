@@ -4,7 +4,7 @@ import path from "node:path";
 import { useLogger } from "../logger";
 import type { PackageManifest, PackagesRegistry } from "../types";
 import { readTypedJson } from "../utils";
-import { findPackagesGlobs } from "./helpers/find-packages-globs";
+import { findPackagesGlobs } from "./helpers";
 
 /**
  * Build a list of all packages in the workspace, depending on the package

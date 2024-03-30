@@ -2,9 +2,11 @@ import { useConfig } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
 import type { PackagesRegistry } from "../types";
-import { generateNpmLockfile } from "./helpers/generate-npm-lockfile";
-import { generatePnpmLockfile } from "./helpers/generate-pnpm-lockfile";
-import { generateYarnLockfile } from "./helpers/generate-yarn-lockfile";
+import {
+  generateNpmLockfile,
+  generatePnpmLockfile,
+  generateYarnLockfile,
+} from "./helpers";
 
 /**
  * Adapt the lockfile and write it to the isolate directory. Because we keep the

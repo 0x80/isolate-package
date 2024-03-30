@@ -1,5 +1,4 @@
-import { inferFromFiles } from "./helpers/infer-from-files";
-import { inferFromManifest } from "./helpers/infer-from-manifest";
+import { inferFromFiles, inferFromManifest } from "./helpers";
 import type { PackageManager } from "./names";
 
 export * from "./names";
