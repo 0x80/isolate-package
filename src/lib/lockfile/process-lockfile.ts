@@ -1,7 +1,7 @@
 import { useConfig } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
-import type { PackagesRegistry } from "../types";
+import type { PackageManifest, PackagesRegistry } from "../types";
 import {
   generateNpmLockfile,
   generatePnpmLockfile,
@@ -21,6 +21,7 @@ export async function processLockfile({
   isolateDir,
   internalDepPackageNames,
   targetPackageDir,
+  targetPackageManifest,
 }: {
   workspaceRootDir: string;
   packagesRegistry: PackagesRegistry;
@@ -28,6 +29,7 @@ export async function processLockfile({
   internalDepPackageNames: string[];
   targetPackageDir: string;
   targetPackageName: string;
+  targetPackageManifest: PackageManifest;
 }) {
   const log = useLogger();
 
@@ -86,6 +88,7 @@ export async function processLockfile({
         isolateDir,
         internalDepPackageNames,
         packagesRegistry,
+        targetPackageManifest,
       });
       break;
     }

@@ -3,12 +3,13 @@ import {
   readWantedLockfile,
   writeWantedLockfile,
 } from "@pnpm/lockfile-file";
+import { pruneLockfile } from "@pnpm/prune-lockfile";
 import assert from "node:assert";
 import path from "node:path";
 import { pick } from "remeda";
 import { useConfig } from "~/lib/config";
 import { useLogger } from "~/lib/logger";
-import type { PackagesRegistry } from "~/lib/types";
+import type { PackageManifest, PackagesRegistry } from "~/lib/types";
 import { getErrorMessage } from "~/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
@@ -18,12 +19,14 @@ export async function generatePnpmLockfile({
   isolateDir,
   internalDepPackageNames,
   packagesRegistry,
+  targetPackageManifest,
 }: {
   workspaceRootDir: string;
   targetPackageDir: string;
   isolateDir: string;
   internalDepPackageNames: string[];
   packagesRegistry: PackagesRegistry;
+  targetPackageManifest: PackageManifest;
 }) {
   const { includeDevDependencies, includePatchedDependencies } = useConfig();
   const log = useLogger();
@@ -91,8 +94,15 @@ export async function generatePnpmLockfile({
       )
     );
 
+    log.debug("Pruning the lockfile");
+    const prunedLockfile = await pruneLockfile(
+      lockfile,
+      targetPackageManifest,
+      "."
+    );
+
     await writeWantedLockfile(isolateDir, {
-      ...lockfile,
+      ...prunedLockfile,
       /**
        * Don't know how to map the patched dependencies yet, so we just include
        * them but I don't think it would work like this. The important thing for
