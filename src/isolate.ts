@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
+import { unique } from "remeda";
 import type { IsolateConfig } from "./lib/config";
 import { resolveConfig, setUserConfig } from "./lib/config";
 import { processLockfile } from "./lib/lockfile";
@@ -22,7 +23,12 @@ import { detectPackageManager } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
-import { getDirname, getRootRelativePath, readTypedJson } from "./lib/utils";
+import {
+  getDirname,
+  getRootRelativePath,
+  isRushWorkspace,
+  readTypedJson,
+} from "./lib/utils";
 
 const __dirname = getDirname(import.meta.url);
 
@@ -58,10 +64,6 @@ export async function isolate(
     ? path.join(process.cwd(), config.targetPackagePath)
     : process.cwd();
 
-  /**
-   * We want a trailing slash here. Functionally it doesn't matter, but it makes
-   * the relative paths more correct in the debug output.
-   */
   const workspaceRootDir = config.targetPackagePath
     ? process.cwd()
     : path.join(targetPackageDir, config.workspaceRoot);
@@ -193,11 +195,33 @@ export async function isolate(
      * PNPM doesn't install dependencies of packages that are linked via link:
      * or file: specifiers. It requires the directory to be configured as a
      * workspace, so we copy the workspace config file to the isolate output.
+     *
+     * Rush doesn't have a pnpm-workspace.yaml file, so we generate one.
      */
-    fs.copyFileSync(
-      path.join(workspaceRootDir, "pnpm-workspace.yaml"),
-      path.join(isolateDir, "pnpm-workspace.yaml")
-    );
+    if (isRushWorkspace(workspaceRootDir)) {
+      const packagesFolderNames = unique(
+        internalPackageNames.map(
+          (name) => path.parse(packagesRegistry[name].rootRelativeDir).base
+        )
+      );
+
+      log.debug("Generating pnpm-workspace.yaml for Rush workspace");
+      log.debug("Packages folder names:", packagesFolderNames);
+
+      const workspaceConfig = {
+        packages: packagesFolderNames.map((x) => pkg.rootRelativeDir),
+      };
+
+      fs.writeFileSync(
+        path.join(isolateDir, "pnpm-workspace.yaml"),
+        JSON.stringify(workspaceConfig, null, 2)
+      );
+    } else {
+      fs.copyFileSync(
+        path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+        path.join(isolateDir, "pnpm-workspace.yaml")
+      );
+    }
   }
   /**
    * If there is an .npmrc file in the workspace root, copy it to the isolate

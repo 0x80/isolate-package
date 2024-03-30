@@ -4,6 +4,7 @@ export * from "./get-error-message";
 export * from "./get-relative-path";
 export * from "./inspect-value";
 export * from "./is-present";
+export * from "./is-rush-workspace";
 export * from "./json";
 export * from "./pack";
 export * from "./unpack";
