@@ -24,7 +24,7 @@ export async function adaptInternalPackageManifests(
       const { manifest, rootRelativeDir } = packagesRegistry[packageName];
 
       /** Dev dependencies and scripts are never included for internal deps */
-      const inputManifest = omit(manifest, ["scripts", "devDependencies"]);
+      const strippedManifest = omit(manifest, ["scripts", "devDependencies"]);
 
       const outputManifest =
         packageManager.name === "pnpm" && !forceNpm
@@ -32,10 +32,10 @@ export async function adaptInternalPackageManifests(
              * For PNPM the output itself is a workspace so we can preserve the specifiers
              * with "workspace:*" in the output manifest.
              */
-            inputManifest
+            strippedManifest
           : /** For other package managers we replace the links to internal dependencies */
             adaptManifestInternalDeps({
-              manifest: inputManifest,
+              manifest: strippedManifest,
               packagesRegistry,
               parentRootRelativeDir: rootRelativeDir,
             });
