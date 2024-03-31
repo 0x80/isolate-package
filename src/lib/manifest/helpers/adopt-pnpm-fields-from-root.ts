@@ -1,7 +1,7 @@
 import type { ProjectManifest } from "@pnpm/types";
 import path from "path";
 import type { PackageManifest } from "~/lib/types";
-import { readTypedJson } from "~/lib/utils";
+import { isRushWorkspace, readTypedJson } from "~/lib/utils";
 
 /**
  * Adopts the `pnpm` fields from the root package manifest. Currently it only
@@ -12,6 +12,10 @@ export async function adoptPnpmFieldsFromRoot(
   targetPackageManifest: PackageManifest,
   workspaceRootDir: string
 ) {
+  if (isRushWorkspace(workspaceRootDir)) {
+    return targetPackageManifest;
+  }
+
   const rootPackageManifest = await readTypedJson<ProjectManifest>(
     path.join(workspaceRootDir, "package.json")
   );

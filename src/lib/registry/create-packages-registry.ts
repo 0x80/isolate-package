@@ -3,7 +3,7 @@ import { globSync } from "glob";
 import path from "node:path";
 import { useLogger } from "../logger";
 import type { PackageManifest, PackagesRegistry } from "../types";
-import { readTypedJson } from "../utils";
+import { isRushWorkspace, readTypedJson, readTypedJsonSync } from "../utils";
 import { findPackagesGlobs } from "./helpers";
 
 /**
@@ -23,16 +23,13 @@ export async function createPackagesRegistry(
     );
   }
 
-  const packagesGlobs =
-    workspacePackagesOverride ?? findPackagesGlobs(workspaceRootDir);
+  const allPackages = listWorkspacePackages(
+    workspacePackagesOverride,
+    workspaceRootDir
+  );
 
   const cwd = process.cwd();
   process.chdir(workspaceRootDir);
-
-  const allPackages = packagesGlobs
-    .flatMap((glob) => globSync(glob))
-    /** Make sure to filter any loose files that might hang around. */
-    .filter((dir) => fs.lstatSync(dir).isDirectory());
 
   const registry: PackagesRegistry = (
     await Promise.all(
@@ -69,4 +66,31 @@ export async function createPackagesRegistry(
   process.chdir(cwd);
 
   return registry;
+}
+
+type RushConfig = {
+  projects: { packageName: string; projectFolder: string }[];
+};
+
+function listWorkspacePackages(
+  workspacePackagesOverride: string[] | undefined,
+  workspaceRootDir: string
+) {
+  if (isRushWorkspace(workspaceRootDir)) {
+    const rushConfig = readTypedJsonSync<RushConfig>(
+      path.join(workspaceRootDir, "rush.json")
+    );
+
+    return rushConfig.projects.map(({ projectFolder }) => projectFolder);
+  } else {
+    const packagesGlobs =
+      workspacePackagesOverride ?? findPackagesGlobs(workspaceRootDir);
+
+    const allPackages = packagesGlobs
+      .flatMap((glob) => globSync(glob))
+      /** Make sure to filter any loose files that might hang around. */
+      .filter((dir) => fs.lstatSync(dir).isDirectory());
+
+    return allPackages;
+  }
 }

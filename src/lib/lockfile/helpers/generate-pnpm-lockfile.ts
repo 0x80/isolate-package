@@ -10,7 +10,7 @@ import { pick } from "remeda";
 import { useConfig } from "~/lib/config";
 import { useLogger } from "~/lib/logger";
 import type { PackageManifest, PackagesRegistry } from "~/lib/types";
-import { getErrorMessage } from "~/lib/utils";
+import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
 export async function generatePnpmLockfile({
@@ -34,9 +34,16 @@ export async function generatePnpmLockfile({
   log.info("Generating PNPM lockfile...");
 
   try {
-    const lockfile = await readWantedLockfile(workspaceRootDir, {
-      ignoreIncompatible: false,
-    });
+    const isRush = isRushWorkspace(workspaceRootDir);
+
+    const lockfile = await readWantedLockfile(
+      isRush
+        ? path.join(workspaceRootDir, "common/config/rush")
+        : workspaceRootDir,
+      {
+        ignoreIncompatible: false,
+      }
+    );
 
     assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
 
@@ -49,6 +56,8 @@ export async function generatePnpmLockfile({
       internalDepPackageNames.map((name) => {
         const pkg = packagesRegistry[name];
         assert(pkg, `Package ${name} not found in packages registry`);
+
+        console.log("pkg.rootRelativeDir", pkg.rootRelativeDir);
         return [name, pkg.rootRelativeDir];
       })
     );
@@ -64,26 +73,29 @@ export async function generatePnpmLockfile({
 
     log.debug("Relevant importer ids:", relevantImporterIds);
 
+    /**
+     * In a Rush workspace the original lockfile is not in the root, so the
+     * importerIds have to be prefixed with `../../`, but that's not how they
+     * should be stored in the isolated lockfile, so we use the prefixed ids
+     * only for parsing.
+     */
+    const relevantImporterIdsWithPrefix = relevantImporterIds.map((x) =>
+      isRush ? `../../${x}` : x
+    );
+
     lockfile.importers = Object.fromEntries(
-      Object.entries(pick(lockfile.importers, relevantImporterIds)).map(
-        ([importerId, importer]) => {
-          if (importerId === targetImporterId) {
-            log.debug("Setting target package importer on root");
+      Object.entries(
+        pick(lockfile.importers, relevantImporterIdsWithPrefix)
+      ).map(([prefixedImporterId, importer]) => {
+        const importerId = isRush
+          ? prefixedImporterId.replace("../../", "")
+          : prefixedImporterId;
 
-            return [
-              ".",
-              pnpmMapImporter(importer, {
-                includeDevDependencies,
-                includePatchedDependencies,
-                directoryByPackageName,
-              }),
-            ];
-          }
-
-          log.debug("Setting internal package importer:", importerId);
+        if (importerId === targetImporterId) {
+          log.debug("Setting target package importer on root");
 
           return [
-            importerId,
+            ".",
             pnpmMapImporter(importer, {
               includeDevDependencies,
               includePatchedDependencies,
@@ -91,7 +103,18 @@ export async function generatePnpmLockfile({
             }),
           ];
         }
-      )
+
+        log.debug("Setting internal package importer:", importerId);
+
+        return [
+          importerId,
+          pnpmMapImporter(importer, {
+            includeDevDependencies,
+            includePatchedDependencies,
+            directoryByPackageName,
+          }),
+        ];
+      })
     );
 
     log.debug("Pruning the lockfile");
