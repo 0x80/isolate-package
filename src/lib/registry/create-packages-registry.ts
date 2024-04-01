@@ -28,13 +28,11 @@ export async function createPackagesRegistry(
     workspaceRootDir
   );
 
-  const cwd = process.cwd();
-  process.chdir(workspaceRootDir);
-
   const registry: PackagesRegistry = (
     await Promise.all(
       allPackages.map(async (rootRelativeDir) => {
-        const manifestPath = path.join(rootRelativeDir, "package.json");
+        const absoluteDir = path.join(workspaceRootDir, rootRelativeDir);
+        const manifestPath = path.join(absoluteDir, "package.json");
 
         if (!fs.existsSync(manifestPath)) {
           log.warn(
@@ -45,13 +43,13 @@ export async function createPackagesRegistry(
           log.debug(`Registering package ./${rootRelativeDir}`);
 
           const manifest = await readTypedJson<PackageManifest>(
-            path.join(rootRelativeDir, "package.json")
+            path.join(absoluteDir, "package.json")
           );
 
           return {
             manifest,
             rootRelativeDir,
-            absoluteDir: path.join(workspaceRootDir, rootRelativeDir),
+            absoluteDir,
           };
         }
       })
@@ -62,8 +60,6 @@ export async function createPackagesRegistry(
     }
     return acc;
   }, {});
-
-  process.chdir(cwd);
 
   return registry;
 }
@@ -83,6 +79,9 @@ function listWorkspacePackages(
 
     return rushConfig.projects.map(({ projectFolder }) => projectFolder);
   } else {
+    const currentDir = process.cwd();
+    process.chdir(workspaceRootDir);
+
     const packagesGlobs =
       workspacePackagesOverride ?? findPackagesGlobs(workspaceRootDir);
 
@@ -91,6 +90,7 @@ function listWorkspacePackages(
       /** Make sure to filter any loose files that might hang around. */
       .filter((dir) => fs.lstatSync(dir).isDirectory());
 
+    process.chdir(currentDir);
     return allPackages;
   }
 }
