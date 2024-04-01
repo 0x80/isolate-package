@@ -57,7 +57,6 @@ export async function generatePnpmLockfile({
         const pkg = packagesRegistry[name];
         assert(pkg, `Package ${name} not found in packages registry`);
 
-        console.log("pkg.rootRelativeDir", pkg.rootRelativeDir);
         return [name, pkg.rootRelativeDir];
       })
     );
