@@ -1,4 +1,3 @@
-import { useConfig } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
@@ -32,19 +31,6 @@ export async function processLockfile({
   targetPackageManifest: PackageManifest;
 }) {
   const log = useLogger();
-
-  const { forceNpm } = useConfig();
-
-  if (forceNpm) {
-    log.info("Forcing to use NPM for isolate output");
-
-    await generateNpmLockfile({
-      workspaceRootDir,
-      isolateDir,
-    });
-
-    return true;
-  }
 
   const { name, version } = usePackageManager();
   let usedFallbackToNpm = false;

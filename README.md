@@ -210,30 +210,6 @@ Because the configuration loader depends on this setting, its output is not
 affected by this setting. If you want to debug the configuration set
 `DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
 
-### forceNpm
-
-Type: `boolean`, default: `false`
-
-By default the isolate process will generate output based on the package manager
-that you are using for your monorepo. But your deployment target might not be
-compatible with that package manager, or it might not be the best choice given
-the available tooling.
-
-Also, it should not really matter what package manager is used in de deployment
-as long as the versions match your original lockfile.
-
-By setting this option to `true` you are forcing the isolate output to use NPM.
-A package-lock file will be generated based on the contents of node_modules and
-therefore should match the versions in your original lockfile.
-
-This way you can enjoy using PNPM or Yarn for your monorepo, while your
-deployment uses NPM with modules locked to the same versions.
-
-> !! Warning: Generating an NPM lockfile currently requires moving the
-> node_modules from the root of the monorepo temporarily into the isolate
-> directory. This will not be compatible with setups that run multiple isolation
-> processes in parallel.
-
 ### buildDirName
 
 Type: `string | undefined`, default: `undefined`
@@ -341,13 +317,8 @@ When you use the `targetPackagePath` option, this setting will be ignored.
 ## Lockfiles
 
 The isolate process tries to generate an isolated / pruned lockfile for the
-package manager that you use in your monorepo. If the package manager is not
-supported (modern Yarn versions), it can still generate a matching NPM lockfile
-based on the installed versions in node_modules.
-
-In case your package manager is not supported by your deployment target you can
-also choose NPM to be used by setting the `makeNpmLockfile` to `true` in your
-configuration.
+package manager that you use in your monorepo. The strategy is different for
+each package manager, with NPM currently being the least attractive.
 
 ### NPM
 
@@ -366,13 +337,8 @@ after Arborist has finished doing its thing.
 
 ### PNPM
 
-The PNPM lockfile format is very readable (YAML) but getting it adapted to the
-isolate output was a bit of a trip.
-
-It turns out, at least up to v10, that the isolated output has to be formatted
-as a workspace itself, otherwise dependencies of internally linked packages are
-not installed by PNPM. Therefore, the output looks a bit different from other
-package managers:
+For PNPM, the isolated output will be formatted as a workspace itself, otherwise
+dependencies of internally linked packages are not installed by PNPM.
 
 - Links are preserved
 - Versions specifiers like "workspace:\*" are preserved
