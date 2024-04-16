@@ -34,7 +34,7 @@
   },
   "scripts": {
     "build": "tsup-node",
-    "build:watch": "tsup-node --watch",
+    "dev": "tsup-node --watch",
     "test": "vitest",
     "format": "prettier --write .",
     "lint:format": "prettier --check .",
