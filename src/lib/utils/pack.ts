@@ -2,18 +2,24 @@ import { exec } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { useLogger } from "../logger";
+import { usePackageManager } from "../package-manager";
 import { getErrorMessage } from "./get-error-message";
 
-export async function pack(
-  srcDir: string,
-  dstDir: string,
-  usePnpmPack?: boolean
-) {
+export async function pack(srcDir: string, dstDir: string) {
+  const log = useLogger();
+  const { name, version } = usePackageManager();
+
+  const versionMajor = parseInt(version.split(".")[0], 10);
+
+  const usePnpmPack = name === "pnpm" && versionMajor >= 8;
+
+  if (usePnpmPack) {
+    log.debug("Using PNPM pack instead of NPM pack");
+  }
+
   const execOptions = {
     maxBuffer: 10 * 1024 * 1024,
   };
-
-  const log = useLogger();
 
   const previousCwd = process.cwd();
   process.chdir(srcDir);
