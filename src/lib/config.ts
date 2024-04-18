@@ -85,12 +85,14 @@ export function resolveConfig(): IsolateConfigResolved {
   } else {
     log.debug(`Attempting to load config from ${configFilePath}`);
 
+    const fallbackUserConfig = process.env.NO_ISOLATE_CONFIG_CACHE ? undefined : {};
+
     _user_defined_config = fs.existsSync(configFilePath)
       ? readTypedJsonSync<IsolateConfig>(configFilePath)
-      : {};
+      : fallbackUserConfig;
   }
 
-  const foreignKeys = Object.keys(_user_defined_config).filter(
+  const foreignKeys = Object.keys(_user_defined_config || {}).filter(
     (key) => !validConfigKeys.includes(key)
   );
 
