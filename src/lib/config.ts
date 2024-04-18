@@ -70,7 +70,7 @@ export function useConfig() {
  * called before this, it does not attempt to read a config file from disk.
  */
 export function resolveConfig(): IsolateConfigResolved {
-  if (_resolvedConfig) {
+  if (_resolvedConfig && !process.env.NO_ISOLATE_CONFIG_CACHE) {
     return _resolvedConfig;
   }
 
