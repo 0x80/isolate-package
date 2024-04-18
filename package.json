@@ -39,7 +39,7 @@
     "format": "prettier --write .",
     "lint:format": "prettier --check .",
     "type-check": "tsc --noEmit",
-    "prepare": "pnpm run build"
+    "prepare": "pnpm run type-check && pnpm run build"
   },
   "dependencies": {
     "@npmcli/arborist": "^7.4.0",
@@ -71,5 +71,6 @@
     "tsup": "^8.0.2",
     "typescript": "^5.4.3",
     "vitest": "^1.4.0"
-  }
+  },
+  "packageManager": "pnpm@9.0.0+sha256.bdfc9a7b372b5c462176993e586492603e20da5864d2f8881edc2462482c76fa"
 }

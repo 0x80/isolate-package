@@ -2,20 +2,11 @@ import { exec } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { useLogger } from "../logger";
-import { usePackageManager } from "../package-manager";
+import { shouldUsePnpmPack } from "../package-manager";
 import { getErrorMessage } from "./get-error-message";
 
 export async function pack(srcDir: string, dstDir: string) {
   const log = useLogger();
-  const { name, version } = usePackageManager();
-
-  const versionMajor = parseInt(version.split(".")[0], 10);
-
-  const usePnpmPack = name === "pnpm" && versionMajor >= 8;
-
-  if (usePnpmPack) {
-    log.debug("Using PNPM pack instead of NPM pack");
-  }
 
   const execOptions = {
     maxBuffer: 10 * 1024 * 1024,
@@ -28,7 +19,7 @@ export async function pack(srcDir: string, dstDir: string) {
    * PNPM pack seems to be a lot faster than NPM pack, so when PNPM is detected
    * we use that instead.
    */
-  const stdout = usePnpmPack
+  const stdout = shouldUsePnpmPack()
     ? await new Promise<string>((resolve, reject) => {
         exec(
           `pnpm pack --pack-destination "${dstDir}"`,

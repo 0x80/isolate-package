@@ -19,7 +19,7 @@ import {
   processBuildOutputFiles,
   unpackDependencies,
 } from "./lib/output";
-import { detectPackageManager } from "./lib/package-manager";
+import { detectPackageManager, shouldUsePnpmPack } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
@@ -110,6 +110,10 @@ export async function isolate(
     packageManager.name,
     packageManager.version
   );
+
+  if (shouldUsePnpmPack()) {
+    log.debug("Use PNPM pack instead of NPM pack");
+  }
 
   /**
    * Build a packages registry so we can find the workspace packages by name and
