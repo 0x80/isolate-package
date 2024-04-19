@@ -1,11 +1,11 @@
+import assert from "node:assert";
+import path from "node:path";
 import {
   getLockfileImporterId,
   readWantedLockfile,
   writeWantedLockfile,
-} from "@pnpm/lockfile-file";
-import { pruneLockfile } from "@pnpm/prune-lockfile";
-import assert from "node:assert";
-import path from "node:path";
+} from "pnpm_lockfile_file_v8";
+import { pruneLockfile } from "pnpm_prune_lockfile_v5";
 import { pick } from "remeda";
 import { useConfig } from "~/lib/config";
 import { useLogger } from "~/lib/logger";

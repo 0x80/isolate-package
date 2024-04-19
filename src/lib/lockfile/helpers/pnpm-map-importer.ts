@@ -1,7 +1,7 @@
 import type {
   ProjectSnapshot,
   ResolvedDependencies,
-} from "@pnpm/lockfile-file";
+} from "pnpm_lockfile_file_v8";
 import { mapValues } from "remeda";
 
 /** Convert dependency links */
