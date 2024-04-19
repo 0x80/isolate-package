@@ -15,6 +15,7 @@ export async function processBuildOutputFiles({
   isolateDir: string;
 }) {
   const log = useLogger();
+
   const packedFilePath = await pack(targetPackageDir, tmpDir);
   const unpackDir = path.join(tmpDir, "target");
 

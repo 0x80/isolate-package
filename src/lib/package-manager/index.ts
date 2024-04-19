@@ -38,3 +38,11 @@ export function detectPackageManager(workspaceRootDir: string): PackageManager {
 
   return packageManager;
 }
+
+export function shouldUsePnpmPack() {
+  const { name, version } = usePackageManager();
+
+  const majorVersion = parseInt(version.split(".")[0], 10);
+
+  return name === "pnpm" && majorVersion >= 8;
+}
