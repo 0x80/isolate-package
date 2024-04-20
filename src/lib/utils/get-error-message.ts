@@ -17,7 +17,7 @@ function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
     return new Error(JSON.stringify(maybeError));
   } catch {
     /**
-     * Fallback in case there’s an error stringifying the maybeError like with
+     * Fallback in case there’s an error in stringify which can happen with
      * circular references.
      */
     return new Error(String(maybeError));

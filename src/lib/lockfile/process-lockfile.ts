@@ -32,7 +32,7 @@ export async function processLockfile({
 }) {
   const log = useLogger();
 
-  const { name, version } = usePackageManager();
+  const { name, majorVersion } = usePackageManager();
   let usedFallbackToNpm = false;
 
   switch (name) {
@@ -45,9 +45,7 @@ export async function processLockfile({
       break;
     }
     case "yarn": {
-      const versionMajor = parseInt(version.split(".")[0], 10);
-
-      if (versionMajor === 1) {
+      if (majorVersion === 1) {
         await generateYarnLockfile({
           workspaceRootDir,
           isolateDir,
@@ -75,6 +73,7 @@ export async function processLockfile({
         internalDepPackageNames,
         packagesRegistry,
         targetPackageManifest,
+        majorVersion,
       });
       break;
     }

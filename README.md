@@ -68,10 +68,9 @@ integrated, check out [mono-ts](https://github.com/0x80/mono-ts)
 
 Run `pnpm install isolate-package --dev` or the equivalent for `npm` or `yarn`.
 
-I recommend using `pnpm` for
-[a number of reasons](https://pnpm.io/feature-comparison). In my experience it
-is the best package manager, especially for monorepo setups, but any other
-package manager should work.
+It is recommended to use `pnpm` over `npm` or `yarn`. Apart from being fast and
+efficient, PNPM has better support for monorepos, and the the lockfile isolation
+code is solid and works in parallel for multiple packages, [unlike NPM](#npm)
 
 ## Usage
 

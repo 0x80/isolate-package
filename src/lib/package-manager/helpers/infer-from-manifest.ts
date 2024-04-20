@@ -2,6 +2,7 @@ import fs from "fs-extra";
 import assert from "node:assert";
 import path from "node:path";
 import { useLogger } from "~/lib/logger";
+import { getMajorVersion } from "~/lib/utils/get-major-version";
 import type { PackageManifest } from "../../types";
 import { readTypedJsonSync } from "../../utils";
 import type { PackageManagerName } from "../names";
@@ -36,5 +37,5 @@ export function inferFromManifest(workspaceRoot: string) {
     `Manifest declares ${name} to be the packageManager, but failed to find ${lockfileName} in workspace root`
   );
 
-  return { name, version };
+  return { name, version, majorVersion: getMajorVersion(version) };
 }
