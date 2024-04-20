@@ -1,11 +1,17 @@
 import assert from "node:assert";
 import path from "node:path";
 import {
-  getLockfileImporterId,
-  readWantedLockfile,
-  writeWantedLockfile,
+  getLockfileImporterId as getLockfileImporterId_v8,
+  readWantedLockfile as readWantedLockfile_v8,
+  writeWantedLockfile as writeWantedLockfile_v8,
 } from "pnpm_lockfile_file_v8";
-import { pruneLockfile } from "pnpm_prune_lockfile_v5";
+import {
+  getLockfileImporterId as getLockfileImporterId_v9,
+  readWantedLockfile as readWantedLockfile_v9,
+  writeWantedLockfile as writeWantedLockfile_v9,
+} from "pnpm_lockfile_file_v9";
+import { pruneLockfile as pruneLockfile_v8 } from "pnpm_prune_lockfile_v8";
+import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
 import { pick } from "remeda";
 import { useConfig } from "~/lib/config";
 import { useLogger } from "~/lib/logger";
@@ -20,6 +26,7 @@ export async function generatePnpmLockfile({
   internalDepPackageNames,
   packagesRegistry,
   targetPackageManifest,
+  majorVersion,
 }: {
   workspaceRootDir: string;
   targetPackageDir: string;
@@ -27,7 +34,15 @@ export async function generatePnpmLockfile({
   internalDepPackageNames: string[];
   packagesRegistry: PackagesRegistry;
   targetPackageManifest: PackageManifest;
+  majorVersion: number;
 }) {
+  /**
+   * For now we will assume that the lockfile format might not change in the
+   * versions after 9, because we might get lucky. If it does change, things
+   * would break either way.
+   */
+  const useVersion9 = majorVersion >= 9;
+
   const { includeDevDependencies, includePatchedDependencies } = useConfig();
   const log = useLogger();
 
@@ -36,21 +51,29 @@ export async function generatePnpmLockfile({
   try {
     const isRush = isRushWorkspace(workspaceRootDir);
 
-    const lockfile = await readWantedLockfile(
-      isRush
-        ? path.join(workspaceRootDir, "common/config/rush")
-        : workspaceRootDir,
-      {
-        ignoreIncompatible: false,
-      }
-    );
+    const lockfile = useVersion9
+      ? await readWantedLockfile_v9(
+          isRush
+            ? path.join(workspaceRootDir, "common/config/rush")
+            : workspaceRootDir,
+          {
+            ignoreIncompatible: false,
+          }
+        )
+      : await readWantedLockfile_v8(
+          isRush
+            ? path.join(workspaceRootDir, "common/config/rush")
+            : workspaceRootDir,
+          {
+            ignoreIncompatible: false,
+          }
+        );
 
     assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
 
-    const targetImporterId = getLockfileImporterId(
-      workspaceRootDir,
-      targetPackageDir
-    );
+    const targetImporterId = useVersion9
+      ? getLockfileImporterId_v9(workspaceRootDir, targetPackageDir)
+      : getLockfileImporterId_v8(workspaceRootDir, targetPackageDir);
 
     const directoryByPackageName = Object.fromEntries(
       internalDepPackageNames.map((name) => {
@@ -117,24 +140,30 @@ export async function generatePnpmLockfile({
     );
 
     log.debug("Pruning the lockfile");
-    const prunedLockfile = await pruneLockfile(
-      lockfile,
-      targetPackageManifest,
-      "."
-    );
 
-    await writeWantedLockfile(isolateDir, {
-      ...prunedLockfile,
-      /**
-       * Don't know how to map the patched dependencies yet, so we just include
-       * them but I don't think it would work like this. The important thing for
-       * now is that they are omitted by default, because that is the most
-       * common use case.
-       */
-      patchedDependencies: includePatchedDependencies
-        ? lockfile.patchedDependencies
-        : undefined,
-    });
+    const prunedLockfile = useVersion9
+      ? await pruneLockfile_v9(lockfile, targetPackageManifest, ".")
+      : await pruneLockfile_v8(lockfile, targetPackageManifest, ".");
+
+    /**
+     * Don't know how to map the patched dependencies yet, so we just include
+     * them but I don't think it would work like this. The important thing for
+     * now is that they are omitted by default, because that is the most common
+     * use case.
+     */
+    const patchedDependencies = includePatchedDependencies
+      ? lockfile.patchedDependencies
+      : undefined;
+
+    useVersion9
+      ? await writeWantedLockfile_v9(isolateDir, {
+          ...prunedLockfile,
+          patchedDependencies,
+        })
+      : await writeWantedLockfile_v8(isolateDir, {
+          ...prunedLockfile,
+          patchedDependencies,
+        });
 
     log.debug("Created lockfile at", path.join(isolateDir, "pnpm-lock.yaml"));
   } catch (err) {

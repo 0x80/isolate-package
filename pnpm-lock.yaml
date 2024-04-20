@@ -35,10 +35,10 @@ importers:
       pnpm_lockfile_file_v9:
         specifier: npm:@pnpm/lockfile-file@9
         version: '@pnpm/lockfile-file@9.0.0(@pnpm/logger@5.0.0)'
-      pnpm_prune_lockfile_v5:
+      pnpm_prune_lockfile_v8:
         specifier: npm:@pnpm/prune-lockfile@5
         version: '@pnpm/prune-lockfile@5.0.10'
-      pnpm_prune_lockfile_v6:
+      pnpm_prune_lockfile_v9:
         specifier: npm:@pnpm/prune-lockfile@6
         version: '@pnpm/prune-lockfile@6.0.0'
       remeda:
