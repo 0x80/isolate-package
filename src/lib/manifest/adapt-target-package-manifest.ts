@@ -46,7 +46,7 @@ export async function adaptTargetPackageManifest({
   return {
     ...adaptedManifest,
     /** Adopt the package manager definition from the root manifest if available. */
-    packageManager: packageManager.manifestPackageManager,
+    packageManager: packageManager.packageManagerString,
     /**
      * Scripts are removed by default if not explicitly picked or omitted via
      * config.
