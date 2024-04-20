@@ -50,11 +50,11 @@ export async function isolate(
 
   const log = useLogger();
 
-  const thisPackageManifest = await readTypedJson<PackageManifest>(
+  const { version: libraryVersion } = await readTypedJson<PackageManifest>(
     path.join(path.join(__dirname, "..", "package.json"))
   );
 
-  log.debug("Using isolate-package version", thisPackageManifest.version);
+  log.debug("Using isolate-package version", libraryVersion);
 
   /**
    * If a targetPackagePath is set, we assume the configuration lives in the
