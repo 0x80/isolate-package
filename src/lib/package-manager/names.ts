@@ -6,6 +6,7 @@ export type PackageManager = {
   name: PackageManagerName;
   version: string;
   majorVersion: number;
+  packageManagerString?: string;
 };
 
 export function getLockfileFileName(name: PackageManagerName) {
