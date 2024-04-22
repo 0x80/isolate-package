@@ -51,7 +51,7 @@ export async function processLockfile({
           isolateDir,
         });
       } else {
-        log.info(
+        log.warn(
           "Detected modern version of Yarn. Using NPM lockfile fallback."
         );
 

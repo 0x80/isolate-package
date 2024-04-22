@@ -18,7 +18,7 @@ export async function generateNpmLockfile({
 }) {
   const log = useLogger();
 
-  log.info("Generating NPM lockfile...");
+  log.debug("Generating NPM lockfile...");
 
   const origRootNodeModulesPath = path.join(workspaceRootDir, "node_modules");
   const tempRootNodeModulesPath = path.join(isolateDir, "node_modules");

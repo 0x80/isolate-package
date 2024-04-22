@@ -46,7 +46,7 @@ export async function generatePnpmLockfile({
   const { includeDevDependencies, includePatchedDependencies } = useConfig();
   const log = useLogger();
 
-  log.info("Generating PNPM lockfile...");
+  log.debug("Generating PNPM lockfile...");
 
   try {
     const isRush = isRushWorkspace(workspaceRootDir);

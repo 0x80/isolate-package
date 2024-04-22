@@ -54,7 +54,7 @@ export async function isolate(
     path.join(path.join(__dirname, "..", "package.json"))
   );
 
-  log.debug("Using isolate-package version", libraryVersion);
+  log.info("Using isolate-package version", libraryVersion);
 
   /**
    * If a targetPackagePath is set, we assume the configuration lives in the

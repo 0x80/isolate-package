@@ -18,7 +18,7 @@ export async function generateYarnLockfile({
 }) {
   const log = useLogger();
 
-  log.info("Generating Yarn lockfile...");
+  log.debug("Generating Yarn lockfile...");
 
   const origLockfilePath = isRushWorkspace(workspaceRootDir)
     ? path.join(workspaceRootDir, "common/config/rush", "yarn.lock")
