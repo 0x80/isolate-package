@@ -18,6 +18,7 @@ export type IsolateConfigResolved = {
   forceNpm: boolean;
   pickFromScripts?: string[];
   omitFromScripts?: string[];
+  omitPackageManager?: boolean;
 };
 
 export type IsolateConfig = Partial<IsolateConfigResolved>;
@@ -35,6 +36,7 @@ const configDefaults: IsolateConfigResolved = {
   forceNpm: false,
   pickFromScripts: undefined,
   omitFromScripts: undefined,
+  omitPackageManager: false,
 };
 
 /**
