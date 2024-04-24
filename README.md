@@ -14,11 +14,11 @@
   - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
 - [Configuration Options](#configuration-options)
   - [logLevel](#loglevel)
-  - [forceNpm](#forcenpm)
   - [buildDirName](#builddirname)
   - [includeDevDependencies](#includedevdependencies)
   - [pickFromScripts](#pickfromscripts)
   - [omitFromScripts](#omitfromscripts)
+  - [omitPackageManager](#omitpackagemanager)
   - [isolateDirName](#isolatedirname)
   - [targetPackagePath](#targetpackagepath)
   - [tsconfigPath](#tsconfigpath)
@@ -244,6 +244,15 @@ you want to preserve all of the other scripts, set it to `["build"]`.
 
 By default, all scripts are omitted, and the [pickFromScripts](#pickfromscripts)
 configuration overrules this configuration.
+
+### omitPackageManager
+
+Type: `boolean`, default: `false`
+
+By default the packageManager field from the root manifest is copied to the
+target manifest. I have found that some platforms (Cloud Run, April 2024) can
+fail on this for some reason. This option allows you to omit the field from the
+isolated package manifest.
 
 ### isolateDirName
 
