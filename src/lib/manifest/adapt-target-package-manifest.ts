@@ -21,8 +21,12 @@ export async function adaptTargetPackageManifest({
   workspaceRootDir: string;
 }) {
   const packageManager = usePackageManager();
-  const { includeDevDependencies, pickFromScripts, omitFromScripts } =
-    useConfig();
+  const {
+    includeDevDependencies,
+    pickFromScripts,
+    omitFromScripts,
+    omitPackageManager,
+  } = useConfig();
 
   /** Dev dependencies are omitted by default */
   const inputManifest = includeDevDependencies
@@ -45,8 +49,14 @@ export async function adaptTargetPackageManifest({
 
   return {
     ...adaptedManifest,
-    /** Adopt the package manager definition from the root manifest if available. */
-    packageManager: packageManager.packageManagerString,
+    /**
+     * Adopt the package manager definition from the root manifest if available.
+     * The option to omit is there because some platforms might not handle it
+     * properly (Cloud Run, April 24th 2024, does not handle pnpm v9)
+     */
+    packageManager: omitPackageManager
+      ? undefined
+      : packageManager.packageManagerString,
     /**
      * Scripts are removed by default if not explicitly picked or omitted via
      * config.
