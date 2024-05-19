@@ -2,7 +2,7 @@ import Arborist from "@npmcli/arborist";
 import fs from "fs-extra";
 import path from "node:path";
 import { useLogger } from "~/lib/logger";
-import { getErrorMessage, inspectValue } from "~/lib/utils";
+import { getErrorMessage } from "~/lib/utils";
 
 /**
  * Generate an isolated / pruned lockfile, based on the contents of installed
@@ -20,28 +20,15 @@ export async function generateNpmLockfile({
 
   log.debug("Generating NPM lockfile...");
 
-  const origRootNodeModulesPath = path.join(workspaceRootDir, "node_modules");
-  const tempRootNodeModulesPath = path.join(isolateDir, "node_modules");
-
-  let hasMovedNodeModules = false;
-
-  let hasError = false;
+  const nodeModulesPath = path.join(workspaceRootDir, "node_modules");
 
   try {
-    if (!fs.existsSync(origRootNodeModulesPath)) {
-      throw new Error(
-        `Failed to find node_modules at ${origRootNodeModulesPath}`
-      );
+    if (!fs.existsSync(nodeModulesPath)) {
+      throw new Error(`Failed to find node_modules at ${nodeModulesPath}`);
     }
-
-    log.debug(`Temporarily moving node_modules to the isolate output`);
-
-    await fs.move(origRootNodeModulesPath, tempRootNodeModulesPath);
-    hasMovedNodeModules = true;
 
     const arborist = new Arborist({ path: isolateDir });
 
-    log.debug(`Building tree...`);
     const { meta } = await arborist.buildIdealTree();
 
     meta?.commit();
@@ -52,18 +39,6 @@ export async function generateNpmLockfile({
 
     log.debug("Created lockfile at", lockfilePath);
   } catch (err) {
-    console.error(inspectValue(err));
-    log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
-    hasError = true;
-  } finally {
-    /** @todo We should be able to use the new "using" keyword for this I think. */
-    if (hasMovedNodeModules) {
-      log.debug(`Restoring node_modules to the workspace root`);
-      await fs.move(tempRootNodeModulesPath, origRootNodeModulesPath);
-    }
-  }
-
-  if (hasError) {
-    throw new Error("Failed to generate lockfile");
+    throw new Error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
   }
 }
