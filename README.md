@@ -68,9 +68,8 @@ integrated, check out [mono-ts](https://github.com/0x80/mono-ts)
 
 Run `pnpm install isolate-package --dev` or the equivalent for `npm` or `yarn`.
 
-It is recommended to use `pnpm` over `npm` or `yarn`. Apart from being fast and
-efficient, PNPM has better support for monorepos, and the lockfile isolation is
-solid and works in parallel for multiple packages, [unlike NPM](#npm)
+I recommended using `pnpm` over `npm` or `yarn`. Besides being fast and
+efficient, PNPM has better support for monorepos.
 
 ## Usage
 
@@ -331,17 +330,8 @@ each package manager, with NPM currently being the least attractive.
 ### NPM
 
 For NPM we use a tool called Arborist, which is an integral part of the NPM
-codebase. It is executed in the isolate output directory and requires the
-adapted lockfile and the `node_modules` directory from the root of the
-repository. As this directory is typically quite large, copying it over as part
-of the isolate flow is not very desirable.
-
-To work around this, we move it to the isolate output and then move it back
-after Arborist has finished doing its thing.
-
-> !! Warning: This will not be compatible with setups that run multiple
-> isolation processes in parallel. Hopefully a future update to NPM Arborist
-> (the part the generates the lockfile) will solve this.
+codebase. It is executed in the isolate output directory with an adaptation
+adapted manifest file.
 
 ### PNPM
 
@@ -355,11 +345,7 @@ dependencies of internally linked packages are not installed by PNPM.
 ### Classic Yarn
 
 For Yarn v1 we can simply copy the root lockfile to the isolate output, and run
-a `yarn install` to prune that lockfile. The command finds the installed node
-modules in the root of the monorepo so versions are preserved.
-
-> Note: I expect this to break down if you configure the isolate output
-> directory to be located outside the monorepo tree.
+a `yarn install` to prune that lockfile.
 
 ### Modern Yarn
 
