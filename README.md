@@ -24,11 +24,6 @@
   - [tsconfigPath](#tsconfigpath)
   - [workspacePackages](#workspacepackages)
   - [workspaceRoot](#workspaceroot)
-- [Lockfiles](#lockfiles)
-  - [NPM](#npm)
-  - [PNPM](#pnpm)
-  - [Classic Yarn](#classic-yarn)
-  - [Modern Yarn](#modern-yarn)
 - [API](#api)
 - [The internal packages strategy](#the-internal-packages-strategy)
 - [Firebase](#firebase)
@@ -66,7 +61,7 @@ integrated, check out [mono-ts](https://github.com/0x80/mono-ts)
 
 ## Installation
 
-Run `pnpm install isolate-package --dev` or the equivalent for `npm` or `yarn`.
+Run `pnpm install isolate-package -D` or the equivalent for `npm` or `yarn`.
 
 I recommended using `pnpm` over `npm` or `yarn`. Besides being fast and
 efficient, PNPM has better support for monorepos.
@@ -320,42 +315,6 @@ services
 ```
 
 When you use the `targetPackagePath` option, this setting will be ignored.
-
-## Lockfiles
-
-The isolate process tries to generate an isolated / pruned lockfile for the
-package manager that you use in your monorepo. The strategy is different for
-each package manager, with NPM currently being the least attractive.
-
-### NPM
-
-For NPM we use a tool called Arborist, which is an integral part of the NPM
-codebase. It is executed in the isolate output directory with an adaptation
-adapted manifest file.
-
-### PNPM
-
-For PNPM, the isolated output will be formatted as a workspace itself, otherwise
-dependencies of internally linked packages are not installed by PNPM.
-
-- Links are preserved
-- Versions specifiers like "workspace:\*" are preserved
-- A pnpm-workspace.yaml file is added to the output
-
-### Classic Yarn
-
-For Yarn v1 we can simply copy the root lockfile to the isolate output, and run
-a `yarn install` to prune that lockfile.
-
-### Modern Yarn
-
-For modern Yarn versions we fall back to using NPM for the output lockfile,
-because the strategy of running `yarn install` does not seem to apply here.
-
-Based on the installed node_modules we generate an NPM lockfile that matches the
-versions in the Yarn lockfile. It should not really matter what package manager
-your deployed code uses, as long as the lockfile versions match with the
-original lockfile.
 
 ## API
 
