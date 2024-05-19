@@ -1,34 +1,15 @@
 # Isolate Package
 
-<!-- TOC -->
-
 - [Quickstart](#quickstart)
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Troubleshooting](#troubleshooting)
 - [Prerequisites](#prerequisites)
-  - [Define shared dependencies in the package manifest](#define-shared-dependencies-in-the-package-manifest)
-  - [Define "version" field in each package manifest](#define-version-field-in-each-package-manifest)
-  - [Define "files" field in each package manifest](#define-files-field-in-each-package-manifest)
-  - [Use a flat structure inside your packages folders](#use-a-flat-structure-inside-your-packages-folders)
 - [Configuration Options](#configuration-options)
-  - [logLevel](#loglevel)
-  - [buildDirName](#builddirname)
-  - [includeDevDependencies](#includedevdependencies)
-  - [pickFromScripts](#pickfromscripts)
-  - [omitFromScripts](#omitfromscripts)
-  - [omitPackageManager](#omitpackagemanager)
-  - [isolateDirName](#isolatedirname)
-  - [targetPackagePath](#targetpackagepath)
-  - [tsconfigPath](#tsconfigpath)
-  - [workspacePackages](#workspacepackages)
-  - [workspaceRoot](#workspaceroot)
 - [API](#api)
 - [The internal packages strategy](#the-internal-packages-strategy)
 - [Firebase](#firebase)
-
-<!-- /TOC -->
 
 ## Quickstart
 
