@@ -9,10 +9,16 @@ export function inferFromFiles(workspaceRoot: string): PackageManager {
   for (const name of supportedPackageManagerNames) {
     const lockfileName = getLockfileFileName(name);
 
-    const version = getVersion(name);
-
     if (fs.existsSync(path.join(workspaceRoot, lockfileName))) {
-      return { name, version, majorVersion: getMajorVersion(version) };
+      try {
+        const version = getVersion(name);
+
+        return { name, version, majorVersion: getMajorVersion(version) };
+      } catch (err) {
+        throw new Error(
+          `Failed to find package manager version for ${name}: ${err}`
+        );
+      }
     }
   }
 
