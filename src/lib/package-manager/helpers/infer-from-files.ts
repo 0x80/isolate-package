@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import { execSync } from "node:child_process";
 import path from "node:path";
+import { getErrorMessage } from "~/lib/utils";
 import { getMajorVersion } from "~/lib/utils/get-major-version";
 import type { PackageManager, PackageManagerName } from "../names";
 import { getLockfileFileName, supportedPackageManagerNames } from "../names";
@@ -16,7 +17,7 @@ export function inferFromFiles(workspaceRoot: string): PackageManager {
         return { name, version, majorVersion: getMajorVersion(version) };
       } catch (err) {
         throw new Error(
-          `Failed to find package manager version for ${name}: ${err}`
+          `Failed to find package manager version for ${name}: ${getErrorMessage(err)}`
         );
       }
     }
