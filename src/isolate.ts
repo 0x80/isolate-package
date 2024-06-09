@@ -213,7 +213,7 @@ export async function isolate(
       log.debug("Generating pnpm-workspace.yaml for Rush workspace");
       log.debug("Packages folder names:", packagesFolderNames);
 
-      const packages = packagesFolderNames.map((x) => x + "/*");
+      const packages = packagesFolderNames.map((x) => path.join(x, "/*"));
 
       await writeTypedYamlSync(path.join(isolateDir, "pnpm-workspace.yaml"), {
         packages,
