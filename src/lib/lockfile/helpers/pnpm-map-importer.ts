@@ -45,17 +45,17 @@ function pnpmMapDependenciesLinks(
   directoryByPackageName: { [packageName: string]: string }
 ): ResolvedDependencies {
   return mapValues(def, (value, key) => {
-    if (value.startsWith("link:")) {
-      let relativePath = path.relative(
-        importerPath,
-        directoryByPackageName[key]
-      );
-      if (!relativePath.startsWith(".") && !relativePath.startsWith("/")) {
-        relativePath = `./${relativePath}`;
-      }
-      return `link:${relativePath}`;
-    } else {
+    if (!value.startsWith("link:")) {
       return value;
     }
+
+    const relativePath = path.relative(
+      importerPath,
+      directoryByPackageName[key]
+    );
+
+    return relativePath.startsWith(".")
+      ? `link:${relativePath}`
+      : `link:./${relativePath}`;
   });
 }
