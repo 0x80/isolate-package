@@ -145,6 +145,11 @@ export async function generatePnpmLockfile({
       ? await pruneLockfile_v9(lockfile, targetPackageManifest, ".")
       : await pruneLockfile_v8(lockfile, targetPackageManifest, ".");
 
+    /** Pruning seems to remove the overrides from the lockfile */
+    if (lockfile.overrides) {
+      prunedLockfile.overrides = lockfile.overrides;
+    }
+
     /**
      * Don't know how to map the patched dependencies yet, so we just include
      * them but I don't think it would work like this. The important thing for

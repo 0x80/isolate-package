@@ -36,11 +36,11 @@ export async function createPackagesRegistry(
 
         if (!fs.existsSync(manifestPath)) {
           log.warn(
-            `Ignoring directory ./${rootRelativeDir} because it does not contain a package.json file`
+            `Ignoring directory ${rootRelativeDir} because it does not contain a package.json file`
           );
           return;
         } else {
-          log.debug(`Registering package ./${rootRelativeDir}`);
+          log.debug(`Registering package ${rootRelativeDir}`);
 
           const manifest = await readTypedJson<PackageManifest>(
             path.join(absoluteDir, "package.json")
