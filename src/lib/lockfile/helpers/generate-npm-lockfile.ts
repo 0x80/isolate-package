@@ -39,6 +39,7 @@ export async function generateNpmLockfile({
 
     log.debug("Created lockfile at", lockfilePath);
   } catch (err) {
-    throw new Error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
+    log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
+    throw err;
   }
 }

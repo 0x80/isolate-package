@@ -44,6 +44,7 @@ export async function generateYarnLockfile({
 
     log.debug("Generated lockfile at", newLockfilePath);
   } catch (err) {
-    throw new Error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
+    log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
+    throw err;
   }
 }
