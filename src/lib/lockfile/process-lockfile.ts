@@ -77,6 +77,16 @@ export async function processLockfile({
       });
       break;
     }
+    case "bun": {
+      log.warn(`Ouput lockfiles for Bun are not yet supported. Using NPM for output`);
+      await generateNpmLockfile({
+        workspaceRootDir,
+        isolateDir,
+      });
+
+      usedFallbackToNpm = true;
+      break;
+    }
     default:
       log.warn(`Unexpected package manager ${name}. Using NPM for output`);
       await generateNpmLockfile({
