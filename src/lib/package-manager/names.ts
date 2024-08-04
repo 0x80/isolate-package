@@ -1,4 +1,9 @@
-export const supportedPackageManagerNames = ["pnpm", "yarn", "npm", "bun"] as const;
+export const supportedPackageManagerNames = [
+  "pnpm",
+  "yarn",
+  "npm",
+  "bun",
+] as const;
 
 export type PackageManagerName = (typeof supportedPackageManagerNames)[number];
 

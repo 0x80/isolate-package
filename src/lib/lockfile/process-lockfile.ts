@@ -78,7 +78,9 @@ export async function processLockfile({
       break;
     }
     case "bun": {
-      log.warn(`Ouput lockfiles for Bun are not yet supported. Using NPM for output`);
+      log.warn(
+        `Ouput lockfiles for Bun are not yet supported. Using NPM for output`
+      );
       await generateNpmLockfile({
         workspaceRootDir,
         isolateDir,
