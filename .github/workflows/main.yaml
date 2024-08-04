@@ -16,10 +16,12 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
-      - name: Lint Format
+      - name: Lint syntax
+        run: pnpm lint
+      - name: Lint formatting
         run: pnpm lint:format
-      - name: Type Check
-        run: pnpm type-check
+      - name: Check types
+        run: pnpm compile
       - name: Test
         run: pnpm test
       - name: Build
