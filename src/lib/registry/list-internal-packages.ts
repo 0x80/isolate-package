@@ -1,4 +1,4 @@
-import { uniq } from "remeda";
+import { unique } from "remeda";
 import type { PackageManifest, PackagesRegistry } from "../types";
 
 /**
@@ -35,5 +35,5 @@ export function listInternalPackages(
       )
   );
 
-  return uniq(internalPackageNames.concat(nestedInternalPackageNames));
+  return unique(internalPackageNames.concat(nestedInternalPackageNames));
 }
