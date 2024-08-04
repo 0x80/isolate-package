@@ -26,7 +26,7 @@ integrated, check out [mono-ts](https://github.com/0x80/mono-ts)
   deployments.
 - Preserve packages file structure, without code bundling
 - Should work with any package manager, and tested with NPM, PNPM, and Yarn
-  (both classic and modern).
+  (both classic and modern)
   - There is partial support for Bun - the process will detect the Bun package manager but will not output a Bun lockfile for the isolated package; instead it will fall back to generating an NPM lockfile.
 - Zero-config for the vast majority of use-cases
 - Isolates dependencies recursively. If package A depends on internal package B
