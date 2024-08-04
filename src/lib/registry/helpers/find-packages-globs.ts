@@ -27,6 +27,7 @@ export function findPackagesGlobs(workspaceRootDir: string) {
       log.debug("Detected pnpm packages globs:", inspectValue(globs));
       return globs;
     }
+    case "bun":
     case "yarn":
     case "npm": {
       const workspaceRootManifestPath = path.join(

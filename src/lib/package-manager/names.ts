@@ -1,4 +1,9 @@
-export const supportedPackageManagerNames = ["pnpm", "yarn", "npm"] as const;
+export const supportedPackageManagerNames = [
+  "pnpm",
+  "yarn",
+  "npm",
+  "bun",
+] as const;
 
 export type PackageManagerName = (typeof supportedPackageManagerNames)[number];
 
@@ -11,6 +16,8 @@ export type PackageManager = {
 
 export function getLockfileFileName(name: PackageManagerName) {
   switch (name) {
+    case "bun":
+      return "bun.lockb";
     case "pnpm":
       return "pnpm-lock.yaml";
     case "yarn":
