@@ -185,6 +185,24 @@ Because the configuration loader depends on this setting, its output is not
 affected by this setting. If you want to debug the configuration set
 `DEBUG_ISOLATE_CONFIG=true` before you run `isolate`
 
+### forceNpm
+
+Type: `boolean`, default: `false`
+
+By default the isolate process will generate output based on the package manager
+that you are using for your monorepo, but your deployment target might not be
+compatible with that package manager.
+
+It should not really matter what package manager is used in de deployment as
+long as the versions match your original lockfile.
+
+By setting this option to `true` you are forcing the isolate output to use NPM.
+A package-lock file will be generated based on the contents of node_modules and
+therefore should match the versions in your original lockfile.
+
+This way you can enjoy using PNPM or Yarn for your monorepo, while your
+deployment requires NPM.
+
 ### buildDirName
 
 Type: `string | undefined`, default: `undefined`
