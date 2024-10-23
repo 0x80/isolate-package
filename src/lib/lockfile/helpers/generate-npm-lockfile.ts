@@ -3,6 +3,7 @@ import fs from "fs-extra";
 import path from "node:path";
 import { useLogger } from "~/lib/logger";
 import { getErrorMessage } from "~/lib/utils";
+import { loadNpmConfig } from "./load-npm-config";
 
 /**
  * Generate an isolated / pruned lockfile, based on the contents of installed
@@ -27,7 +28,12 @@ export async function generateNpmLockfile({
       throw new Error(`Failed to find node_modules at ${nodeModulesPath}`);
     }
 
-    const arborist = new Arborist({ path: isolateDir });
+    const config = await loadNpmConfig({ npmPath: workspaceRootDir });
+
+    const arborist = new Arborist({
+      path: isolateDir,
+      ...config.flat,
+    });
 
     const { meta } = await arborist.buildIdealTree();
 
