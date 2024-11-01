@@ -41,7 +41,7 @@ export async function generatePnpmLockfile({
    * versions after 9, because we might get lucky. If it does change, things
    * would break either way.
    */
-  const useVersion9 = majorVersion >= 9;
+  const useReadVersion9 = majorVersion >= 9;
 
   const { includeDevDependencies, includePatchedDependencies } = useConfig();
   const log = useLogger();
@@ -51,7 +51,7 @@ export async function generatePnpmLockfile({
   try {
     const isRush = isRushWorkspace(workspaceRootDir);
 
-    const lockfile = useVersion9
+    const lockfile = useReadVersion9
       ? await readWantedLockfile_v9(
           isRush
             ? path.join(workspaceRootDir, "common/config/rush")
@@ -71,7 +71,11 @@ export async function generatePnpmLockfile({
 
     assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
 
-    const targetImporterId = useVersion9
+    const [lockfileMajorVersion] = String(lockfile.lockfileVersion).split(".");
+
+    const useLockfileVersion9 = lockfileMajorVersion >= "9";
+
+    const targetImporterId = useLockfileVersion9
       ? getLockfileImporterId_v9(workspaceRootDir, targetPackageDir)
       : getLockfileImporterId_v8(workspaceRootDir, targetPackageDir);
 
@@ -141,7 +145,7 @@ export async function generatePnpmLockfile({
 
     log.debug("Pruning the lockfile");
 
-    const prunedLockfile = useVersion9
+    const prunedLockfile = useLockfileVersion9
       ? await pruneLockfile_v9(lockfile, targetPackageManifest, ".")
       : await pruneLockfile_v8(lockfile, targetPackageManifest, ".");
 
@@ -160,7 +164,7 @@ export async function generatePnpmLockfile({
       ? lockfile.patchedDependencies
       : undefined;
 
-    useVersion9
+    useLockfileVersion9
       ? await writeWantedLockfile_v9(isolateDir, {
           ...prunedLockfile,
           patchedDependencies,
