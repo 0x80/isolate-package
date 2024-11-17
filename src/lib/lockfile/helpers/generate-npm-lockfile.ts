@@ -19,17 +19,15 @@ export async function generateNpmLockfile({
 }) {
   const log = useLogger();
 
-  log.debug("Generating NPM lockfile the new way...");
+  log.debug("Generating NPM lockfile...");
 
-  // const nodeModulesPath = path.join(workspaceRootDir, "node_modules");
-
-  const origLockfilePath = path.join(workspaceRootDir, "package-lock.json");
+  const originalLockfilePath = path.join(workspaceRootDir, "package-lock.json");
   const isolatedLockfilePath = path.join(isolateDir, "package-lock.json");
 
   try {
-    if (!fs.existsSync(origLockfilePath)) {
+    if (!fs.existsSync(originalLockfilePath)) {
       throw new Error(
-        `Failed to find package-lock.json at ${origLockfilePath}`
+        `Failed to find package-lock.json at ${originalLockfilePath}`
       );
     }
 
@@ -45,7 +43,7 @@ export async function generateNpmLockfile({
      * original lockfile to the isolate directory and run loadVirtual before
      * buildIdealTree
      */
-    await fs.copy(origLockfilePath, isolatedLockfilePath, {
+    await fs.copy(originalLockfilePath, isolatedLockfilePath, {
       overwrite: true,
     });
 
