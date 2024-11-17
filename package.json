@@ -40,7 +40,7 @@
     "lint": "eslint . --max-warnings 0",
     "lint:format": "prettier --check .",
     "compile": "tsc --noEmit",
-    "prepare": "pnpm run compile && pnpm run build"
+    "?prepare": "pnpm run compile && pnpm run build"
   },
   "dependencies": {
     "@npmcli/arborist": "^7.5.4",

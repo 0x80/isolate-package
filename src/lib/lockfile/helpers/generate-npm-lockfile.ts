@@ -19,13 +19,18 @@ export async function generateNpmLockfile({
 }) {
   const log = useLogger();
 
-  log.debug("Generating NPM lockfile...");
+  log.debug("Generating NPM lockfile the new way...");
 
-  const nodeModulesPath = path.join(workspaceRootDir, "node_modules");
+  // const nodeModulesPath = path.join(workspaceRootDir, "node_modules");
+
+  const origLockfilePath = path.join(workspaceRootDir, "package-lock.json");
+  const isolatedLockfilePath = path.join(isolateDir, "package-lock.json");
 
   try {
-    if (!fs.existsSync(nodeModulesPath)) {
-      throw new Error(`Failed to find node_modules at ${nodeModulesPath}`);
+    if (!fs.existsSync(origLockfilePath)) {
+      throw new Error(
+        `Failed to find package-lock.json at ${origLockfilePath}`
+      );
     }
 
     const config = await loadNpmConfig({ npmPath: workspaceRootDir });
@@ -35,15 +40,26 @@ export async function generateNpmLockfile({
       ...config.flat,
     });
 
+    /**
+     * One way to get NPM to match the lockfile versions seems to be to copy the
+     * original lockfile to the isolate directory and run loadVirtual before
+     * buildIdealTree
+     */
+    await fs.copy(origLockfilePath, isolatedLockfilePath, {
+      overwrite: true,
+    });
+
+    log.debug("Load virtual tree");
+    await arborist.loadVirtual();
+
+    log.debug("Build ideal tree");
     const { meta } = await arborist.buildIdealTree();
 
     meta?.commit();
 
-    const lockfilePath = path.join(isolateDir, "package-lock.json");
+    await fs.writeFile(isolatedLockfilePath, String(meta));
 
-    await fs.writeFile(lockfilePath, String(meta));
-
-    log.debug("Created lockfile at", lockfilePath);
+    log.debug("Created lockfile at", isolatedLockfilePath);
   } catch (err) {
     log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
     throw err;
