@@ -195,7 +195,7 @@ export async function isolate(
     await writeManifest(isolateDir, manifest);
   }
 
-  if (packageManager.name === "pnpm") {
+  if (packageManager.name === "pnpm" && !config.forceNpm) {
     /**
      * PNPM doesn't install dependencies of packages that are linked via link:
      * or file: specifiers. It requires the directory to be configured as a

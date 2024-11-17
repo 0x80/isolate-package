@@ -26,6 +26,7 @@ export async function adaptTargetPackageManifest({
     pickFromScripts,
     omitFromScripts,
     omitPackageManager,
+    forceNpm,
   } = useConfig();
 
   /** Dev dependencies are omitted by default */
@@ -34,7 +35,7 @@ export async function adaptTargetPackageManifest({
     : omit(manifest, ["devDependencies"]);
 
   const adaptedManifest =
-    packageManager.name === "pnpm"
+    packageManager.name === "pnpm" && !forceNpm
       ? /**
          * For PNPM the output itself is a workspace so we can preserve the specifiers
          * with "workspace:*" in the output manifest, but we do want to adopt the

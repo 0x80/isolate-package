@@ -1,5 +1,6 @@
 import path from "node:path";
 import { omit } from "remeda";
+import { useConfig } from "~/lib/config";
 import { usePackageManager } from "~/lib/package-manager";
 import type { PackagesRegistry } from "~/lib/types";
 import { writeManifest } from "../io";
@@ -16,6 +17,7 @@ export async function adaptInternalPackageManifests(
   isolateDir: string
 ) {
   const packageManager = usePackageManager();
+  const { forceNpm } = useConfig();
 
   await Promise.all(
     internalPackageNames.map(async (packageName) => {
@@ -25,7 +27,7 @@ export async function adaptInternalPackageManifests(
       const strippedManifest = omit(manifest, ["scripts", "devDependencies"]);
 
       const outputManifest =
-        packageManager.name === "pnpm"
+        packageManager.name === "pnpm" && !forceNpm
           ? /**
              * For PNPM the output itself is a workspace so we can preserve the specifiers
              * with "workspace:*" in the output manifest.
