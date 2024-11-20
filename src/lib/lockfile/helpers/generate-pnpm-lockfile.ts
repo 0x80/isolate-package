@@ -118,7 +118,7 @@ export async function generatePnpmLockfile({
 
           return [
             ".",
-            pnpmMapImporter(".", importer, {
+            pnpmMapImporter(".", importer!, {
               includeDevDependencies,
               includePatchedDependencies,
               directoryByPackageName,
@@ -130,7 +130,7 @@ export async function generatePnpmLockfile({
 
         return [
           importerId,
-          pnpmMapImporter(importerId, importer, {
+          pnpmMapImporter(importerId, importer!, {
             includeDevDependencies,
             includePatchedDependencies,
             directoryByPackageName,

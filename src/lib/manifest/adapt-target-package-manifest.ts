@@ -1,3 +1,4 @@
+import type { PackageScripts } from "@pnpm/types";
 import { omit, pick } from "remeda";
 import { useConfig } from "../config";
 import { usePackageManager } from "../package-manager";
@@ -19,7 +20,7 @@ export async function adaptTargetPackageManifest({
   manifest: PackageManifest;
   packagesRegistry: PackagesRegistry;
   workspaceRootDir: string;
-}) {
+}): Promise<PackageManifest> {
   const packageManager = usePackageManager();
   const {
     includeDevDependencies,
@@ -63,9 +64,9 @@ export async function adaptTargetPackageManifest({
      * config.
      */
     scripts: pickFromScripts
-      ? pick(manifest.scripts ?? {}, pickFromScripts)
+      ? (pick(manifest.scripts ?? {}, pickFromScripts) as PackageScripts)
       : omitFromScripts
-        ? omit(manifest.scripts ?? {}, omitFromScripts)
-        : undefined,
+        ? (omit(manifest.scripts ?? {}, omitFromScripts) as PackageScripts)
+        : {},
   };
 }
