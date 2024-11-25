@@ -48,7 +48,8 @@ export async function pack(srcDir: string, dstDir: string) {
         );
       });
 
-  const fileName = path.basename(stdout.trim());
+  const lastLine = stdout.trim().split("\n").pop() || "";
+  const fileName = path.basename(lastLine);
 
   const filePath = path.join(dstDir, fileName);
 
