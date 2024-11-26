@@ -48,7 +48,13 @@ export async function pack(srcDir: string, dstDir: string) {
         );
       });
 
-  const lastLine = stdout.trim().split("\n").pop() || "";
+  const lastLine = stdout.trim().split("\n").pop();
+  if (!lastLine) {
+    log.error(
+      `Failed to parse last line from stdout: ${stdout.trim()}`
+    );
+    throw new Error("Unable to find fileName from pack output");
+  }
   const fileName = path.basename(lastLine);
 
   const filePath = path.join(dstDir, fileName);
