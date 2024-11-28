@@ -50,10 +50,7 @@ export async function pack(srcDir: string, dstDir: string) {
 
   const lastLine = stdout.trim().split("\n").at(-1)
   if (!lastLine) {
-    log.error(
-      `Failed to parse last line from stdout: ${stdout.trim()}`
-    );
-    throw new Error("Unable to find fileName from pack output");
+    throw new Error(`Failed to parse last line from stdout: ${stdout.trim()}`);
   }
   const fileName = path.basename(lastLine);
 
