@@ -48,7 +48,11 @@ export async function pack(srcDir: string, dstDir: string) {
         );
       });
 
-  const fileName = path.basename(stdout.trim());
+  const lastLine = stdout.trim().split("\n").at(-1);
+  if (!lastLine) {
+    throw new Error(`Failed to parse last line from stdout: ${stdout.trim()}`);
+  }
+  const fileName = path.basename(lastLine);
 
   const filePath = path.join(dstDir, fileName);
 
