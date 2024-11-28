@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { exec } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -49,10 +50,12 @@ export async function pack(srcDir: string, dstDir: string) {
       });
 
   const lastLine = stdout.trim().split("\n").at(-1);
-  if (!lastLine) {
-    throw new Error(`Failed to parse last line from stdout: ${stdout.trim()}`);
-  }
+
+  assert(lastLine, `Failed to parse last line from stdout: ${stdout.trim()}`);
+
   const fileName = path.basename(lastLine);
+
+  assert(fileName, `Failed to parse file name from: ${lastLine}`);
 
   const filePath = path.join(dstDir, fileName);
 
