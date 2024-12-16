@@ -50,11 +50,9 @@ function pnpmMapDependenciesLinks(
     }
 
     // Replace backslashes with forward slashes to support Windows Git Bash
-    const relativePath = path.relative(
-      importerPath,
-      directoryByPackageName[key]
-    ).replace(path.sep, path.posix.sep);
-
+    const relativePath = path
+      .relative(importerPath, directoryByPackageName[key])
+      .replace(path.sep, path.posix.sep);
 
     return relativePath.startsWith(".")
       ? `link:${relativePath}`

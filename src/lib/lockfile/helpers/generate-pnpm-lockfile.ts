@@ -95,12 +95,11 @@ export async function generatePnpmLockfile({
        * Split the path by the OS separator and join it back with the POSIX
        * separator.
        *
-       * The importerIds are built from directory names, so Windows Git
-       * Bash environments will have double backslashes in their ids:
-       *   packages\\common  vs.  packages/common
-       * Without this split & join, any packages not on the top-level will
-       * have ill-formatted importerIds and their entries will be missing
-       * from the lockfile.importers list.
+       * The importerIds are built from directory names, so Windows Git Bash
+       * environments will have double backslashes in their ids:
+       * "packages\common" vs. "packages/common". Without this split & join, any
+       * packages not on the top-level will have ill-formatted importerIds and
+       * their entries will be missing from the lockfile.importers list.
        */
     ].map((x) => x.split(path.sep).join(path.posix.sep));
 
