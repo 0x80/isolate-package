@@ -49,6 +49,7 @@
     "@pnpm/types": "^9.4.2",
     "chalk": "^5.3.0",
     "fs-extra": "^11.2.0",
+    "get-tsconfig": "^4.8.1",
     "glob": "^10.4.5",
     "outdent": "^0.8.0",
     "pnpm_lockfile_file_v8": "npm:@pnpm/lockfile-file@8",
