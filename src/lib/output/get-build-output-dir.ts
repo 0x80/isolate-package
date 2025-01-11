@@ -1,21 +1,27 @@
 import { getTsconfig } from "get-tsconfig";
 import path from "node:path";
 import outdent from "outdent";
-import { useConfig } from "../config";
 import { useLogger } from "../logger";
 
-export async function getBuildOutputDir(targetPackageDir: string) {
-  const config = useConfig();
+export async function getBuildOutputDir({
+  targetPackageDir,
+  buildDirName,
+  tsconfigPath,
+}: {
+  targetPackageDir: string;
+  buildDirName?: string;
+  tsconfigPath: string;
+}) {
   const log = useLogger();
 
-  if (config.buildDirName) {
-    log.debug("Using buildDirName from config:", config.buildDirName);
-    return path.join(targetPackageDir, config.buildDirName);
+  if (buildDirName) {
+    log.debug("Using buildDirName from config:", buildDirName);
+    return path.join(targetPackageDir, buildDirName);
   }
 
-  const tsconfigPath = path.join(targetPackageDir, config.tsconfigPath);
+  const fullTsconfigPath = path.join(targetPackageDir, tsconfigPath);
 
-  const tsconfig = getTsconfig(tsconfigPath);
+  const tsconfig = getTsconfig(fullTsconfigPath);
 
   if (tsconfig) {
     log.debug("Found tsconfig at:", tsconfig.path);
@@ -30,7 +36,7 @@ export async function getBuildOutputDir(targetPackageDir: string) {
       `);
     }
   } else {
-    log.warn("Failed to find tsconfig at:", tsconfigPath);
+    log.warn("Failed to find tsconfig at:", fullTsconfigPath);
 
     throw new Error(outdent`
       Failed to infer the build output directory from either the isolate config buildDirName or a Typescript config file. See the documentation on how to configure one of these options.
