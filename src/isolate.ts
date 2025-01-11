@@ -15,6 +15,7 @@ import {
 } from "./lib/manifest";
 import {
   getBuildOutputDir,
+  handleFirebaseConfig,
   packDependencies,
   processBuildOutputFiles,
   unpackDependencies,
@@ -25,7 +26,7 @@ import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
 import {
   getDirname,
-  getRootRelativePath,
+  getRootRelativeLogPath,
   isRushWorkspace,
   readTypedJson,
   writeTypedYamlSync,
@@ -79,14 +80,14 @@ export async function isolate(
   log.debug("Workspace root resolved to", workspaceRootDir);
   log.debug(
     "Isolate target package",
-    getRootRelativePath(targetPackageDir, workspaceRootDir)
+    getRootRelativeLogPath(targetPackageDir, workspaceRootDir)
   );
 
   const isolateDir = path.join(targetPackageDir, config.isolateDirName);
 
   log.debug(
     "Isolate output directory",
-    getRootRelativePath(isolateDir, workspaceRootDir)
+    getRootRelativeLogPath(isolateDir, workspaceRootDir)
   );
 
   if (fs.existsSync(isolateDir)) {
@@ -239,13 +240,19 @@ export async function isolate(
     log.debug("Copied .npmrc file to the isolate output");
   }
 
+  await handleFirebaseConfig({
+    targetPackageDir,
+    workspaceRootDir,
+    isolateDir,
+  });
+
   /**
-   * Clean up. Only so this in the happy path, so we can look at the temp folder
-   * when thing go wrong.
+   * Clean up. Only do this when things succeed, so we can look at the temp
+   * folder in case something goes wrong.
    */
   log.debug(
     "Deleting temp directory",
-    getRootRelativePath(tmpDir, workspaceRootDir)
+    getRootRelativeLogPath(tmpDir, workspaceRootDir)
   );
   await fs.remove(tmpDir);
 

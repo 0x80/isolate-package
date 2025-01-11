@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import path, { join } from "node:path";
 import { useLogger } from "../logger";
 import type { PackagesRegistry } from "../types";
-import { getIsolateRelativePath, unpack } from "../utils";
+import { getIsolateRelativeLogPath, unpack } from "../utils";
 
 export async function unpackDependencies(
   packedFilesByName: Record<string, string>,
@@ -30,7 +30,7 @@ export async function unpackDependencies(
       });
 
       log.debug(
-        `Moved package files to ${getIsolateRelativePath(
+        `Moved package files to ${getIsolateRelativeLogPath(
           destinationDir,
           isolateDir
         )}`
