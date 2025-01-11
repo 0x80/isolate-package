@@ -1,9 +1,8 @@
-import fs from "fs-extra";
+import { getTsconfig } from "get-tsconfig";
 import path from "node:path";
 import outdent from "outdent";
 import { useConfig } from "../config";
 import { useLogger } from "../logger";
-import { readTypedJson } from "../utils";
 
 export async function getBuildOutputDir(targetPackageDir: string) {
   const config = useConfig();
@@ -16,14 +15,12 @@ export async function getBuildOutputDir(targetPackageDir: string) {
 
   const tsconfigPath = path.join(targetPackageDir, config.tsconfigPath);
 
-  if (fs.existsSync(tsconfigPath)) {
-    log.debug("Found tsconfig at:", config.tsconfigPath);
+  const tsconfig = getTsconfig(tsconfigPath);
 
-    const tsconfig = await readTypedJson<{
-      compilerOptions?: { outDir?: string };
-    }>(tsconfigPath);
+  if (tsconfig) {
+    log.debug("Found tsconfig at:", tsconfig.path);
 
-    const outDir = tsconfig.compilerOptions?.outDir;
+    const outDir = tsconfig.config.compilerOptions?.outDir;
 
     if (outDir) {
       return path.join(targetPackageDir, outDir);
