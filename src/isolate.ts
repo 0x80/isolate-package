@@ -44,7 +44,7 @@ export function createIsolator(config?: IsolateConfig) {
       path.join(path.join(__dirname, "..", "package.json"))
     );
 
-    log.info("Using isolate-package version", libraryVersion);
+    log.debug("Using isolate-package version", libraryVersion);
 
     /**
      * If a targetPackagePath is set, we assume the configuration lives in the
@@ -247,7 +247,7 @@ export function createIsolator(config?: IsolateConfig) {
     );
     await fs.remove(tmpDir);
 
-    log.info("Isolate completed at", isolateDir);
+    log.debug("Isolate completed at", isolateDir);
 
     return isolateDir;
   };

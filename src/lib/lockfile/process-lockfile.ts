@@ -36,7 +36,7 @@ export async function processLockfile({
   const log = useLogger();
 
   if (config.forceNpm) {
-    log.info("Forcing to use NPM for isolate output");
+    log.debug("Forcing to use NPM for isolate output");
 
     await generateNpmLockfile({
       workspaceRootDir,
