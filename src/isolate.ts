@@ -14,7 +14,6 @@ import {
 } from "./lib/manifest";
 import {
   getBuildOutputDir,
-  handleFirebaseConfig,
   packDependencies,
   processBuildOutputFiles,
   unpackDependencies,
@@ -237,12 +236,6 @@ export function createIsolator(config?: IsolateConfig) {
       fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
       log.debug("Copied .npmrc file to the isolate output");
     }
-
-    await handleFirebaseConfig({
-      targetPackageDir,
-      workspaceRootDir,
-      isolateDir,
-    });
 
     /**
      * Clean up. Only do this when things succeed, so we can look at the temp
