@@ -16,3 +16,10 @@ export type WorkspacePackageInfo = {
 };
 
 export type PackagesRegistry = Record<string, WorkspacePackageInfo>;
+
+export type FirebaseFunctionsConfig = {
+  source: string;
+  runtime?: string;
+  predeploy?: string[];
+  codebase?: string;
+};

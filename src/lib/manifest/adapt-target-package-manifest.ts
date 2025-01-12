@@ -1,6 +1,6 @@
 import type { PackageScripts } from "@pnpm/types";
 import { omit, pick } from "remeda";
-import { useConfig } from "../config";
+import type { IsolateConfigResolved } from "../config";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
 import { adaptManifestInternalDeps, adoptPnpmFieldsFromRoot } from "./helpers";
@@ -16,10 +16,12 @@ export async function adaptTargetPackageManifest({
   manifest,
   packagesRegistry,
   workspaceRootDir,
+  config,
 }: {
   manifest: PackageManifest;
   packagesRegistry: PackagesRegistry;
   workspaceRootDir: string;
+  config: IsolateConfigResolved;
 }): Promise<PackageManifest> {
   const packageManager = usePackageManager();
   const {
@@ -28,7 +30,7 @@ export async function adaptTargetPackageManifest({
     omitFromScripts,
     omitPackageManager,
     forceNpm,
-  } = useConfig();
+  } = config;
 
   /** Dev dependencies are omitted by default */
   const inputManifest = includeDevDependencies

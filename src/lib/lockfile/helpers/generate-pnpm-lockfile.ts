@@ -13,7 +13,6 @@ import {
 import { pruneLockfile as pruneLockfile_v8 } from "pnpm_prune_lockfile_v8";
 import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
 import { pick } from "remeda";
-import { useConfig } from "~/lib/config";
 import { useLogger } from "~/lib/logger";
 import type { PackageManifest, PackagesRegistry } from "~/lib/types";
 import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
@@ -27,6 +26,8 @@ export async function generatePnpmLockfile({
   packagesRegistry,
   targetPackageManifest,
   majorVersion,
+  includeDevDependencies,
+  includePatchedDependencies,
 }: {
   workspaceRootDir: string;
   targetPackageDir: string;
@@ -35,6 +36,8 @@ export async function generatePnpmLockfile({
   packagesRegistry: PackagesRegistry;
   targetPackageManifest: PackageManifest;
   majorVersion: number;
+  includeDevDependencies: boolean;
+  includePatchedDependencies: boolean;
 }) {
   /**
    * For now we will assume that the lockfile format might not change in the
@@ -43,7 +46,6 @@ export async function generatePnpmLockfile({
    */
   const useVersion9 = majorVersion >= 9;
 
-  const { includeDevDependencies, includePatchedDependencies } = useConfig();
   const log = useLogger();
 
   log.debug("Generating PNPM lockfile...");

@@ -1,6 +1,5 @@
 import path from "node:path";
 import { omit } from "remeda";
-import { useConfig } from "~/lib/config";
 import { usePackageManager } from "~/lib/package-manager";
 import type { PackagesRegistry } from "~/lib/types";
 import { writeManifest } from "../io";
@@ -11,13 +10,18 @@ import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
  * target package), so that their dependencies point to the other isolated
  * packages in the same folder.
  */
-export async function adaptInternalPackageManifests(
-  internalPackageNames: string[],
-  packagesRegistry: PackagesRegistry,
-  isolateDir: string
-) {
+export async function adaptInternalPackageManifests({
+  internalPackageNames,
+  packagesRegistry,
+  isolateDir,
+  forceNpm,
+}: {
+  internalPackageNames: string[];
+  packagesRegistry: PackagesRegistry;
+  isolateDir: string;
+  forceNpm: boolean;
+}) {
   const packageManager = usePackageManager();
-  const { forceNpm } = useConfig();
 
   await Promise.all(
     internalPackageNames.map(async (packageName) => {

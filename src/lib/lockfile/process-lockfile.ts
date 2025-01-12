@@ -1,4 +1,4 @@
-import { useConfig } from "../config";
+import type { IsolateConfigResolved } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
@@ -22,6 +22,7 @@ export async function processLockfile({
   internalDepPackageNames,
   targetPackageDir,
   targetPackageManifest,
+  config,
 }: {
   workspaceRootDir: string;
   packagesRegistry: PackagesRegistry;
@@ -30,12 +31,11 @@ export async function processLockfile({
   targetPackageDir: string;
   targetPackageName: string;
   targetPackageManifest: PackageManifest;
+  config: IsolateConfigResolved;
 }) {
   const log = useLogger();
 
-  const { forceNpm } = useConfig();
-
-  if (forceNpm) {
+  if (config.forceNpm) {
     log.info("Forcing to use NPM for isolate output");
 
     await generateNpmLockfile({
@@ -88,6 +88,8 @@ export async function processLockfile({
         packagesRegistry,
         targetPackageManifest,
         majorVersion,
+        includeDevDependencies: config.includeDevDependencies,
+        includePatchedDependencies: config.includePatchedDependencies,
       });
       break;
     }
