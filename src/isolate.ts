@@ -11,6 +11,7 @@ import {
   adaptTargetPackageManifest,
   readManifest,
   writeManifest,
+  validateManifestMandatoryFields,
 } from "./lib/manifest";
 import {
   getBuildOutputDir,
@@ -95,6 +96,12 @@ export function createIsolator(config?: IsolateConfig) {
 
     const targetPackageManifest = await readTypedJson<PackageManifest>(
       path.join(targetPackageDir, "package.json")
+    );
+
+    /** Validate mandatory fields for the target package */
+    validateManifestMandatoryFields(
+      targetPackageManifest,
+      getRootRelativeLogPath(targetPackageDir, workspaceRootDir)
     );
 
     const packageManager = detectPackageManager(workspaceRootDir);
