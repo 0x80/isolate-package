@@ -30,6 +30,11 @@ export function findPackagesGlobs(workspaceRootDir: string) {
         );
       }
 
+      assert(
+        workspaceConfig.packages,
+        "packages property must be defined in pnpm-workspace.yaml"
+      );
+
       const { packages: globs } = workspaceConfig;
 
       log.debug("Detected pnpm packages globs:", inspectValue(globs));
