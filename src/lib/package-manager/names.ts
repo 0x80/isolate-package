@@ -17,7 +17,7 @@ export type PackageManager = {
 export function getLockfileFileName(name: PackageManagerName) {
   switch (name) {
     case "bun":
-      return "bun.lockb";
+      return "bun.lock";
     case "pnpm":
       return "pnpm-lock.yaml";
     case "yarn":
