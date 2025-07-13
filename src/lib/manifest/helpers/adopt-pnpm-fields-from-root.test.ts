@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import type { PackageManifest, ProjectManifest } from "@pnpm/types";
+import type {
+  PackageManifest,
+  ProjectManifest,
+  PnpmSettings,
+} from "@pnpm/types";
 import { adoptPnpmFieldsFromRoot } from "./adopt-pnpm-fields-from-root";
 
 /** Mock the dependencies */
@@ -8,7 +12,9 @@ vi.mock("~/lib/utils", () => ({
   readTypedJson: vi.fn(),
 }));
 
-const { isRushWorkspace, readTypedJson } = vi.mocked(await import("~/lib/utils"));
+const { isRushWorkspace, readTypedJson } = vi.mocked(
+  await import("~/lib/utils")
+);
 
 describe("adoptPnpmFieldsFromRoot", () => {
   beforeEach(() => {
@@ -57,7 +63,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
       version: "1.0.0",
       pnpm: {
         overrides: {
-          "foo": "^1.0.0",
+          foo: "^1.0.0",
         },
       },
     } as ProjectManifest);
@@ -74,7 +80,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
       version: "1.0.0",
       pnpm: {
         overrides: {
-          "foo": "^1.0.0",
+          foo: "^1.0.0",
         },
       },
     });
@@ -139,8 +145,8 @@ describe("adoptPnpmFieldsFromRoot", () => {
       version: "1.0.0",
       pnpm: {
         overrides: {
-          "foo": "^1.0.0",
-          "bar": "^2.0.0",
+          foo: "^1.0.0",
+          bar: "^2.0.0",
         },
         onlyBuiltDependencies: ["fsevents", "node-gyp"],
         ignoredBuiltDependencies: ["puppeteer", "cypress"],
@@ -159,8 +165,8 @@ describe("adoptPnpmFieldsFromRoot", () => {
       version: "1.0.0",
       pnpm: {
         overrides: {
-          "foo": "^1.0.0",
-          "bar": "^2.0.0",
+          foo: "^1.0.0",
+          bar: "^2.0.0",
         },
         onlyBuiltDependencies: ["fsevents", "node-gyp"],
         ignoredBuiltDependencies: ["puppeteer", "cypress"],
@@ -175,7 +181,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
       version: "1.0.0",
       pnpm: {
         overrides: {
-          "foo": "^1.0.0",
+          foo: "^1.0.0",
         },
         onlyBuiltDependencies: ["fsevents"],
       },
@@ -187,7 +193,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
       pnpm: {
         someOtherField: "value",
       },
-    } as PackageManifest & { pnpm: any };
+    } as PackageManifest & { pnpm: Partial<PnpmSettings> };
 
     const result = await adoptPnpmFieldsFromRoot(targetManifest, "/workspace");
 
@@ -197,7 +203,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
       version: "1.0.0",
       pnpm: {
         overrides: {
-          "foo": "^1.0.0",
+          foo: "^1.0.0",
         },
         onlyBuiltDependencies: ["fsevents"],
       },

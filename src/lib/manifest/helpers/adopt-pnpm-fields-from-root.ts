@@ -1,4 +1,4 @@
-import type { ProjectManifest } from "@pnpm/types";
+import type { ProjectManifest, PnpmSettings } from "@pnpm/types";
 import path from "path";
 import type { PackageManifest } from "~/lib/types";
 import { isRushWorkspace, readTypedJson } from "~/lib/utils";
@@ -28,7 +28,7 @@ export async function adoptPnpmFieldsFromRoot(
     return targetPackageManifest;
   }
 
-  const pnpmConfig: Record<string, any> = {};
+  const pnpmConfig: Partial<PnpmSettings> = {};
 
   if (overrides) {
     pnpmConfig.overrides = overrides;
