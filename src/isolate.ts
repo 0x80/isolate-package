@@ -10,8 +10,8 @@ import {
   adaptInternalPackageManifests,
   adaptTargetPackageManifest,
   readManifest,
-  writeManifest,
   validateManifestMandatoryFields,
+  writeManifest,
 } from "./lib/manifest";
 import {
   getBuildOutputDir,
@@ -132,6 +132,15 @@ export function createIsolator(config?: IsolateConfig) {
         includeDevDependencies: config.includeDevDependencies,
       }
     );
+
+    /** Validate mandatory fields for all internal packages that will be isolated */
+    for (const packageName of internalPackageNames) {
+      const packageDef = packagesRegistry[packageName];
+      validateManifestMandatoryFields(
+        packageDef.manifest,
+        getRootRelativeLogPath(packageDef.absoluteDir, workspaceRootDir)
+      );
+    }
 
     const packedFilesByName = await packDependencies({
       internalPackageNames,
