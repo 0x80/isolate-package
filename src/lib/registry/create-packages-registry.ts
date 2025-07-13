@@ -2,7 +2,6 @@ import fs from "fs-extra";
 import { globSync } from "glob";
 import path from "node:path";
 import { useLogger } from "../logger";
-import { validateManifestMandatoryFields } from "../manifest";
 import type { PackageManifest, PackagesRegistry } from "../types";
 import { isRushWorkspace, readTypedJson, readTypedJsonSync } from "../utils";
 import { findPackagesGlobs } from "./helpers";
@@ -46,9 +45,6 @@ export async function createPackagesRegistry(
           const manifest = await readTypedJson<PackageManifest>(
             path.join(absoluteDir, "package.json")
           );
-
-          /** Validate mandatory fields for all packages */
-          validateManifestMandatoryFields(manifest, rootRelativeDir);
 
           return {
             manifest,
