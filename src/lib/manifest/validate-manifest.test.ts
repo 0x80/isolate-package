@@ -20,7 +20,7 @@ describe("validateManifestMandatoryFields", () => {
       files: ["dist"],
     };
 
-    expect(() => 
+    expect(() =>
       validateManifestMandatoryFields(validManifest, packagePath)
     ).not.toThrow();
   });
@@ -31,7 +31,7 @@ describe("validateManifestMandatoryFields", () => {
       files: ["dist"],
     } as PackageManifest;
 
-    expect(() => 
+    expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
     ).toThrow(/missing mandatory fields: version/);
   });
@@ -42,7 +42,7 @@ describe("validateManifestMandatoryFields", () => {
       version: "1.0.0",
     } as PackageManifest;
 
-    expect(() => 
+    expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
     ).toThrow(/missing mandatory fields: files/);
   });
@@ -54,7 +54,7 @@ describe("validateManifestMandatoryFields", () => {
       files: [],
     };
 
-    expect(() => 
+    expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
     ).toThrow(/missing mandatory fields: files/);
   });
@@ -66,7 +66,7 @@ describe("validateManifestMandatoryFields", () => {
       files: "dist" as unknown as string[],
     };
 
-    expect(() => 
+    expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
     ).toThrow(/missing mandatory fields: files/);
   });
@@ -76,7 +76,7 @@ describe("validateManifestMandatoryFields", () => {
       name: "test-package",
     } as PackageManifest;
 
-    expect(() => 
+    expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
     ).toThrow(/missing mandatory fields: version, files/);
   });
@@ -86,12 +86,14 @@ describe("validateManifestMandatoryFields", () => {
       name: "test-package",
     } as PackageManifest;
 
-    expect(() => 
+    expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
     ).toThrow(/The "version" field is required for pack to execute/);
-    
-    expect(() => 
+
+    expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
-    ).toThrow(/the "files" field is required to declare what files should be included/);
+    ).toThrow(
+      /the "files" field is required to declare what files should be included/
+    );
   });
 });
