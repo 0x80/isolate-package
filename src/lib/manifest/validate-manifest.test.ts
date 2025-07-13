@@ -63,7 +63,7 @@ describe("validateManifestMandatoryFields", () => {
     const invalidManifest: PackageManifest = {
       name: "test-package",
       version: "1.0.0",
-      files: "dist" as any,
+      files: "dist" as unknown as string[],
     };
 
     expect(() => 
