@@ -20,17 +20,9 @@ export function findPackagesGlobs(workspaceRootDir: string) {
 
   switch (packageManager.name) {
     case "pnpm": {
-      const workspaceConfig = readTypedYamlSync<{ packages: string[] }>(
+      const { packages: globs } = readTypedYamlSync<{ packages: string[] }>(
         path.join(workspaceRootDir, "pnpm-workspace.yaml")
       );
-
-      if (!workspaceConfig) {
-        throw new Error(
-          "pnpm-workspace.yaml file is empty. Please specify packages configuration."
-        );
-      }
-
-      const { packages: globs } = workspaceConfig;
 
       log.debug("Detected pnpm packages globs:", inspectValue(globs));
       return globs;
