@@ -7,25 +7,28 @@ import type { PackageManifest } from "../types";
  *
  * @param manifest - The package manifest to validate
  * @param packagePath - The path to the package (for error reporting)
+ * @param requireFilesField - Whether to require the files field (true for production deps, false for dev-only deps)
  * @throws Error if mandatory fields are missing
  */
 export function validateManifestMandatoryFields(
   manifest: PackageManifest,
-  packagePath: string
+  packagePath: string,
+  requireFilesField = true
 ): void {
   const log = useLogger();
   const missingFields: string[] = [];
 
-  /** The version field is required for pack to execute */
+  /** The version field is required for all packages */
   if (!manifest.version) {
     missingFields.push("version");
   }
 
-  /** The files field is required for pack to extract the correct files */
+  /** The files field is only required for production dependencies that will be packed */
   if (
-    !manifest.files ||
-    !Array.isArray(manifest.files) ||
-    manifest.files.length === 0
+    requireFilesField &&
+    (!manifest.files ||
+      !Array.isArray(manifest.files) ||
+      manifest.files.length === 0)
   ) {
     missingFields.push("files");
   }
@@ -33,8 +36,11 @@ export function validateManifestMandatoryFields(
   if (missingFields.length > 0) {
     const errorMessage =
       `Package at ${packagePath} is missing mandatory fields: ${missingFields.join(", ")}. ` +
-      `The "version" field is required for pack to execute, and the "files" field is required to declare what files should be included in the output. ` +
-      `See the documentation for more details.`;
+      `The "version" field is required for pack to execute` +
+      (requireFilesField
+        ? `, and the "files" field is required to declare what files should be included in the output.`
+        : `.`) +
+      ` See the documentation for more details.`;
 
     log.error(errorMessage);
     throw new Error(errorMessage);
