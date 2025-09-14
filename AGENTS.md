@@ -145,6 +145,28 @@ const packageManager = usePackageManager();
 - Include clear commit messages
 - Consider backward compatibility
 
+### PR Summary Documentation
+
+**Always create a PR summary when completing a task that involves code
+changes:**
+
+1. Create or overwrite the `PR_SUMMARY.md` file at the project root
+   - Note: This file is not in version control and may already exist from
+     previous tasks
+   - Always completely overwrite the existing content with new summary
+2. Include the following sections:
+   - **Problem**: Clear description of the issue being solved
+   - **Root Cause**: Technical explanation of why the issue occurred
+   - **Solution**: Code changes made with examples
+   - **Benefits**: List of improvements and guarantees
+   - **Testing**: Verification steps taken (tests, compilation, build)
+   - **Impact**: How this affects users and resolves the original issue
+3. Link to relevant GitHub issues/PRs using markdown format
+4. Use clear, technical language suitable for code review
+5. Include code snippets to illustrate key changes
+
+This documentation helps maintain project history and assists with code reviews.
+
 ## Common Pitfalls to Avoid
 
 1. Don't assume a specific package manager - always detect

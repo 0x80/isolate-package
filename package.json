@@ -35,12 +35,12 @@
   "scripts": {
     "build": "tsup-node",
     "dev": "tsup-node --watch",
-    "test": "vitest",
+    "test": "vitest --run",
     "format": "prettier --write .",
     "lint": "eslint . --max-warnings 0",
-    "lint:format": "prettier --check .",
-    "compile": "tsc --noEmit",
-    "prepare": "pnpm run compile && pnpm run build"
+    "check-format": "prettier --check .",
+    "check-types": "tsc --noEmit",
+    "prepare": "pnpm run check-types && pnpm run build"
   },
   "dependencies": {
     "@npmcli/arborist": "^9.1.4",
