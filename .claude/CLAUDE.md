@@ -1,6 +1,8 @@
 # Project Configuration
 
-This project uses pnpm as its package manager. Always use pnpm commands instead of npm:
+This project uses pnpm as its package manager. Always use pnpm commands instead
+of npm:
+
 - Use `pnpm install` instead of `npm install`
 - Use `pnpm run <script>` instead of `npm run <script>`
 - Use `pnpm test` instead of `npm test`
@@ -8,6 +10,7 @@ This project uses pnpm as its package manager. Always use pnpm commands instead 
 - Use `pnpm remove` instead of `npm remove`
 
 ## Available Scripts
+
 - `pnpm build` - Build the project
 - `pnpm dev` - Development mode with watch
 - `pnpm test` - Run tests

@@ -7,7 +7,8 @@ import type { PackageManifest } from "../types";
  *
  * @param manifest - The package manifest to validate
  * @param packagePath - The path to the package (for error reporting)
- * @param requireFilesField - Whether to require the files field (true for production deps, false for dev-only deps)
+ * @param requireFilesField - Whether to require the files field (true for
+ *   production deps, false for dev-only deps)
  * @throws Error if mandatory fields are missing
  */
 export function validateManifestMandatoryFields(
@@ -23,7 +24,10 @@ export function validateManifestMandatoryFields(
     missingFields.push("version");
   }
 
-  /** The files field is only required for production dependencies that will be packed */
+  /**
+   * The files field is only required for production dependencies that will be
+   * packed
+   */
   if (
     requireFilesField &&
     (!manifest.files ||
