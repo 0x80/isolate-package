@@ -38,13 +38,7 @@ export function validateManifestMandatoryFields(
   }
 
   if (missingFields.length > 0) {
-    const errorMessage =
-      `Package at ${packagePath} is missing mandatory fields: ${missingFields.join(", ")}. ` +
-      `The "version" field is required for pack to execute` +
-      (requireFilesField
-        ? `, and the "files" field is required to declare what files should be included in the output.`
-        : `.`) +
-      ` See the documentation for more details.`;
+    const errorMessage = `Package at ${packagePath} is missing mandatory fields: ${missingFields.join(", ")}. See the documentation for more details.`;
 
     log.error(errorMessage);
     throw new Error(errorMessage);
