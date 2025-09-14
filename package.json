@@ -1,6 +1,6 @@
 {
   "name": "isolate-package",
-  "version": "1.24.0",
+  "version": "1.24.0-4",
   "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
   "author": "Thijs Koerselman",
   "license": "MIT",
@@ -35,12 +35,12 @@
   "scripts": {
     "build": "tsup-node",
     "dev": "tsup-node --watch",
-    "test": "vitest",
+    "test": "vitest --run",
     "format": "prettier --write .",
     "lint": "eslint . --max-warnings 0",
-    "lint:format": "prettier --check .",
-    "compile": "tsc --noEmit",
-    "prepare": "pnpm run compile && pnpm run build"
+    "check-format": "prettier --check .",
+    "check-types": "tsc --noEmit",
+    "prepare": "pnpm run check-types && pnpm run build"
   },
   "dependencies": {
     "@npmcli/arborist": "^7.5.4",
