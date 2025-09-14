@@ -133,8 +133,18 @@ export function createIsolator(config?: IsolateConfig) {
       }
     );
 
-    /** Validate mandatory fields for all internal packages that will be isolated */
-    for (const packageName of internalPackageNames) {
+    /**
+     * Get the list of packages that are production dependencies (not dev-only).
+     * These packages require validation because they will be packed.
+     */
+    const productionInternalPackageNames = config.includeDevDependencies
+      ? listInternalPackages(targetPackageManifest, packagesRegistry, {
+          includeDevDependencies: false,
+        })
+      : internalPackageNames;
+
+    /** Validate mandatory fields only for production packages that will be packed */
+    for (const packageName of productionInternalPackageNames) {
       const packageDef = packagesRegistry[packageName];
       validateManifestMandatoryFields(
         packageDef.manifest,
