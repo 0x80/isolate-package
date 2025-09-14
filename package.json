@@ -57,11 +57,9 @@
     "pnpm_prune_lockfile_v8": "npm:@pnpm/prune-lockfile@5",
     "pnpm_prune_lockfile_v9": "npm:@pnpm/prune-lockfile@6",
     "remeda": "^2.31.1",
-    "rename-overwrite": "^6.0.3",
     "source-map-support": "^0.5.21",
     "strip-json-comments": "^5.0.3",
     "tar-fs": "^3.1.0",
-    "type-fest": "^5.0.0",
     "yaml": "^2.8.1"
   },
   "devDependencies": {
