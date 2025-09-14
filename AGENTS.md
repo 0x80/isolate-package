@@ -147,10 +147,12 @@ const packageManager = usePackageManager();
 
 ### PR Summary Documentation
 
-**Always create a PR summary when completing a task that involves code changes:**
+**Always create a PR summary when completing a task that involves code
+changes:**
 
 1. Create or overwrite the `PR_SUMMARY.md` file at the project root
-   - Note: This file is not in version control and may already exist from previous tasks
+   - Note: This file is not in version control and may already exist from
+     previous tasks
    - Always completely overwrite the existing content with new summary
 2. Include the following sections:
    - **Problem**: Clear description of the issue being solved
