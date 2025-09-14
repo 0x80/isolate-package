@@ -109,12 +109,10 @@ describe("validateManifestMandatoryFields", () => {
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
-    ).toThrow(/The "version" field is required for pack to execute/);
+    ).toThrow(/missing mandatory fields: version, files/);
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
-    ).toThrow(
-      /the "files" field is required to declare what files should be included/
-    );
+    ).toThrow(/See the documentation for more details/);
   });
 });
