@@ -124,13 +124,17 @@ generate part of the packed filename. A personal preference is to set it to
 > NOTE: This step is not required if you use the
 > [internal packages strategy](#the-internal-packages-strategy) but you could
 > set it to `["src"]` instead of `["dist"]`.
+>
+> When using `includeDevDependencies`, packages that are only dev dependencies
+> (like ESLint configs or other build tools) don't require a `files` field since
+> they are not packed for deployment.
 
 The isolate process uses (p)npm `pack` to extract files from package
 directories, just like publishing a package would.
 
-For this to work it is required that you define the `files` property in each
-package manifest, as it declares what files should be included in the published
-output.
+For production dependencies, it is required that you define the `files` property
+in each package manifest, as it declares what files should be included in the
+published output.
 
 Typically, the value contains an array with only the name of the build output
 directory. For example:
@@ -218,6 +222,11 @@ Type: `boolean`, default: `false`
 By default devDependencies are ignored and stripped from the isolated output
 `package.json` files. If you enable this the devDependencies will be included
 and isolated just like the production dependencies.
+
+Note: Dev-only internal packages (like ESLint configs) that are included through
+this option don't require a `files` field in their package.json, only a
+`version` field. Production dependencies always require both `version` and
+`files` fields.
 
 ### pickFromScripts
 

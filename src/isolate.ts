@@ -134,12 +134,27 @@ export function createIsolator(config?: IsolateConfig) {
       }
     );
 
+    /**
+     * Get the list of packages that are production dependencies (not dev-only).
+     * These packages require full validation including the files field.
+     */
+    const productionInternalPackageNames = listInternalPackages(
+      targetPackageManifest,
+      packagesRegistry,
+      {
+        includeDevDependencies: false,
+      }
+    );
+
     /** Validate mandatory fields for all internal packages that will be isolated */
     for (const packageName of internalPackageNames) {
       const packageDef = packagesRegistry[packageName];
+      const isProductionDependency =
+        productionInternalPackageNames.includes(packageName);
       validateManifestMandatoryFields(
         packageDef.manifest,
-        getRootRelativeLogPath(packageDef.absoluteDir, workspaceRootDir)
+        getRootRelativeLogPath(packageDef.absoluteDir, workspaceRootDir),
+        isProductionDependency
       );
     }
 

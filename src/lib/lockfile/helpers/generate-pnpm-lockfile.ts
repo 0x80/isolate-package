@@ -207,7 +207,7 @@ export async function generatePnpmLockfile({
         return [
           importerId,
           pnpmMapImporter(importerId, importer!, {
-            includeDevDependencies,
+            includeDevDependencies: false, // Only include dev deps for target package
             includePatchedDependencies,
             directoryByPackageName,
           }),

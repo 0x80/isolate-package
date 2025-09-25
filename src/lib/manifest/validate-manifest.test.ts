@@ -25,6 +25,27 @@ describe("validateManifestMandatoryFields", () => {
     ).not.toThrow();
   });
 
+  it("should pass validation for dev-only packages without files field", () => {
+    const devPackageManifest: PackageManifest = {
+      name: "eslint-config",
+      version: "1.0.0",
+    };
+
+    expect(() =>
+      validateManifestMandatoryFields(devPackageManifest, packagePath, false)
+    ).not.toThrow();
+  });
+
+  it("should still require version for dev-only packages", () => {
+    const invalidDevManifest = {
+      name: "eslint-config",
+    } as PackageManifest;
+
+    expect(() =>
+      validateManifestMandatoryFields(invalidDevManifest, packagePath, false)
+    ).toThrow(/missing mandatory fields: version/);
+  });
+
   it("should throw error when version field is missing", () => {
     const invalidManifest = {
       name: "test-package",
@@ -88,12 +109,10 @@ describe("validateManifestMandatoryFields", () => {
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
-    ).toThrow(/The "version" field is required for pack to execute/);
+    ).toThrow(/missing mandatory fields: version, files/);
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath)
-    ).toThrow(
-      /the "files" field is required to declare what files should be included/
-    );
+    ).toThrow(/See the documentation for more details/);
   });
 });
