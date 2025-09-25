@@ -21,6 +21,7 @@ import {
 } from "./lib/output";
 import { detectPackageManager, shouldUsePnpmPack } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
+import { copyPatches } from "./lib/patches/copy-patches";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
 import {
@@ -194,6 +195,26 @@ export function createIsolator(config?: IsolateConfig) {
       targetPackageManifest: outputManifest,
       config,
     });
+
+    /** Copy patch files if includePatchedDependencies is enabled */
+    const copiedPatches = await copyPatches({
+      workspaceRootDir,
+      targetPackageManifest,
+      isolateDir,
+      includePatchedDependencies: config.includePatchedDependencies,
+      includeDevDependencies: config.includeDevDependencies,
+    });
+
+    /** Add copied patches to the isolated package.json */
+    if (Object.keys(copiedPatches).length > 0) {
+      const manifest = await readManifest(isolateDir);
+      if (!manifest.pnpm) {
+        manifest.pnpm = {};
+      }
+      manifest.pnpm.patchedDependencies = copiedPatches;
+      await writeManifest(isolateDir, manifest);
+      log.debug(`Added ${Object.keys(copiedPatches).length} patches to isolated package.json`);
+    }
 
     if (usedFallbackToNpm) {
       /**
