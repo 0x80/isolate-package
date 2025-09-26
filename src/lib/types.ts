@@ -2,6 +2,10 @@ import type { PackageManifest as PnpmPackageManifest } from "@pnpm/types";
 
 export type PackageManifest = PnpmPackageManifest & {
   packageManager?: string;
+  pnpm?: {
+    patchedDependencies?: Record<string, string>;
+    [key: string]: unknown;
+  };
 };
 
 export type WorkspacePackageInfo = {

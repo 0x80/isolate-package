@@ -1,4 +1,8 @@
 import { defineConfig } from "tsup";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const { default: tsconfigPathsPlugin } = require("@esbuild-plugins/tsconfig-paths");
 
 export default defineConfig({
   entry: {
@@ -11,6 +15,7 @@ export default defineConfig({
   splitting: false,
   dts: true,
   clean: true,
+  esbuildPlugins: [tsconfigPathsPlugin({})],
   // shims: true, // replaces use of import.meta
   /**
    * The `isolate` binary is an ES module. The file is required to have the
