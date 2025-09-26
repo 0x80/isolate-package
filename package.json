@@ -63,6 +63,7 @@
     "yaml": "^2.8.1"
   },
   "devDependencies": {
+    "@esbuild-plugins/tsconfig-paths": "^0.1.2",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.4.0",
     "@types/npmcli__config": "^6.0.3",

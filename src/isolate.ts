@@ -228,7 +228,9 @@ export function createIsolator(config?: IsolateConfig) {
       }
       manifest.pnpm.patchedDependencies = copiedPatches;
       await writeManifest(isolateDir, manifest);
-      log.debug(`Added ${Object.keys(copiedPatches).length} patches to isolated package.json`);
+      log.debug(
+        `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`
+      );
     }
 
     if (usedFallbackToNpm) {

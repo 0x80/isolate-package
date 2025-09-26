@@ -46,46 +46,56 @@ export async function copyPatches({
   const patchesDir = path.join(isolateDir, "patches");
   await fs.ensureDir(patchesDir);
 
-  log.debug(`Found ${Object.keys(patchedDependencies).length} patched dependencies`);
+  log.debug(
+    `Found ${Object.keys(patchedDependencies).length} patched dependencies`
+  );
 
   // Get the package name from the package spec (e.g., "chalk@5.3.0" -> "chalk", "@firebase/app@1.2.3" -> "@firebase/app")
   const getPackageName = (packageSpec: string): string => {
     // Handle scoped packages: @scope/package@version -> @scope/package
-    if (packageSpec.startsWith('@')) {
-      const parts = packageSpec.split('@');
+    if (packageSpec.startsWith("@")) {
+      const parts = packageSpec.split("@");
       return `@${parts[1]}`;
     }
     // Handle regular packages: package@version -> package
-    return packageSpec.split('@')[0];
+    return packageSpec.split("@")[0];
   };
 
   // Filter patches based on dependency type
-  const filteredPatches = Object.entries(patchedDependencies).filter(([packageSpec]) => {
-    const packageName = getPackageName(packageSpec);
-    
-    // Check if it's a regular dependency
-    if (targetPackageManifest.dependencies?.[packageName]) {
-      log.debug(`Including production dependency patch: ${packageSpec}`);
-      return true;
-    }
-    
-    // Check if it's a dev dependency and we should include dev dependencies
-    if (targetPackageManifest.devDependencies?.[packageName]) {
-      if (includeDevDependencies) {
-        log.debug(`Including dev dependency patch: ${packageSpec}`);
-        return true;
-      } else {
-        log.debug(`Excluding dev dependency patch: ${packageSpec} (includeDevDependencies=false)`);
-        return false;
-      }
-    }
-    
-    // Package not found in dependencies or devDependencies
-    log.debug(`Excluding patch ${packageSpec}: package "${packageName}" not found in target dependencies`);
-    return false;
-  });
+  const filteredPatches = Object.entries(patchedDependencies).filter(
+    ([packageSpec]) => {
+      const packageName = getPackageName(packageSpec);
 
-  log.debug(`Copying ${filteredPatches.length} patches (filtered from ${Object.keys(patchedDependencies).length})`);
+      // Check if it's a regular dependency
+      if (targetPackageManifest.dependencies?.[packageName]) {
+        log.debug(`Including production dependency patch: ${packageSpec}`);
+        return true;
+      }
+
+      // Check if it's a dev dependency and we should include dev dependencies
+      if (targetPackageManifest.devDependencies?.[packageName]) {
+        if (includeDevDependencies) {
+          log.debug(`Including dev dependency patch: ${packageSpec}`);
+          return true;
+        } else {
+          log.debug(
+            `Excluding dev dependency patch: ${packageSpec} (includeDevDependencies=false)`
+          );
+          return false;
+        }
+      }
+
+      // Package not found in dependencies or devDependencies
+      log.debug(
+        `Excluding patch ${packageSpec}: package "${packageName}" not found in target dependencies`
+      );
+      return false;
+    }
+  );
+
+  log.debug(
+    `Copying ${filteredPatches.length} patches (filtered from ${Object.keys(patchedDependencies).length})`
+  );
 
   const copiedPatches: Record<string, string> = {};
 
@@ -94,17 +104,21 @@ export async function copyPatches({
     const targetPatchPath = path.join(patchesDir, path.basename(patchPath));
 
     if (!fs.existsSync(sourcePatchPath)) {
-      log.warn(`Patch file not found: ${getRootRelativeLogPath(sourcePatchPath, workspaceRootDir)}`);
+      log.warn(
+        `Patch file not found: ${getRootRelativeLogPath(sourcePatchPath, workspaceRootDir)}`
+      );
       continue;
     }
 
     await fs.copy(sourcePatchPath, targetPatchPath);
     log.debug(`Copied patch for ${packageSpec}: ${path.basename(patchPath)}`);
-    
+
     // Store the relative path for the isolated package.json
     copiedPatches[packageSpec] = `patches/${path.basename(patchPath)}`;
   }
 
-  log.debug(`Patches copied to ${getRootRelativeLogPath(patchesDir, isolateDir)}`);
+  log.debug(
+    `Patches copied to ${getRootRelativeLogPath(patchesDir, isolateDir)}`
+  );
   return copiedPatches;
 }

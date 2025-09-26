@@ -25,35 +25,42 @@ function filterPatchedDependencies(
   includeDevDependencies: boolean,
   log: Logger
 ): any {
-  if (!originalPatchedDependencies || typeof originalPatchedDependencies !== 'object') {
+  if (
+    !originalPatchedDependencies ||
+    typeof originalPatchedDependencies !== "object"
+  ) {
     return undefined;
   }
 
   const getPackageName = (packageSpec: string): string => {
     // Handle scoped packages: @scope/package@version -> @scope/package
-    if (packageSpec.startsWith('@')) {
-      const parts = packageSpec.split('@');
+    if (packageSpec.startsWith("@")) {
+      const parts = packageSpec.split("@");
       return `@${parts[1]}`;
     }
     // Handle regular packages: package@version -> package
-    return packageSpec.split('@')[0];
+    return packageSpec.split("@")[0];
   };
 
   const filteredPatches: any = {};
   let includedCount = 0;
   let excludedCount = 0;
 
-  for (const [packageSpec, patchInfo] of Object.entries(originalPatchedDependencies)) {
+  for (const [packageSpec, patchInfo] of Object.entries(
+    originalPatchedDependencies
+  )) {
     const packageName = getPackageName(packageSpec);
-    
+
     // Check if it's a regular dependency
     if (targetPackageManifest.dependencies?.[packageName]) {
       filteredPatches[packageSpec] = patchInfo;
       includedCount++;
-      log.debug(`Including production dependency patch in lockfile: ${packageSpec}`);
+      log.debug(
+        `Including production dependency patch in lockfile: ${packageSpec}`
+      );
       continue;
     }
-    
+
     // Check if it's a dev dependency and we should include dev dependencies
     if (targetPackageManifest.devDependencies?.[packageName]) {
       if (includeDevDependencies) {
@@ -62,18 +69,24 @@ function filterPatchedDependencies(
         log.debug(`Including dev dependency patch in lockfile: ${packageSpec}`);
       } else {
         excludedCount++;
-        log.debug(`Excluding dev dependency patch from lockfile: ${packageSpec}`);
+        log.debug(
+          `Excluding dev dependency patch from lockfile: ${packageSpec}`
+        );
       }
       continue;
     }
-    
+
     // Package not found in dependencies or devDependencies
-    log.debug(`Excluding patch from lockfile: ${packageSpec} (package "${packageName}" not found in target dependencies)`);
+    log.debug(
+      `Excluding patch from lockfile: ${packageSpec} (package "${packageName}" not found in target dependencies)`
+    );
     excludedCount++;
   }
 
-  log.debug(`Filtered patched dependencies: ${includedCount} included, ${excludedCount} excluded`);
-  
+  log.debug(
+    `Filtered patched dependencies: ${includedCount} included, ${excludedCount} excluded`
+  );
+
   return Object.keys(filteredPatches).length > 0 ? filteredPatches : undefined;
 }
 
@@ -99,17 +112,20 @@ export async function generatePnpmLockfile({
   includePatchedDependencies: boolean;
 }) {
   /**
-   * PNPM 10+ uses the same lockfile format as version 9, but with lockfileVersion: '10.0'
-   * Since @pnpm/lockfile-file v10 packages don't exist yet, we use v9 packages for PNPM 10+.
-   * This should work because PNPM maintains backward compatibility, but we log a warning
-   * to alert users of potential edge cases.
+   * PNPM 10+ uses the same lockfile format as version 9, but with
+   * lockfileVersion: '10.0' Since @pnpm/lockfile-file v10 packages don't exist
+   * yet, we use v9 packages for PNPM 10+. This should work because PNPM
+   * maintains backward compatibility, but we log a warning to alert users of
+   * potential edge cases.
    */
   const useVersion9 = majorVersion >= 9;
-  
+
   const log = useLogger();
-  
+
   if (majorVersion >= 10) {
-    log.debug(`Using PNPM v${majorVersion} with v9 lockfile packages - this should work but may have limitations`);
+    log.debug(
+      `Using PNPM v${majorVersion} with v9 lockfile packages - this should work but may have limitations`
+    );
   }
 
   log.debug("Generating PNPM lockfile...");
@@ -227,9 +243,10 @@ export async function generatePnpmLockfile({
     }
 
     /**
-     * Filter patched dependencies to only include patches for packages that will
-     * actually be present in the isolated lockfile based on dependency type.
-     * We read patchedDependencies from workspace root, but filter based on target package dependencies.
+     * Filter patched dependencies to only include patches for packages that
+     * will actually be present in the isolated lockfile based on dependency
+     * type. We read patchedDependencies from workspace root, but filter based
+     * on target package dependencies.
      */
     const patchedDependencies = includePatchedDependencies
       ? filterPatchedDependencies(
