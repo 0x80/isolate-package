@@ -309,7 +309,7 @@ export function createIsolator(config?: IsolateConfig) {
   };
 }
 
-// Keep the original function for backward compatibility
+/** Keep the original function for backward compatibility */
 export async function isolate(config?: IsolateConfig): Promise<string> {
   return createIsolator(config)();
 }

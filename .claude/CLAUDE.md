@@ -89,3 +89,7 @@ The codebase uses `~/` as path alias for `src/` (configured in tsconfig.json).
 ## Testing
 
 Tests use Vitest and are co-located with source files (`*.test.ts`).
+
+## Code Style
+
+- Use JSDoc style comments (`/** ... */`) for all comments, including single-line comments

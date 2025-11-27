@@ -25,11 +25,11 @@ import { pnpmMapImporter } from "./pnpm-map-importer";
  */
 function getPackageName(packageSpec: string): string {
   if (packageSpec.startsWith("@")) {
-    // Scoped packages: @scope/package@version -> @scope/package
+    /** Scoped packages: @scope/package@version -> @scope/package */
     const parts = packageSpec.split("@");
     return `@${parts[1] ?? ""}`;
   }
-  // Regular packages: package@version -> package
+  /** Regular packages: package@version -> package */
   return packageSpec.split("@")[0] ?? "";
 }
 
@@ -54,7 +54,7 @@ function filterPatchedDependencies<T>(
   for (const [packageSpec, patchInfo] of Object.entries(patchedDependencies)) {
     const packageName = getPackageName(packageSpec);
 
-    // Check if it's a production dependency
+    /** Check if it's a production dependency */
     if (targetPackageManifest.dependencies?.[packageName]) {
       filteredPatches[packageSpec] = patchInfo;
       includedCount++;
@@ -64,7 +64,7 @@ function filterPatchedDependencies<T>(
       continue;
     }
 
-    // Check if it's a dev dependency and we should include dev dependencies
+    /** Check if it's a dev dependency and we should include dev dependencies */
     if (targetPackageManifest.devDependencies?.[packageName]) {
       if (includeDevDependencies) {
         filteredPatches[packageSpec] = patchInfo;
@@ -79,7 +79,7 @@ function filterPatchedDependencies<T>(
       continue;
     }
 
-    // Package not found in dependencies or devDependencies
+    /** Package not found in dependencies or devDependencies */
     log.debug(
       `Excluding patch from lockfile: ${packageSpec} (package "${packageName}" not found in target dependencies)`
     );

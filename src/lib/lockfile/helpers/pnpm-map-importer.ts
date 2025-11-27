@@ -50,7 +50,7 @@ function pnpmMapDependenciesLinks(
       return value;
     }
 
-    // Replace backslashes with forward slashes to support Windows Git Bash
+    /** Replace backslashes with forward slashes to support Windows Git Bash */
     const relativePath = path
       .relative(importerPath, got(directoryByPackageName, key))
       .replace(path.sep, path.posix.sep);

@@ -10,11 +10,11 @@ import { getRootRelativeLogPath, readTypedJson } from "~/lib/utils";
  */
 function getPackageName(packageSpec: string): string {
   if (packageSpec.startsWith("@")) {
-    // Scoped packages: @scope/package@version -> @scope/package
+    /** Scoped packages: @scope/package@version -> @scope/package */
     const parts = packageSpec.split("@");
     return `@${parts[1] ?? ""}`;
   }
-  // Regular packages: package@version -> package
+  /** Regular packages: package@version -> package */
   return packageSpec.split("@")[0] ?? "";
 }
 
@@ -68,13 +68,13 @@ export async function copyPatches({
     ([packageSpec]) => {
       const packageName = getPackageName(packageSpec);
 
-      // Check if it's a production dependency
+      /** Check if it's a production dependency */
       if (targetPackageManifest.dependencies?.[packageName]) {
         log.debug(`Including production dependency patch: ${packageSpec}`);
         return true;
       }
 
-      // Check if it's a dev dependency and we should include dev dependencies
+      /** Check if it's a dev dependency and we should include dev dependencies */
       if (targetPackageManifest.devDependencies?.[packageName]) {
         if (includeDevDependencies) {
           log.debug(`Including dev dependency patch: ${packageSpec}`);
