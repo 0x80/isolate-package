@@ -15,7 +15,8 @@ describe("getPackageName", () => {
       expect(getPackageName("@firebase/app")).toBe("@firebase/app");
     });
 
-    it("should handle deeply nested scoped package", () => {
+    it("should handle malformed scoped package with extra slashes", () => {
+      /** This is malformed input - real scoped packages only support @scope/name */
       expect(getPackageName("@org/sub/package@1.0.0")).toBe("@org/sub/package");
     });
   });
