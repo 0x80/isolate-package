@@ -329,9 +329,9 @@ When you use the `targetPackagePath` option, this setting will be ignored.
 
 ## PNPM Patched Dependencies
 
-If your workspace uses PNPM's
-[patched dependencies](https://pnpm.io/cli/patch) feature, `isolate` will
-automatically copy the relevant patch files to the isolated output.
+If your workspace uses PNPM's [patched dependencies](https://pnpm.io/cli/patch)
+feature, `isolate` will automatically copy the relevant patch files to the
+isolated output.
 
 Patches are filtered based on the target package's dependencies:
 
