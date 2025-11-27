@@ -202,15 +202,20 @@ export function createIsolator(config?: IsolateConfig) {
 
     /**
      * Copy patch files before generating lockfile so the lockfile contains the
-     * correct transformed paths (flattened to patches/ with collision
-     * avoidance).
+     * correct paths. Only copy patches when output uses pnpm, since patched
+     * dependencies are a pnpm-specific feature.
      */
-    const copiedPatches = await copyPatches({
-      workspaceRootDir,
-      targetPackageManifest: outputManifest,
-      isolateDir,
-      includeDevDependencies: config.includeDevDependencies,
-    });
+    const shouldCopyPatches =
+      packageManager.name === "pnpm" && !config.forceNpm;
+
+    const copiedPatches = shouldCopyPatches
+      ? await copyPatches({
+          workspaceRootDir,
+          targetPackageManifest: outputManifest,
+          isolateDir,
+          includeDevDependencies: config.includeDevDependencies,
+        })
+      : {};
 
     /** Generate an isolated lockfile based on the original one */
     const usedFallbackToNpm = await processLockfile({
