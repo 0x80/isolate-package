@@ -58,19 +58,6 @@ describe("copyPatches", () => {
     vi.restoreAllMocks();
   });
 
-  it("should return empty object when includePatchedDependencies is false", async () => {
-    const result = await copyPatches({
-      workspaceRootDir: "/workspace",
-      targetPackageManifest: { name: "test", version: "1.0.0" },
-      isolateDir: "/workspace/isolate",
-      includePatchedDependencies: false,
-      includeDevDependencies: false,
-    });
-
-    expect(result).toEqual({});
-    expect(readTypedJson).not.toHaveBeenCalled();
-  });
-
   it("should return empty object when workspace root package.json cannot be read", async () => {
     readTypedJson.mockRejectedValue(new Error("File not found"));
 
@@ -78,7 +65,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: { name: "test", version: "1.0.0" },
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: false,
     });
 
@@ -95,7 +81,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: { name: "test", version: "1.0.0" },
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: false,
     });
 
@@ -118,7 +103,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: { name: "test", version: "1.0.0" },
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: false,
     });
 
@@ -152,7 +136,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: targetManifest,
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: false,
     });
 
@@ -193,7 +176,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: targetManifest,
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: true,
     });
 
@@ -234,7 +216,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: targetManifest,
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: false,
     });
 
@@ -269,7 +250,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: targetManifest,
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: false,
     });
 
@@ -307,7 +287,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: targetManifest,
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: false,
     });
 
@@ -345,7 +324,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: targetManifest,
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: false,
     });
 
@@ -391,7 +369,6 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: targetManifest,
       isolateDir: "/workspace/isolate",
-      includePatchedDependencies: true,
       includeDevDependencies: false,
     });
 

@@ -17,21 +17,14 @@ export async function copyPatches({
   workspaceRootDir,
   targetPackageManifest,
   isolateDir,
-  includePatchedDependencies,
   includeDevDependencies,
 }: {
   workspaceRootDir: string;
   targetPackageManifest: PackageManifest;
   isolateDir: string;
-  includePatchedDependencies: boolean;
   includeDevDependencies: boolean;
 }): Promise<Record<string, PatchFile>> {
   const log = useLogger();
-
-  if (!includePatchedDependencies) {
-    log.debug("Skipping patch copying (includePatchedDependencies is false)");
-    return {};
-  }
 
   let workspaceRootManifest: PackageManifest;
   try {

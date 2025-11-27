@@ -209,7 +209,6 @@ export function createIsolator(config?: IsolateConfig) {
       workspaceRootDir,
       targetPackageManifest: outputManifest,
       isolateDir,
-      includePatchedDependencies: config.includePatchedDependencies,
       includeDevDependencies: config.includeDevDependencies,
     });
 
