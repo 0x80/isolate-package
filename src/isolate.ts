@@ -215,7 +215,7 @@ export function createIsolator(config?: IsolateConfig) {
     /** Copy patch files if includePatchedDependencies is enabled */
     const copiedPatches = await copyPatches({
       workspaceRootDir,
-      targetPackageManifest,
+      targetPackageManifest: outputManifest,
       isolateDir,
       includePatchedDependencies: config.includePatchedDependencies,
       includeDevDependencies: config.includeDevDependencies,
