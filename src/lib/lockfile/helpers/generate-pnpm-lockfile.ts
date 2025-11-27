@@ -16,22 +16,12 @@ import { pick } from "remeda";
 import type { Logger } from "~/lib/logger";
 import { useLogger } from "~/lib/logger";
 import type { PackageManifest, PackagesRegistry } from "~/lib/types";
-import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
+import {
+  getErrorMessage,
+  getPackageName,
+  isRushWorkspace,
+} from "~/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
-
-/**
- * Extracts the package name from a package spec like "chalk@5.3.0" or
- * "@firebase/app@1.2.3"
- */
-function getPackageName(packageSpec: string): string {
-  if (packageSpec.startsWith("@")) {
-    /** Scoped packages: @scope/package@version -> @scope/package */
-    const parts = packageSpec.split("@");
-    return `@${parts[1] ?? ""}`;
-  }
-  /** Regular packages: package@version -> package */
-  return packageSpec.split("@")[0] ?? "";
-}
 
 /**
  * Filters patched dependencies to only include patches for packages that will

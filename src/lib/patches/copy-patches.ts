@@ -2,21 +2,11 @@ import fs from "fs-extra";
 import path from "node:path";
 import { useLogger } from "~/lib/logger";
 import type { PackageManifest } from "~/lib/types";
-import { getRootRelativeLogPath, readTypedJson } from "~/lib/utils";
-
-/**
- * Extracts the package name from a package spec like "chalk@5.3.0" or
- * "@firebase/app@1.2.3"
- */
-function getPackageName(packageSpec: string): string {
-  if (packageSpec.startsWith("@")) {
-    /** Scoped packages: @scope/package@version -> @scope/package */
-    const parts = packageSpec.split("@");
-    return `@${parts[1] ?? ""}`;
-  }
-  /** Regular packages: package@version -> package */
-  return packageSpec.split("@")[0] ?? "";
-}
+import {
+  getPackageName,
+  getRootRelativeLogPath,
+  readTypedJson,
+} from "~/lib/utils";
 
 export async function copyPatches({
   workspaceRootDir,
