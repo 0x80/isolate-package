@@ -1,11 +1,7 @@
 import fs from "fs-extra";
 import path from "node:path";
-import {
-  readWantedLockfile as readWantedLockfile_v8,
-} from "pnpm_lockfile_file_v8";
-import {
-  readWantedLockfile as readWantedLockfile_v9,
-} from "pnpm_lockfile_file_v9";
+import { readWantedLockfile as readWantedLockfile_v8 } from "pnpm_lockfile_file_v8";
+import { readWantedLockfile as readWantedLockfile_v9 } from "pnpm_lockfile_file_v9";
 import { useLogger } from "~/lib/logger";
 import { usePackageManager } from "~/lib/package-manager";
 import type { PackageManifest, PatchFile } from "~/lib/types";
@@ -72,9 +68,8 @@ export async function copyPatches({
   }
 
   /** Read the lockfile to get the hashes for each patch */
-  const lockfilePatchedDependencies = await readLockfilePatchedDependencies(
-    workspaceRootDir
-  );
+  const lockfilePatchedDependencies =
+    await readLockfilePatchedDependencies(workspaceRootDir);
 
   const patchesDir = path.join(isolateDir, "patches");
   await fs.ensureDir(patchesDir);

@@ -201,8 +201,8 @@ export function createIsolator(config?: IsolateConfig) {
     await writeManifest(isolateDir, outputManifest);
 
     /**
-     * Copy patch files before generating lockfile so the lockfile contains
-     * the correct transformed paths (flattened to patches/ with collision
+     * Copy patch files before generating lockfile so the lockfile contains the
+     * correct transformed paths (flattened to patches/ with collision
      * avoidance).
      */
     const copiedPatches = await copyPatches({
@@ -237,7 +237,10 @@ export function createIsolator(config?: IsolateConfig) {
         if (!manifest.pnpm) {
           manifest.pnpm = {};
         }
-        /** Extract just the paths for the manifest (lockfile needs full PatchFile) */
+        /**
+         * Extract just the paths for the manifest (lockfile needs full
+         * PatchFile)
+         */
         manifest.pnpm.patchedDependencies = Object.fromEntries(
           Object.entries(copiedPatches).map(([spec, patchFile]) => [
             spec,
