@@ -2,6 +2,7 @@ node_modules
 dist
 *.log
 .DS_Store
+tsconfig.tsbuildinfo
 
 # Claude Code local settings
 .claude/settings.local.json
