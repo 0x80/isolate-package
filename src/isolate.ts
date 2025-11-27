@@ -245,7 +245,7 @@ export function createIsolator(config?: IsolateConfig) {
 
         const packages = packagesFolderNames.map((x) => path.join(x, "/*"));
 
-        await writeTypedYamlSync(path.join(isolateDir, "pnpm-workspace.yaml"), {
+        writeTypedYamlSync(path.join(isolateDir, "pnpm-workspace.yaml"), {
           packages,
         });
       } else {

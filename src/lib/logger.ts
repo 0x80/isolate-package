@@ -14,8 +14,8 @@ export type Logger = {
 };
 
 /**
- * Map our log levels to consola's numeric levels.
- * Consola levels: 0=fatal/error, 1=warn, 2=log, 3=info, 4=debug, 5=trace
+ * Map our log levels to consola's numeric levels. Consola levels:
+ * 0=fatal/error, 1=warn, 2=log, 3=info, 4=debug, 5=trace
  */
 const logLevelMap: Record<LogLevel, number> = {
   error: 0,

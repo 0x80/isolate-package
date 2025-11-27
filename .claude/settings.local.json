@@ -2,15 +2,19 @@
   "permissions": {
     "allow": [
       "Bash(pnpm test:*)",
-      "Bash(pnpm run check-types:*)",
-      "Bash(pnpm run build:*)",
       "Bash(pnpm remove:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm check-types:*)",
       "Bash(pnpm build:*)",
       "Bash(cat:*)",
       "Bash(git push:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm check-format:*)",
+      "Bash(pnpm format:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
