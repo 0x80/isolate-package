@@ -64,12 +64,18 @@ by name.
 - `unpack-dependencies.ts` - Extracts packed tarballs to isolate directory
 - `process-build-output-files.ts` - Copies target package build output
 
+**patches/** - Handles PNPM patched dependencies:
+
+- `copy-patches.ts` - Copies relevant patch files from workspace root to isolate
+  directory, filtering based on target package dependencies
+
 ### Key Types (`src/lib/types.ts`)
 
 - `PackageManifest` - Extended pnpm package manifest type
 - `PackagesRegistry` - Maps package names to their paths and manifests
 - `WorkspacePackageInfo` - Package metadata (absoluteDir, rootRelativeDir,
   manifest)
+- `PatchFile` - Represents a patch file entry with path and hash
 
 ### Process Flow
 
@@ -79,8 +85,9 @@ by name.
 4. Recursively find all internal dependencies
 5. Pack and unpack internal dependencies to isolate directory
 6. Adapt manifests to use `file:` references
-7. Generate pruned lockfile for the isolated package
-8. Copy workspace config files (.npmrc, pnpm-workspace.yaml)
+7. Copy PNPM patched dependencies (if any exist)
+8. Generate pruned lockfile for the isolated package
+9. Copy workspace config files (.npmrc, pnpm-workspace.yaml)
 
 ## Path Alias
 

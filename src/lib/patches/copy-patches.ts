@@ -7,7 +7,6 @@ import { usePackageManager } from "~/lib/package-manager";
 import type { PackageManifest, PatchFile } from "~/lib/types";
 import {
   filterPatchedDependencies,
-  getIsolateRelativeLogPath,
   getRootRelativeLogPath,
   isRushWorkspace,
   readTypedJson,
@@ -63,11 +62,7 @@ export async function copyPatches({
   const lockfilePatchedDependencies =
     await readLockfilePatchedDependencies(workspaceRootDir);
 
-  const patchesDir = path.join(isolateDir, "patches");
-  await fs.ensureDir(patchesDir);
-
   const copiedPatches: Record<string, PatchFile> = {};
-  const usedFilenames = new Set<string>();
 
   for (const [packageSpec, patchPath] of Object.entries(filteredPatches)) {
     const sourcePatchPath = path.resolve(workspaceRootDir, patchPath);
@@ -79,33 +74,11 @@ export async function copyPatches({
       continue;
     }
 
-    /**
-     * Generate a unique filename to avoid collisions from different
-     * subdirectories
-     */
-    const basename = path.basename(patchPath);
-    let targetFilename = basename;
-
-    if (usedFilenames.has(targetFilename)) {
-      const ext = path.extname(basename);
-      const name = path.basename(basename, ext);
-      let counter = 1;
-
-      do {
-        targetFilename = `${name}-${counter}${ext}`;
-        counter++;
-      } while (usedFilenames.has(targetFilename));
-
-      log.debug(
-        `Renamed patch ${basename} to ${targetFilename} to avoid collision`
-      );
-    }
-
-    usedFilenames.add(targetFilename);
-
-    const targetPatchPath = path.join(patchesDir, targetFilename);
+    /** Preserve original folder structure */
+    const targetPatchPath = path.join(isolateDir, patchPath);
+    await fs.ensureDir(path.dirname(targetPatchPath));
     await fs.copy(sourcePatchPath, targetPatchPath);
-    log.debug(`Copied patch for ${packageSpec}: ${targetFilename}`);
+    log.debug(`Copied patch for ${packageSpec}: ${patchPath}`);
 
     /** Get the hash from the original lockfile, or use empty string if not found */
     const originalPatchFile = lockfilePatchedDependencies?.[packageSpec];
@@ -116,15 +89,13 @@ export async function copyPatches({
     }
 
     copiedPatches[packageSpec] = {
-      path: `patches/${targetFilename}`,
+      path: patchPath,
       hash,
     };
   }
 
   if (Object.keys(copiedPatches).length > 0) {
-    log.debug(
-      `Patches copied to ${getIsolateRelativeLogPath(patchesDir, isolateDir)}`
-    );
+    log.debug(`Copied ${Object.keys(copiedPatches).length} patch files`);
   }
 
   return copiedPatches;

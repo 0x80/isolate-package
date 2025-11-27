@@ -142,6 +142,7 @@ describe("copyPatches", () => {
     expect(result).toEqual({
       "lodash@4.17.21": { path: "patches/lodash.patch", hash: "" },
     });
+    /** Should preserve original folder structure */
     expect(fs.ensureDir).toHaveBeenCalledWith("/workspace/isolate/patches");
     expect(fs.copy).toHaveBeenCalledWith(
       "/workspace/patches/lodash.patch",
@@ -187,6 +188,10 @@ describe("copyPatches", () => {
       targetPackageManifest: targetManifest,
       includeDevDependencies: true,
     });
+    expect(fs.copy).toHaveBeenCalledWith(
+      "/workspace/patches/vitest.patch",
+      "/workspace/isolate/patches/vitest.patch"
+    );
   });
 
   it("should skip missing patch files and log a warning", async () => {
@@ -258,7 +263,7 @@ describe("copyPatches", () => {
     });
   });
 
-  it("should handle filename collisions by renaming", async () => {
+  it("should preserve nested folder structure when copying patches", async () => {
     const targetManifest: PackageManifest = {
       name: "test",
       version: "1.0.0",
@@ -290,14 +295,23 @@ describe("copyPatches", () => {
       includeDevDependencies: false,
     });
 
+    /** Should preserve original paths without renaming */
     expect(result).toEqual({
-      "pkg-a@1.0.0": { path: "patches/fix.patch", hash: "" },
-      "pkg-b@1.0.0": { path: "patches/fix-1.patch", hash: "" },
+      "pkg-a@1.0.0": { path: "patches/v1/fix.patch", hash: "" },
+      "pkg-b@1.0.0": { path: "patches/v2/fix.patch", hash: "" },
     });
     expect(fs.copy).toHaveBeenCalledTimes(2);
+    expect(fs.copy).toHaveBeenCalledWith(
+      "/workspace/patches/v1/fix.patch",
+      "/workspace/isolate/patches/v1/fix.patch"
+    );
+    expect(fs.copy).toHaveBeenCalledWith(
+      "/workspace/patches/v2/fix.patch",
+      "/workspace/isolate/patches/v2/fix.patch"
+    );
   });
 
-  it("should transform patch paths correctly for isolated directory", async () => {
+  it("should preserve deeply nested patch paths", async () => {
     const targetManifest: PackageManifest = {
       name: "test",
       version: "1.0.0",
@@ -327,13 +341,16 @@ describe("copyPatches", () => {
       includeDevDependencies: false,
     });
 
-    /** The path should be flattened to patches/ directory */
+    /** The path should preserve the original directory structure */
     expect(result).toEqual({
-      "lodash@4.17.21": { path: "patches/lodash.patch", hash: "" },
+      "lodash@4.17.21": { path: "some/nested/path/lodash.patch", hash: "" },
     });
+    expect(fs.ensureDir).toHaveBeenCalledWith(
+      "/workspace/isolate/some/nested/path"
+    );
     expect(fs.copy).toHaveBeenCalledWith(
       "/workspace/some/nested/path/lodash.patch",
-      "/workspace/isolate/patches/lodash.patch"
+      "/workspace/isolate/some/nested/path/lodash.patch"
     );
   });
 
