@@ -1,4 +1,5 @@
 export * from "./filter-object-undefined";
+export * from "./filter-patched-dependencies";
 export * from "./get-dirname";
 export * from "./get-error-message";
 export * from "./get-package-name";

@@ -3,7 +3,7 @@ import path from "node:path";
 import { useLogger } from "~/lib/logger";
 import type { PackageManifest } from "~/lib/types";
 import {
-  getPackageName,
+  filterPatchedDependencies,
   getRootRelativeLogPath,
   readTypedJson,
 } from "~/lib/utils";
@@ -47,49 +47,27 @@ export async function copyPatches({
     return {};
   }
 
-  const patchesDir = path.join(isolateDir, "patches");
-  await fs.ensureDir(patchesDir);
-
   log.debug(
     `Found ${Object.keys(patchedDependencies).length} patched dependencies in workspace`
   );
 
-  const filteredPatches = Object.entries(patchedDependencies).filter(
-    ([packageSpec]) => {
-      const packageName = getPackageName(packageSpec);
-
-      /** Check if it's a production dependency */
-      if (targetPackageManifest.dependencies?.[packageName]) {
-        log.debug(`Including production dependency patch: ${packageSpec}`);
-        return true;
-      }
-
-      /** Check if it's a dev dependency and we should include dev dependencies */
-      if (targetPackageManifest.devDependencies?.[packageName]) {
-        if (includeDevDependencies) {
-          log.debug(`Including dev dependency patch: ${packageSpec}`);
-          return true;
-        }
-        log.debug(
-          `Excluding dev dependency patch: ${packageSpec} (includeDevDependencies=false)`
-        );
-        return false;
-      }
-
-      log.debug(
-        `Excluding patch ${packageSpec}: package "${packageName}" not found in target dependencies`
-      );
-      return false;
-    }
+  const filteredPatches = filterPatchedDependencies(
+    patchedDependencies,
+    targetPackageManifest,
+    includeDevDependencies,
+    log
   );
 
-  log.debug(
-    `Copying ${filteredPatches.length} patches (filtered from ${Object.keys(patchedDependencies).length})`
-  );
+  if (!filteredPatches) {
+    return {};
+  }
+
+  const patchesDir = path.join(isolateDir, "patches");
+  await fs.ensureDir(patchesDir);
 
   const copiedPatches: Record<string, string> = {};
 
-  for (const [packageSpec, patchPath] of filteredPatches) {
+  for (const [packageSpec, patchPath] of Object.entries(filteredPatches)) {
     const sourcePatchPath = path.resolve(workspaceRootDir, patchPath);
     const targetPatchPath = path.join(patchesDir, path.basename(patchPath));
 
