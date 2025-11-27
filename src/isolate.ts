@@ -200,6 +200,19 @@ export function createIsolator(config?: IsolateConfig) {
 
     await writeManifest(isolateDir, outputManifest);
 
+    /**
+     * Copy patch files before generating lockfile so the lockfile contains
+     * the correct transformed paths (flattened to patches/ with collision
+     * avoidance).
+     */
+    const copiedPatches = await copyPatches({
+      workspaceRootDir,
+      targetPackageManifest: outputManifest,
+      isolateDir,
+      includePatchedDependencies: config.includePatchedDependencies,
+      includeDevDependencies: config.includeDevDependencies,
+    });
+
     /** Generate an isolated lockfile based on the original one */
     const usedFallbackToNpm = await processLockfile({
       workspaceRootDir,
@@ -209,16 +222,9 @@ export function createIsolator(config?: IsolateConfig) {
       targetPackageDir,
       targetPackageName: targetPackageManifest.name,
       targetPackageManifest: outputManifest,
+      patchedDependencies:
+        Object.keys(copiedPatches).length > 0 ? copiedPatches : undefined,
       config,
-    });
-
-    /** Copy patch files if includePatchedDependencies is enabled */
-    const copiedPatches = await copyPatches({
-      workspaceRootDir,
-      targetPackageManifest: outputManifest,
-      isolateDir,
-      includePatchedDependencies: config.includePatchedDependencies,
-      includeDevDependencies: config.includeDevDependencies,
     });
 
     const hasCopiedPatches = Object.keys(copiedPatches).length > 0;
@@ -231,7 +237,13 @@ export function createIsolator(config?: IsolateConfig) {
         if (!manifest.pnpm) {
           manifest.pnpm = {};
         }
-        manifest.pnpm.patchedDependencies = copiedPatches;
+        /** Extract just the paths for the manifest (lockfile needs full PatchFile) */
+        manifest.pnpm.patchedDependencies = Object.fromEntries(
+          Object.entries(copiedPatches).map(([spec, patchFile]) => [
+            spec,
+            patchFile.path,
+          ])
+        );
         log.debug(
           `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`
         );

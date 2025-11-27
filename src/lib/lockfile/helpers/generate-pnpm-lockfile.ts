@@ -14,12 +14,8 @@ import { pruneLockfile as pruneLockfile_v8 } from "pnpm_prune_lockfile_v8";
 import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
 import { pick } from "remeda";
 import { useLogger } from "~/lib/logger";
-import type { PackageManifest, PackagesRegistry } from "~/lib/types";
-import {
-  filterPatchedDependencies,
-  getErrorMessage,
-  isRushWorkspace,
-} from "~/lib/utils";
+import type { PackageManifest, PackagesRegistry, PatchFile } from "~/lib/types";
+import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
 export async function generatePnpmLockfile({
@@ -31,7 +27,7 @@ export async function generatePnpmLockfile({
   targetPackageManifest,
   majorVersion,
   includeDevDependencies,
-  includePatchedDependencies,
+  patchedDependencies,
 }: {
   workspaceRootDir: string;
   targetPackageDir: string;
@@ -41,7 +37,8 @@ export async function generatePnpmLockfile({
   targetPackageManifest: PackageManifest;
   majorVersion: number;
   includeDevDependencies: boolean;
-  includePatchedDependencies: boolean;
+  /** Pre-computed patched dependencies with transformed paths from copyPatches */
+  patchedDependencies?: Record<string, PatchFile>;
 }) {
   /**
    * For now we will assume that the lockfile format might not change in the
@@ -136,7 +133,6 @@ export async function generatePnpmLockfile({
             ".",
             pnpmMapImporter(".", importer!, {
               includeDevDependencies,
-              includePatchedDependencies,
               directoryByPackageName,
             }),
           ];
@@ -147,8 +143,7 @@ export async function generatePnpmLockfile({
         return [
           importerId,
           pnpmMapImporter(importerId, importer!, {
-            includeDevDependencies: false, // Only include dev deps for target package
-            includePatchedDependencies,
+            includeDevDependencies: false,
             directoryByPackageName,
           }),
         ];
@@ -167,20 +162,10 @@ export async function generatePnpmLockfile({
     }
 
     /**
-     * Filter patched dependencies to only include patches for packages that
-     * will actually be present in the isolated lockfile based on dependency
-     * type. We read patchedDependencies from workspace root lockfile, but
-     * filter based on target package dependencies.
+     * Use pre-computed patched dependencies with transformed paths. The paths
+     * are already adapted by copyPatches to match the isolated directory
+     * structure (flattened to patches/ with collision avoidance).
      */
-    const patchedDependencies = includePatchedDependencies
-      ? filterPatchedDependencies(
-          lockfile.patchedDependencies,
-          targetPackageManifest,
-          includeDevDependencies,
-          log
-        )
-      : undefined;
-
     if (useVersion9) {
       await writeWantedLockfile_v9(isolateDir, {
         ...prunedLockfile,

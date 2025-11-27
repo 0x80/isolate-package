@@ -16,7 +16,6 @@ export function pnpmMapImporter(
     directoryByPackageName,
   }: {
     includeDevDependencies: boolean;
-    includePatchedDependencies: boolean;
     directoryByPackageName: { [packageName: string]: string };
   }
 ): ProjectSnapshot {

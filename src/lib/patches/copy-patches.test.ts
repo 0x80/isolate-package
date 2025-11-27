@@ -142,7 +142,7 @@ describe("copyPatches", () => {
     });
 
     expect(result).toEqual({
-      "lodash@4.17.21": "patches/lodash.patch",
+      "lodash@4.17.21": { path: "patches/lodash.patch", hash: "" },
     });
     expect(fs.ensureDir).toHaveBeenCalledWith("/workspace/isolate/patches");
     expect(fs.copy).toHaveBeenCalledWith(
@@ -183,7 +183,7 @@ describe("copyPatches", () => {
     });
 
     expect(result).toEqual({
-      "vitest@1.0.0": "patches/vitest.patch",
+      "vitest@1.0.0": { path: "patches/vitest.patch", hash: "" },
     });
     expect(filterPatchedDependencies).toHaveBeenCalledWith(
       { "vitest@1.0.0": "patches/vitest.patch" },
@@ -260,7 +260,7 @@ describe("copyPatches", () => {
     });
 
     expect(result).toEqual({
-      "@firebase/app@1.2.3": "patches/firebase-app.patch",
+      "@firebase/app@1.2.3": { path: "patches/firebase-app.patch", hash: "" },
     });
   });
 
@@ -298,8 +298,8 @@ describe("copyPatches", () => {
     });
 
     expect(result).toEqual({
-      "pkg-a@1.0.0": "patches/fix.patch",
-      "pkg-b@1.0.0": "patches/fix-1.patch",
+      "pkg-a@1.0.0": { path: "patches/fix.patch", hash: "" },
+      "pkg-b@1.0.0": { path: "patches/fix-1.patch", hash: "" },
     });
     expect(fs.copy).toHaveBeenCalledTimes(2);
   });
@@ -337,7 +337,7 @@ describe("copyPatches", () => {
 
     /** The path should be flattened to patches/ directory */
     expect(result).toEqual({
-      "lodash@4.17.21": "patches/lodash.patch",
+      "lodash@4.17.21": { path: "patches/lodash.patch", hash: "" },
     });
     expect(fs.copy).toHaveBeenCalledWith(
       "/workspace/some/nested/path/lodash.patch",
@@ -382,8 +382,8 @@ describe("copyPatches", () => {
     });
 
     expect(result).toEqual({
-      "lodash@4.17.21": "patches/lodash.patch",
-      "@firebase/app@1.2.3": "patches/firebase-app.patch",
+      "lodash@4.17.21": { path: "patches/lodash.patch", hash: "" },
+      "@firebase/app@1.2.3": { path: "patches/firebase-app.patch", hash: "" },
     });
     expect(fs.copy).toHaveBeenCalledTimes(2);
   });

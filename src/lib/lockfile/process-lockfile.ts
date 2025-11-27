@@ -1,7 +1,7 @@
 import type { IsolateConfigResolved } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
-import type { PackageManifest, PackagesRegistry } from "../types";
+import type { PackageManifest, PackagesRegistry, PatchFile } from "../types";
 import {
   generateNpmLockfile,
   generatePnpmLockfile,
@@ -22,6 +22,7 @@ export async function processLockfile({
   internalDepPackageNames,
   targetPackageDir,
   targetPackageManifest,
+  patchedDependencies,
   config,
 }: {
   workspaceRootDir: string;
@@ -31,6 +32,8 @@ export async function processLockfile({
   targetPackageDir: string;
   targetPackageName: string;
   targetPackageManifest: PackageManifest;
+  /** Pre-computed patched dependencies with transformed paths from copyPatches */
+  patchedDependencies?: Record<string, PatchFile>;
   config: IsolateConfigResolved;
 }) {
   const log = useLogger();
@@ -89,7 +92,7 @@ export async function processLockfile({
         targetPackageManifest,
         majorVersion,
         includeDevDependencies: config.includeDevDependencies,
-        includePatchedDependencies: config.includePatchedDependencies,
+        patchedDependencies,
       });
       break;
     }

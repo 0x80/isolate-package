@@ -1,11 +1,19 @@
 import fs from "fs-extra";
 import path from "node:path";
+import {
+  readWantedLockfile as readWantedLockfile_v8,
+} from "pnpm_lockfile_file_v8";
+import {
+  readWantedLockfile as readWantedLockfile_v9,
+} from "pnpm_lockfile_file_v9";
 import { useLogger } from "~/lib/logger";
-import type { PackageManifest } from "~/lib/types";
+import { usePackageManager } from "~/lib/package-manager";
+import type { PackageManifest, PatchFile } from "~/lib/types";
 import {
   filterPatchedDependencies,
   getIsolateRelativeLogPath,
   getRootRelativeLogPath,
+  isRushWorkspace,
   readTypedJson,
 } from "~/lib/utils";
 
@@ -21,7 +29,7 @@ export async function copyPatches({
   isolateDir: string;
   includePatchedDependencies: boolean;
   includeDevDependencies: boolean;
-}): Promise<Record<string, string>> {
+}): Promise<Record<string, PatchFile>> {
   const log = useLogger();
 
   if (!includePatchedDependencies) {
@@ -63,10 +71,15 @@ export async function copyPatches({
     return {};
   }
 
+  /** Read the lockfile to get the hashes for each patch */
+  const lockfilePatchedDependencies = await readLockfilePatchedDependencies(
+    workspaceRootDir
+  );
+
   const patchesDir = path.join(isolateDir, "patches");
   await fs.ensureDir(patchesDir);
 
-  const copiedPatches: Record<string, string> = {};
+  const copiedPatches: Record<string, PatchFile> = {};
   const usedFilenames = new Set<string>();
 
   for (const [packageSpec, patchPath] of Object.entries(filteredPatches)) {
@@ -107,7 +120,18 @@ export async function copyPatches({
     await fs.copy(sourcePatchPath, targetPatchPath);
     log.debug(`Copied patch for ${packageSpec}: ${targetFilename}`);
 
-    copiedPatches[packageSpec] = `patches/${targetFilename}`;
+    /** Get the hash from the original lockfile, or use empty string if not found */
+    const originalPatchFile = lockfilePatchedDependencies?.[packageSpec];
+    const hash = originalPatchFile?.hash ?? "";
+
+    if (!hash) {
+      log.warn(`No hash found for patch ${packageSpec} in lockfile`);
+    }
+
+    copiedPatches[packageSpec] = {
+      path: `patches/${targetFilename}`,
+      hash,
+    };
   }
 
   if (Object.keys(copiedPatches).length > 0) {
@@ -117,4 +141,31 @@ export async function copyPatches({
   }
 
   return copiedPatches;
+}
+
+/**
+ * Read the patchedDependencies from the original lockfile to get the hashes.
+ * Since the file content is the same after copying, the hash remains valid.
+ */
+async function readLockfilePatchedDependencies(
+  workspaceRootDir: string
+): Promise<Record<string, PatchFile> | undefined> {
+  try {
+    const { majorVersion } = usePackageManager();
+    const useVersion9 = majorVersion >= 9;
+    const isRush = isRushWorkspace(workspaceRootDir);
+
+    const lockfileDir = isRush
+      ? path.join(workspaceRootDir, "common/config/rush")
+      : workspaceRootDir;
+
+    const lockfile = useVersion9
+      ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })
+      : await readWantedLockfile_v8(lockfileDir, { ignoreIncompatible: false });
+
+    return lockfile?.patchedDependencies;
+  } catch {
+    /** Package manager not detected or lockfile not readable */
+    return undefined;
+  }
 }
