@@ -154,8 +154,8 @@ export async function generatePnpmLockfile({
     log.debug("Pruning the lockfile");
 
     const prunedLockfile = useVersion9
-      ? await pruneLockfile_v9(lockfile, targetPackageManifest, ".")
-      : await pruneLockfile_v8(lockfile, targetPackageManifest, ".");
+      ? pruneLockfile_v9(lockfile, targetPackageManifest, ".")
+      : pruneLockfile_v8(lockfile, targetPackageManifest, ".");
 
     /** Pruning seems to remove the overrides from the lockfile */
     if (lockfile.overrides) {
@@ -172,15 +172,17 @@ export async function generatePnpmLockfile({
       ? lockfile.patchedDependencies
       : undefined;
 
-    useVersion9
-      ? await writeWantedLockfile_v9(isolateDir, {
-          ...prunedLockfile,
-          patchedDependencies,
-        })
-      : await writeWantedLockfile_v8(isolateDir, {
-          ...prunedLockfile,
-          patchedDependencies,
-        });
+    if (useVersion9) {
+      await writeWantedLockfile_v9(isolateDir, {
+        ...prunedLockfile,
+        patchedDependencies,
+      });
+    } else {
+      await writeWantedLockfile_v8(isolateDir, {
+        ...prunedLockfile,
+        patchedDependencies,
+      });
+    }
 
     log.debug("Created lockfile at", path.join(isolateDir, "pnpm-lock.yaml"));
   } catch (err) {

@@ -1,3 +1,4 @@
+import { got } from "get-or-throw";
 import path from "node:path";
 import { useLogger } from "../../logger";
 import type { PackagesRegistry } from "../../types";
@@ -13,7 +14,7 @@ export function patchInternalEntries(
   return Object.fromEntries(
     Object.entries(dependencies).map(([key, value]) => {
       if (allWorkspacePackageNames.includes(key)) {
-        const def = packagesRegistry[key];
+        const def = got(packagesRegistry, key);
 
         /**
          * When nested internal dependencies are used (internal packages linking

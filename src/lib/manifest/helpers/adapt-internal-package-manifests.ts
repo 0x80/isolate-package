@@ -1,3 +1,4 @@
+import { got } from "get-or-throw";
 import path from "node:path";
 import { omit } from "remeda";
 import { usePackageManager } from "~/lib/package-manager";
@@ -25,7 +26,7 @@ export async function adaptInternalPackageManifests({
 
   await Promise.all(
     internalPackageNames.map(async (packageName) => {
-      const { manifest, rootRelativeDir } = packagesRegistry[packageName];
+      const { manifest, rootRelativeDir } = got(packagesRegistry, packageName);
 
       /** Dev dependencies and scripts are never included for internal deps */
       const strippedManifest = omit(manifest, ["scripts", "devDependencies"]);

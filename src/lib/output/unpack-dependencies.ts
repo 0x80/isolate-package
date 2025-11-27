@@ -1,4 +1,5 @@
 import fs from "fs-extra";
+import { got } from "get-or-throw";
 import path, { join } from "node:path";
 import { useLogger } from "../logger";
 import type { PackagesRegistry } from "../types";
@@ -14,7 +15,7 @@ export async function unpackDependencies(
 
   await Promise.all(
     Object.entries(packedFilesByName).map(async ([packageName, filePath]) => {
-      const dir = packagesRegistry[packageName].rootRelativeDir;
+      const dir = got(packagesRegistry, packageName).rootRelativeDir;
       const unpackDir = join(tmpDir, dir);
 
       log.debug("Unpacking", `(temp)/${path.basename(filePath)}`);

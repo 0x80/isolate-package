@@ -1,4 +1,5 @@
 import fs from "fs-extra";
+import { got } from "get-or-throw";
 import assert from "node:assert";
 import path from "node:path";
 import { unique } from "remeda";
@@ -147,7 +148,7 @@ export function createIsolator(config?: IsolateConfig) {
 
     /** Validate mandatory fields for all internal packages that will be isolated */
     for (const packageName of internalPackageNames) {
-      const packageDef = packagesRegistry[packageName];
+      const packageDef = got(packagesRegistry, packageName);
       const isProductionDependency =
         productionInternalPackageNames.includes(packageName);
       validateManifestMandatoryFields(
@@ -234,7 +235,8 @@ export function createIsolator(config?: IsolateConfig) {
       if (isRushWorkspace(workspaceRootDir)) {
         const packagesFolderNames = unique(
           internalPackageNames.map(
-            (name) => path.parse(packagesRegistry[name].rootRelativeDir).dir
+            (name) =>
+              path.parse(got(packagesRegistry, name).rootRelativeDir).dir
           )
         );
 
@@ -243,7 +245,7 @@ export function createIsolator(config?: IsolateConfig) {
 
         const packages = packagesFolderNames.map((x) => path.join(x, "/*"));
 
-        await writeTypedYamlSync(path.join(isolateDir, "pnpm-workspace.yaml"), {
+        writeTypedYamlSync(path.join(isolateDir, "pnpm-workspace.yaml"), {
           packages,
         });
       } else {
