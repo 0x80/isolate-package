@@ -16,7 +16,22 @@ vi.mock("~/lib/utils", () => ({
   filterPatchedDependencies: vi.fn(),
   getIsolateRelativeLogPath: vi.fn((p: string) => p),
   getRootRelativeLogPath: vi.fn((p: string) => p),
+  isRushWorkspace: vi.fn(() => false),
   readTypedJson: vi.fn(),
+}));
+
+/** Mock the package manager */
+vi.mock("~/lib/package-manager", () => ({
+  usePackageManager: vi.fn(() => ({ majorVersion: 9 })),
+}));
+
+/** Mock the pnpm lockfile readers */
+vi.mock("pnpm_lockfile_file_v8", () => ({
+  readWantedLockfile: vi.fn(() => Promise.resolve(null)),
+}));
+
+vi.mock("pnpm_lockfile_file_v9", () => ({
+  readWantedLockfile: vi.fn(() => Promise.resolve(null)),
 }));
 
 /** Mock the logger */
