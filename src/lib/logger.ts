@@ -7,10 +7,10 @@ export type LogLevel = "info" | "debug" | "warn" | "error";
  * logger object in order to intercept all the logging output.
  */
 export type Logger = {
-  debug(...args: unknown[]): void;
-  info(...args: unknown[]): void;
-  warn(...args: unknown[]): void;
-  error(...args: unknown[]): void;
+  debug(message: unknown, ...args: unknown[]): void;
+  info(message: unknown, ...args: unknown[]): void;
+  warn(message: unknown, ...args: unknown[]): void;
+  error(message: unknown, ...args: unknown[]): void;
 };
 
 /**
@@ -24,41 +24,24 @@ const logLevelMap: Record<LogLevel, number> = {
   debug: 4,
 };
 
-let _consola: ConsolaInstance = createConsola({
+const _consola: ConsolaInstance = createConsola({
   level: logLevelMap["info"],
 });
 
 let _customLogger: Logger | null = null;
 
+function createMethod(method: keyof Logger) {
+  return (message: unknown, ...args: unknown[]) => {
+    const target = _customLogger ?? _consola;
+    target[method](message, ...args);
+  };
+}
+
 const _logger: Logger = {
-  debug(...args: unknown[]) {
-    if (_customLogger) {
-      _customLogger.debug(...args);
-    } else {
-      _consola.debug(...(args as [unknown, ...unknown[]]));
-    }
-  },
-  info(...args: unknown[]) {
-    if (_customLogger) {
-      _customLogger.info(...args);
-    } else {
-      _consola.info(...(args as [unknown, ...unknown[]]));
-    }
-  },
-  warn(...args: unknown[]) {
-    if (_customLogger) {
-      _customLogger.warn(...args);
-    } else {
-      _consola.warn(...(args as [unknown, ...unknown[]]));
-    }
-  },
-  error(...args: unknown[]) {
-    if (_customLogger) {
-      _customLogger.error(...args);
-    } else {
-      _consola.error(...(args as [unknown, ...unknown[]]));
-    }
-  },
+  debug: createMethod("debug"),
+  info: createMethod("info"),
+  warn: createMethod("warn"),
+  error: createMethod("error"),
 };
 
 export function setLogger(logger: Logger) {
