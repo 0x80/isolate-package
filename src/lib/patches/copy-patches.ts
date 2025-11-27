@@ -66,10 +66,10 @@ export async function copyPatches({
   await fs.ensureDir(patchesDir);
 
   const copiedPatches: Record<string, string> = {};
+  const usedFilenames = new Set<string>();
 
   for (const [packageSpec, patchPath] of Object.entries(filteredPatches)) {
     const sourcePatchPath = path.resolve(workspaceRootDir, patchPath);
-    const targetPatchPath = path.join(patchesDir, path.basename(patchPath));
 
     if (!fs.existsSync(sourcePatchPath)) {
       log.warn(
@@ -78,10 +78,32 @@ export async function copyPatches({
       continue;
     }
 
-    await fs.copy(sourcePatchPath, targetPatchPath);
-    log.debug(`Copied patch for ${packageSpec}: ${path.basename(patchPath)}`);
+    /** Generate a unique filename to avoid collisions from different subdirectories */
+    const basename = path.basename(patchPath);
+    let targetFilename = basename;
 
-    copiedPatches[packageSpec] = `patches/${path.basename(patchPath)}`;
+    if (usedFilenames.has(targetFilename)) {
+      const ext = path.extname(basename);
+      const name = path.basename(basename, ext);
+      let counter = 1;
+
+      do {
+        targetFilename = `${name}-${counter}${ext}`;
+        counter++;
+      } while (usedFilenames.has(targetFilename));
+
+      log.debug(
+        `Renamed patch ${basename} to ${targetFilename} to avoid collision`
+      );
+    }
+
+    usedFilenames.add(targetFilename);
+
+    const targetPatchPath = path.join(patchesDir, targetFilename);
+    await fs.copy(sourcePatchPath, targetPatchPath);
+    log.debug(`Copied patch for ${packageSpec}: ${targetFilename}`);
+
+    copiedPatches[packageSpec] = `patches/${targetFilename}`;
   }
 
   if (Object.keys(copiedPatches).length > 0) {
