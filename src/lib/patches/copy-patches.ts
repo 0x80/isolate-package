@@ -4,6 +4,7 @@ import { useLogger } from "~/lib/logger";
 import type { PackageManifest } from "~/lib/types";
 import {
   filterPatchedDependencies,
+  getIsolateRelativeLogPath,
   getRootRelativeLogPath,
   readTypedJson,
 } from "~/lib/utils";
@@ -78,7 +79,10 @@ export async function copyPatches({
       continue;
     }
 
-    /** Generate a unique filename to avoid collisions from different subdirectories */
+    /**
+     * Generate a unique filename to avoid collisions from different
+     * subdirectories
+     */
     const basename = path.basename(patchPath);
     let targetFilename = basename;
 
@@ -108,7 +112,7 @@ export async function copyPatches({
 
   if (Object.keys(copiedPatches).length > 0) {
     log.debug(
-      `Patches copied to ${getRootRelativeLogPath(patchesDir, isolateDir)}`
+      `Patches copied to ${getIsolateRelativeLogPath(patchesDir, isolateDir)}`
     );
   }
 

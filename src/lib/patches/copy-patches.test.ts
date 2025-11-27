@@ -14,6 +14,7 @@ vi.mock("fs-extra", () => ({
 /** Mock the utils */
 vi.mock("~/lib/utils", () => ({
   filterPatchedDependencies: vi.fn(),
+  getIsolateRelativeLogPath: vi.fn((p: string) => p),
   getRootRelativeLogPath: vi.fn((p: string) => p),
   readTypedJson: vi.fn(),
 }));

@@ -92,4 +92,5 @@ Tests use Vitest and are co-located with source files (`*.test.ts`).
 
 ## Code Style
 
-- Use JSDoc style comments (`/** ... */`) for all comments, including single-line comments
+- Use JSDoc style comments (`/** ... */`) for all comments, including
+  single-line comments
