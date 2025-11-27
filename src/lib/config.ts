@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import path from "node:path";
 import { isEmpty } from "remeda";
-import { setLogLevel, useLogger } from "./logger";
+import { type LogLevel, setLogLevel, useLogger } from "./logger";
 import { inspectValue, readTypedJsonSync } from "./utils";
 
 export type IsolateConfigResolved = {
@@ -9,7 +9,7 @@ export type IsolateConfigResolved = {
   includeDevDependencies: boolean;
   includePatchedDependencies: boolean;
   isolateDirName: string;
-  logLevel: "info" | "debug" | "warn" | "error";
+  logLevel: LogLevel;
   targetPackagePath?: string;
   tsconfigPath: string;
   workspacePackages?: string[];
@@ -40,8 +40,6 @@ const configDefaults: IsolateConfigResolved = {
 
 const validConfigKeys = Object.keys(configDefaults);
 const CONFIG_FILE_NAME = "isolate.config.json";
-
-export type LogLevel = IsolateConfigResolved["logLevel"];
 
 function loadConfigFromFile(): IsolateConfig {
   const configFilePath = path.join(process.cwd(), CONFIG_FILE_NAME);

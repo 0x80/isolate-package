@@ -23,9 +23,14 @@
     "url": "git+https://github.com/0x80/isolate-package.git"
   },
   "type": "module",
-  "types": "./dist/index.d.ts",
-  "exports": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./isolate-bin": "./dist/isolate-bin.mjs",
+    "./package.json": "./package.json"
+  },
   "files": [
+    "src",
     "dist",
     "docs"
   ],
@@ -33,22 +38,23 @@
     "isolate": "dist/isolate-bin.mjs"
   },
   "scripts": {
-    "build": "tsup-node",
-    "dev": "tsup-node --watch",
-    "test": "vitest --run",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
     "format": "prettier --write .",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "oxlint --type-aware",
     "check-format": "prettier --check .",
     "check-types": "tsc --noEmit",
-    "prepare": "pnpm run check-types && pnpm run build"
+    "prepare": "pnpm check-types && pnpm build"
   },
   "dependencies": {
     "@npmcli/arborist": "^9.1.4",
     "@npmcli/config": "^10.4.0",
     "@pnpm/logger": "^1001.0.0",
     "@pnpm/types": "^1000.8.0",
-    "chalk": "^5.6.2",
+    "consola": "^3.4.2",
     "fs-extra": "^11.3.1",
+    "get-or-throw": "^2.1.0",
     "get-tsconfig": "^4.10.1",
     "glob": "^11.0.3",
     "outdent": "^0.8.0",
@@ -63,18 +69,21 @@
     "yaml": "^2.8.1"
   },
   "devDependencies": {
+    "@codecompose/typescript-config": "^2.2.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.4.0",
     "@types/npmcli__config": "^6.0.3",
     "@types/source-map-support": "^0.5.10",
     "@types/tar-fs": "^2.0.4",
-    "eslint": "^8.57.1",
-    "eslint-config-0x80": "^0.0.0",
+    "oxlint": "^1.30.0",
+    "oxlint-tsgolint": "^0.8.3",
     "prettier": "^3.6.2",
     "prettier-plugin-jsdoc": "^1.3.3",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.16.7",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@9.0.0+sha256.bdfc9a7b372b5c462176993e586492603e20da5864d2f8881edc2462482c76fa"
+  "packageManager": "pnpm@9.0.0+sha256.bdfc9a7b372b5c462176993e586492603e20da5864d2f8881edc2462482c76fa",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs"
 }

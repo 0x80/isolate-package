@@ -1,3 +1,4 @@
+import { got } from "get-or-throw";
 import assert from "node:assert";
 import { useLogger } from "../logger";
 import type { PackagesRegistry } from "../types";
@@ -31,7 +32,7 @@ export async function packDependencies({
   const packedFileByName: Record<string, string> = {};
 
   for (const dependency of internalPackageNames) {
-    const def = packagesRegistry[dependency];
+    const def = got(packagesRegistry, dependency);
 
     assert(dependency, `Failed to find package definition for ${dependency}`);
 

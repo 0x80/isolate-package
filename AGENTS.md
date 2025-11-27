@@ -79,7 +79,7 @@ src/
 ### Dependencies
 
 - Use `fs-extra` instead of native `fs` for enhanced file operations
-- Use `chalk` for colored console output
+- Use `consola` for logging (via the centralized logger in `lib/logger`)
 - Use `yaml` package for YAML parsing/writing
 - Use `glob` for file pattern matching
 

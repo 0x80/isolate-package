@@ -1,3 +1,4 @@
+import { got } from "get-or-throw";
 import { unique } from "remeda";
 import type { PackageManifest, PackagesRegistry } from "../types";
 
@@ -29,7 +30,7 @@ export function listInternalPackages(
   const nestedInternalPackageNames = internalPackageNames.flatMap(
     (packageName) =>
       listInternalPackages(
-        packagesRegistry[packageName].manifest,
+        got(packagesRegistry, packageName).manifest,
         packagesRegistry,
         { includeDevDependencies }
       )

@@ -3,7 +3,12 @@
     "allow": [
       "Bash(pnpm test:*)",
       "Bash(pnpm run check-types:*)",
-      "Bash(pnpm run build:*)"
+      "Bash(pnpm run build:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm check-types:*)",
+      "Bash(pnpm build:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

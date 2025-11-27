@@ -1,3 +1,4 @@
+import { got } from "get-or-throw";
 import path from "node:path";
 import type {
   ProjectSnapshot,
@@ -51,7 +52,7 @@ function pnpmMapDependenciesLinks(
 
     // Replace backslashes with forward slashes to support Windows Git Bash
     const relativePath = path
-      .relative(importerPath, directoryByPackageName[key])
+      .relative(importerPath, got(directoryByPackageName, key))
       .replace(path.sep, path.posix.sep);
 
     return relativePath.startsWith(".")

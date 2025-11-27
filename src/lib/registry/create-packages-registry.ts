@@ -19,7 +19,7 @@ export async function createPackagesRegistry(
 
   if (workspacePackagesOverride) {
     log.debug(
-      `Override workspace packages via config: ${workspacePackagesOverride}`
+      `Override workspace packages via config: ${workspacePackagesOverride.join(", ")}`
     );
   }
 

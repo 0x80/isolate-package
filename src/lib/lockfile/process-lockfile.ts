@@ -106,7 +106,9 @@ export async function processLockfile({
       break;
     }
     default:
-      log.warn(`Unexpected package manager ${name}. Using NPM for output`);
+      log.warn(
+        `Unexpected package manager ${name as string}. Using NPM for output`
+      );
       await generateNpmLockfile({
         workspaceRootDir,
         isolateDir,
