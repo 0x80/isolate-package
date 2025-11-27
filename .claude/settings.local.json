@@ -8,7 +8,9 @@
       "Bash(pnpm add:*)",
       "Bash(pnpm check-types:*)",
       "Bash(pnpm build:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)"
     ],
     "deny": [],
     "ask": []
