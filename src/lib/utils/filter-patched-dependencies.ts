@@ -1,4 +1,4 @@
-import type { Logger } from "~/lib/logger";
+import { useLogger } from "~/lib/logger";
 import type { PackageManifest } from "~/lib/types";
 import { getPackageName } from "./get-package-name";
 
@@ -6,12 +6,16 @@ import { getPackageName } from "./get-package-name";
  * Filters patched dependencies to only include patches for packages that are
  * present in the target package's dependencies based on dependency type.
  */
-export function filterPatchedDependencies<T>(
-  patchedDependencies: Record<string, T> | undefined,
-  targetPackageManifest: PackageManifest,
-  includeDevDependencies: boolean,
-  log: Logger
-): Record<string, T> | undefined {
+export function filterPatchedDependencies<T>({
+  patchedDependencies,
+  targetPackageManifest,
+  includeDevDependencies,
+}: {
+  patchedDependencies: Record<string, T> | undefined;
+  targetPackageManifest: PackageManifest;
+  includeDevDependencies: boolean;
+}): Record<string, T> | undefined {
+  const log = useLogger();
   if (!patchedDependencies || typeof patchedDependencies !== "object") {
     return undefined;
   }

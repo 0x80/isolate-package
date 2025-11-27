@@ -200,12 +200,11 @@ describe("copyPatches", () => {
     expect(result).toEqual({
       "vitest@1.0.0": { path: "patches/vitest.patch", hash: "" },
     });
-    expect(filterPatchedDependencies).toHaveBeenCalledWith(
-      { "vitest@1.0.0": "patches/vitest.patch" },
-      targetManifest,
-      true,
-      expect.any(Object)
-    );
+    expect(filterPatchedDependencies).toHaveBeenCalledWith({
+      patchedDependencies: { "vitest@1.0.0": "patches/vitest.patch" },
+      targetPackageManifest: targetManifest,
+      includeDevDependencies: true,
+    });
   });
 
   it("should skip missing patch files and log a warning", async () => {

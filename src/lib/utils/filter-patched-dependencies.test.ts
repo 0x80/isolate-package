@@ -1,21 +1,26 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Logger } from "~/lib/logger";
 import type { PackageManifest } from "~/lib/types";
 import { filterPatchedDependencies } from "./filter-patched-dependencies";
 
-const createMockLogger = (): Logger => ({
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-});
+/** Mock the logger */
+vi.mock("~/lib/logger", () => ({
+  useLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+}));
 
 describe("filterPatchedDependencies", () => {
   it("should return undefined when patchedDependencies is undefined", () => {
     const manifest: PackageManifest = { name: "test", version: "1.0.0" };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(undefined, manifest, false, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: undefined,
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+    });
 
     expect(result).toBeUndefined();
   });
@@ -26,9 +31,12 @@ describe("filterPatchedDependencies", () => {
       version: "1.0.0",
       dependencies: { lodash: "^4.0.0" },
     };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies({}, manifest, false, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: {},
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+    });
 
     expect(result).toBeUndefined();
   });
@@ -39,10 +47,12 @@ describe("filterPatchedDependencies", () => {
       version: "1.0.0",
       dependencies: { lodash: "^4.0.0" },
     };
-    const patches = { "lodash@4.17.21": "patches/lodash.patch" };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(patches, manifest, false, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: { "lodash@4.17.21": "patches/lodash.patch" },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+    });
 
     expect(result).toEqual({ "lodash@4.17.21": "patches/lodash.patch" });
   });
@@ -53,10 +63,12 @@ describe("filterPatchedDependencies", () => {
       version: "1.0.0",
       devDependencies: { vitest: "^1.0.0" },
     };
-    const patches = { "vitest@1.0.0": "patches/vitest.patch" };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(patches, manifest, true, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: { "vitest@1.0.0": "patches/vitest.patch" },
+      targetPackageManifest: manifest,
+      includeDevDependencies: true,
+    });
 
     expect(result).toEqual({ "vitest@1.0.0": "patches/vitest.patch" });
   });
@@ -67,10 +79,12 @@ describe("filterPatchedDependencies", () => {
       version: "1.0.0",
       devDependencies: { vitest: "^1.0.0" },
     };
-    const patches = { "vitest@1.0.0": "patches/vitest.patch" };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(patches, manifest, false, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: { "vitest@1.0.0": "patches/vitest.patch" },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+    });
 
     expect(result).toBeUndefined();
   });
@@ -81,10 +95,12 @@ describe("filterPatchedDependencies", () => {
       version: "1.0.0",
       dependencies: { lodash: "^4.0.0" },
     };
-    const patches = { "other-package@1.0.0": "patches/other.patch" };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(patches, manifest, false, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: { "other-package@1.0.0": "patches/other.patch" },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+    });
 
     expect(result).toBeUndefined();
   });
@@ -95,10 +111,14 @@ describe("filterPatchedDependencies", () => {
       version: "1.0.0",
       dependencies: { "@firebase/app": "^1.0.0" },
     };
-    const patches = { "@firebase/app@1.2.3": "patches/firebase-app.patch" };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(patches, manifest, false, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: {
+        "@firebase/app@1.2.3": "patches/firebase-app.patch",
+      },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+    });
 
     expect(result).toEqual({
       "@firebase/app@1.2.3": "patches/firebase-app.patch",
@@ -112,15 +132,17 @@ describe("filterPatchedDependencies", () => {
       dependencies: { lodash: "^4.0.0", "@firebase/app": "^1.0.0" },
       devDependencies: { vitest: "^1.0.0" },
     };
-    const patches = {
-      "lodash@4.17.21": "patches/lodash.patch",
-      "@firebase/app@1.2.3": "patches/firebase-app.patch",
-      "vitest@1.0.0": "patches/vitest.patch",
-      "unknown@1.0.0": "patches/unknown.patch",
-    };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(patches, manifest, false, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: {
+        "lodash@4.17.21": "patches/lodash.patch",
+        "@firebase/app@1.2.3": "patches/firebase-app.patch",
+        "vitest@1.0.0": "patches/vitest.patch",
+        "unknown@1.0.0": "patches/unknown.patch",
+      },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+    });
 
     expect(result).toEqual({
       "lodash@4.17.21": "patches/lodash.patch",
@@ -135,13 +157,15 @@ describe("filterPatchedDependencies", () => {
       dependencies: { lodash: "^4.0.0" },
       devDependencies: { vitest: "^1.0.0" },
     };
-    const patches = {
-      "lodash@4.17.21": "patches/lodash.patch",
-      "vitest@1.0.0": "patches/vitest.patch",
-    };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(patches, manifest, true, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: {
+        "lodash@4.17.21": "patches/lodash.patch",
+        "vitest@1.0.0": "patches/vitest.patch",
+      },
+      targetPackageManifest: manifest,
+      includeDevDependencies: true,
+    });
 
     expect(result).toEqual({
       "lodash@4.17.21": "patches/lodash.patch",
@@ -155,13 +179,15 @@ describe("filterPatchedDependencies", () => {
       version: "1.0.0",
       dependencies: { lodash: "^4.0.0" },
     };
-    const patches = {
-      "unknown-a@1.0.0": "patches/a.patch",
-      "unknown-b@2.0.0": "patches/b.patch",
-    };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(patches, manifest, false, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: {
+        "unknown-a@1.0.0": "patches/a.patch",
+        "unknown-b@2.0.0": "patches/b.patch",
+      },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+    });
 
     expect(result).toBeUndefined();
   });
@@ -172,12 +198,14 @@ describe("filterPatchedDependencies", () => {
       version: "1.0.0",
       dependencies: { lodash: "^4.0.0" },
     };
-    const patches = {
-      "lodash@4.17.21": { path: "patches/lodash.patch", hash: "abc123" },
-    };
-    const log = createMockLogger();
 
-    const result = filterPatchedDependencies(patches, manifest, false, log);
+    const result = filterPatchedDependencies({
+      patchedDependencies: {
+        "lodash@4.17.21": { path: "patches/lodash.patch", hash: "abc123" },
+      },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+    });
 
     expect(result).toEqual({
       "lodash@4.17.21": { path: "patches/lodash.patch", hash: "abc123" },

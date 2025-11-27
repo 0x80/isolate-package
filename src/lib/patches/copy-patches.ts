@@ -56,12 +56,11 @@ export async function copyPatches({
     `Found ${Object.keys(patchedDependencies).length} patched dependencies in workspace`
   );
 
-  const filteredPatches = filterPatchedDependencies(
+  const filteredPatches = filterPatchedDependencies({
     patchedDependencies,
     targetPackageManifest,
     includeDevDependencies,
-    log
-  );
+  });
 
   if (!filteredPatches) {
     return {};
