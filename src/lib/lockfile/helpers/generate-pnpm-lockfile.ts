@@ -164,7 +164,7 @@ export async function generatePnpmLockfile({
     /**
      * Use pre-computed patched dependencies with transformed paths. The paths
      * are already adapted by copyPatches to match the isolated directory
-     * structure (flattened to patches/ with collision avoidance).
+     * structure, preserving the original folder structure (not flattened).
      */
     if (useVersion9) {
       await writeWantedLockfile_v9(isolateDir, {
