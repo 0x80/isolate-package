@@ -162,6 +162,11 @@ export async function generatePnpmLockfile({
       prunedLockfile.overrides = lockfile.overrides;
     }
 
+    /** Add packageExtensionsChecksum back to the pruned lockfile if present */
+    if (lockfile.packageExtensionsChecksum) {
+      prunedLockfile.packageExtensionsChecksum = lockfile.packageExtensionsChecksum;
+    }
+
     /**
      * Don't know how to map the patched dependencies yet, so we just include
      * them but I don't think it would work like this. The important thing for
