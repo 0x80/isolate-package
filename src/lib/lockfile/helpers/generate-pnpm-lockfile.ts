@@ -164,7 +164,8 @@ export async function generatePnpmLockfile({
 
     /** Add packageExtensionsChecksum back to the pruned lockfile if present */
     if (lockfile.packageExtensionsChecksum) {
-      prunedLockfile.packageExtensionsChecksum = lockfile.packageExtensionsChecksum;
+      prunedLockfile.packageExtensionsChecksum =
+        lockfile.packageExtensionsChecksum;
     }
 
     /**
