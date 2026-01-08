@@ -14,7 +14,7 @@ import { pruneLockfile as pruneLockfile_v8 } from "pnpm_prune_lockfile_v8";
 import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
 import { pick } from "remeda";
 import { useLogger } from "~/lib/logger";
-import type { PackageManifest, PackagesRegistry } from "~/lib/types";
+import type { PackageManifest, PackagesRegistry, PatchFile } from "~/lib/types";
 import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
@@ -27,7 +27,7 @@ export async function generatePnpmLockfile({
   targetPackageManifest,
   majorVersion,
   includeDevDependencies,
-  includePatchedDependencies,
+  patchedDependencies,
 }: {
   workspaceRootDir: string;
   targetPackageDir: string;
@@ -37,7 +37,8 @@ export async function generatePnpmLockfile({
   targetPackageManifest: PackageManifest;
   majorVersion: number;
   includeDevDependencies: boolean;
-  includePatchedDependencies: boolean;
+  /** Pre-computed patched dependencies with transformed paths from copyPatches */
+  patchedDependencies?: Record<string, PatchFile>;
 }) {
   /**
    * For now we will assume that the lockfile format might not change in the
@@ -132,7 +133,6 @@ export async function generatePnpmLockfile({
             ".",
             pnpmMapImporter(".", importer!, {
               includeDevDependencies,
-              includePatchedDependencies,
               directoryByPackageName,
             }),
           ];
@@ -143,8 +143,7 @@ export async function generatePnpmLockfile({
         return [
           importerId,
           pnpmMapImporter(importerId, importer!, {
-            includeDevDependencies: false, // Only include dev deps for target package
-            includePatchedDependencies,
+            includeDevDependencies: false,
             directoryByPackageName,
           }),
         ];
@@ -169,15 +168,10 @@ export async function generatePnpmLockfile({
     }
 
     /**
-     * Don't know how to map the patched dependencies yet, so we just include
-     * them but I don't think it would work like this. The important thing for
-     * now is that they are omitted by default, because that is the most common
-     * use case.
+     * Use pre-computed patched dependencies with transformed paths. The paths
+     * are already adapted by copyPatches to match the isolated directory
+     * structure, preserving the original folder structure (not flattened).
      */
-    const patchedDependencies = includePatchedDependencies
-      ? lockfile.patchedDependencies
-      : undefined;
-
     if (useVersion9) {
       await writeWantedLockfile_v9(isolateDir, {
         ...prunedLockfile,

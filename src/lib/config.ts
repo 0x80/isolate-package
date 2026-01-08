@@ -7,7 +7,6 @@ import { inspectValue, readTypedJsonSync } from "./utils";
 export type IsolateConfigResolved = {
   buildDirName?: string;
   includeDevDependencies: boolean;
-  includePatchedDependencies: boolean;
   isolateDirName: string;
   logLevel: LogLevel;
   targetPackagePath?: string;
@@ -25,7 +24,6 @@ export type IsolateConfig = Partial<IsolateConfigResolved>;
 const configDefaults: IsolateConfigResolved = {
   buildDirName: undefined,
   includeDevDependencies: false,
-  includePatchedDependencies: false,
   isolateDirName: "isolate",
   logLevel: "info",
   targetPackagePath: undefined,
