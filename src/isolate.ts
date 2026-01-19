@@ -177,6 +177,7 @@ export function createIsolator(config?: IsolateConfig) {
       packagesRegistry,
       isolateDir,
       forceNpm: config.forceNpm,
+      workspaceRootDir,
     });
 
     /** Pack the target package directory, and unpack it in the isolate location */

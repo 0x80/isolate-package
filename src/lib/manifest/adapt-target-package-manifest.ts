@@ -3,7 +3,11 @@ import { omit, pick } from "remeda";
 import type { IsolateConfigResolved } from "../config";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry } from "../types";
-import { adaptManifestInternalDeps, adoptPnpmFieldsFromRoot } from "./helpers";
+import {
+  adaptManifestInternalDeps,
+  adoptPnpmFieldsFromRoot,
+  resolveCatalogDependencies,
+} from "./helpers";
 
 /**
  * Adapt the output package manifest, so that:
@@ -37,6 +41,15 @@ export async function adaptTargetPackageManifest({
     ? manifest
     : omit(manifest, ["devDependencies"]);
 
+  /** Resolve catalog dependencies before adapting internal deps */
+  const manifestWithResolvedCatalogs = {
+    ...inputManifest,
+    dependencies: await resolveCatalogDependencies(
+      inputManifest.dependencies,
+      workspaceRootDir
+    ),
+  };
+
   const adaptedManifest =
     packageManager.name === "pnpm" && !forceNpm
       ? /**
@@ -44,10 +57,13 @@ export async function adaptTargetPackageManifest({
          * with "workspace:*" in the output manifest, but we do want to adopt the
          * pnpm.overrides field from the root package.json.
          */
-        await adoptPnpmFieldsFromRoot(inputManifest, workspaceRootDir)
+        await adoptPnpmFieldsFromRoot(
+          manifestWithResolvedCatalogs,
+          workspaceRootDir
+        )
       : /** For other package managers we replace the links to internal dependencies */
         adaptManifestInternalDeps({
-          manifest: inputManifest,
+          manifest: manifestWithResolvedCatalogs,
           packagesRegistry,
         });
 
