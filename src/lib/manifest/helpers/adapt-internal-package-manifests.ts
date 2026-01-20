@@ -5,6 +5,7 @@ import { usePackageManager } from "~/lib/package-manager";
 import type { PackagesRegistry } from "~/lib/types";
 import { writeManifest } from "../io";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
+import { resolveCatalogDependencies } from "./resolve-catalog-dependencies";
 
 /**
  * Adapt the manifest files of all the isolated internal packages (excluding the
@@ -16,11 +17,13 @@ export async function adaptInternalPackageManifests({
   packagesRegistry,
   isolateDir,
   forceNpm,
+  workspaceRootDir,
 }: {
   internalPackageNames: string[];
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
   forceNpm: boolean;
+  workspaceRootDir: string;
 }) {
   const packageManager = usePackageManager();
 
@@ -31,16 +34,25 @@ export async function adaptInternalPackageManifests({
       /** Dev dependencies and scripts are never included for internal deps */
       const strippedManifest = omit(manifest, ["scripts", "devDependencies"]);
 
+      /** Resolve catalog dependencies before adapting internal deps */
+      const manifestWithResolvedCatalogs = {
+        ...strippedManifest,
+        dependencies: await resolveCatalogDependencies(
+          strippedManifest.dependencies,
+          workspaceRootDir
+        ),
+      };
+
       const outputManifest =
         packageManager.name === "pnpm" && !forceNpm
           ? /**
              * For PNPM the output itself is a workspace so we can preserve the specifiers
              * with "workspace:*" in the output manifest.
              */
-            strippedManifest
+            manifestWithResolvedCatalogs
           : /** For other package managers we replace the links to internal dependencies */
             adaptManifestInternalDeps({
-              manifest: strippedManifest,
+              manifest: manifestWithResolvedCatalogs,
               packagesRegistry,
               parentRootRelativeDir: rootRelativeDir,
             });
