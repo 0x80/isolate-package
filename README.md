@@ -7,6 +7,7 @@
 - [Troubleshooting](#troubleshooting)
 - [Prerequisites](#prerequisites)
 - [Configuration Options](#configuration-options)
+- [PNPM Patched Dependencies](#pnpm-patched-dependencies)
 - [API](#api)
 - [The internal packages strategy](#the-internal-packages-strategy)
 - [Firebase](#firebase)
@@ -34,6 +35,7 @@ integrated, check out [mono-ts](https://github.com/0x80/mono-ts)
 - Optionally force output to use NPM with matching versions
 - Optionally include devDependencies in the isolated output
 - Optionally pick or omit scripts from the manifest
+- Automatically copies PNPM patched dependencies to the isolated output
 - Compatible with the Firebase tools CLI, including 1st and 2nd generation
   Firebase Functions. For more information see
   [the Firebase instructions](./docs/firebase.md).
@@ -324,6 +326,23 @@ services
 ```
 
 When you use the `targetPackagePath` option, this setting will be ignored.
+
+## PNPM Patched Dependencies
+
+If your workspace uses PNPM's [patched dependencies](https://pnpm.io/cli/patch)
+feature, `isolate` will automatically copy the relevant patch files to the
+isolated output.
+
+Patches are filtered based on the target package's dependencies:
+
+- Patches for production dependencies are always included
+- Patches for dev dependencies are only included when `includeDevDependencies`
+  is enabled
+- Patches for packages not in the target's dependency tree are excluded
+
+The patch files are copied to the isolated output, preserving their original
+directory structure. Both the `package.json` and `pnpm-lock.yaml` are updated
+with the correct paths.
 
 ## API
 

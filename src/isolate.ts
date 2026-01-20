@@ -22,6 +22,7 @@ import {
 } from "./lib/output";
 import { detectPackageManager, shouldUsePnpmPack } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
+import { copyPatches } from "./lib/patches/copy-patches";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
 import {
@@ -200,6 +201,23 @@ export function createIsolator(config?: IsolateConfig) {
 
     await writeManifest(isolateDir, outputManifest);
 
+    /**
+     * Copy patch files before generating lockfile so the lockfile contains the
+     * correct paths. Only copy patches when output uses pnpm, since patched
+     * dependencies are a pnpm-specific feature.
+     */
+    const shouldCopyPatches =
+      packageManager.name === "pnpm" && !config.forceNpm;
+
+    const copiedPatches = shouldCopyPatches
+      ? await copyPatches({
+          workspaceRootDir,
+          targetPackageManifest: outputManifest,
+          isolateDir,
+          includeDevDependencies: config.includeDevDependencies,
+        })
+      : {};
+
     /** Generate an isolated lockfile based on the original one */
     const usedFallbackToNpm = await processLockfile({
       workspaceRootDir,
@@ -209,18 +227,44 @@ export function createIsolator(config?: IsolateConfig) {
       targetPackageDir,
       targetPackageName: targetPackageManifest.name,
       targetPackageManifest: outputManifest,
+      patchedDependencies:
+        Object.keys(copiedPatches).length > 0 ? copiedPatches : undefined,
       config,
     });
 
-    if (usedFallbackToNpm) {
-      /**
-       * When we fall back to NPM, we set the manifest package manager to the
-       * available NPM version.
-       */
+    const hasCopiedPatches = Object.keys(copiedPatches).length > 0;
+
+    /** Update manifest if patches were copied or npm fallback is needed */
+    if (hasCopiedPatches || usedFallbackToNpm) {
       const manifest = await readManifest(isolateDir);
 
-      const npmVersion = getVersion("npm");
-      manifest.packageManager = `npm@${npmVersion}`;
+      if (hasCopiedPatches) {
+        if (!manifest.pnpm) {
+          manifest.pnpm = {};
+        }
+        /**
+         * Extract just the paths for the manifest (lockfile needs full
+         * PatchFile)
+         */
+        manifest.pnpm.patchedDependencies = Object.fromEntries(
+          Object.entries(copiedPatches).map(([spec, patchFile]) => [
+            spec,
+            patchFile.path,
+          ])
+        );
+        log.debug(
+          `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`
+        );
+      }
+
+      if (usedFallbackToNpm) {
+        /**
+         * When we fall back to NPM, we set the manifest package manager to the
+         * available NPM version.
+         */
+        const npmVersion = getVersion("npm");
+        manifest.packageManager = `npm@${npmVersion}`;
+      }
 
       await writeManifest(isolateDir, manifest);
     }
@@ -287,7 +331,7 @@ export function createIsolator(config?: IsolateConfig) {
   };
 }
 
-// Keep the original function for backward compatibility
+/** Keep the original function for backward compatibility */
 export async function isolate(config?: IsolateConfig): Promise<string> {
   return createIsolator(config)();
 }
