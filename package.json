@@ -48,42 +48,40 @@
     "prepare": "pnpm check-types && pnpm build"
   },
   "dependencies": {
-    "@npmcli/arborist": "^9.1.8",
-    "@npmcli/config": "^10.4.4",
+    "@npmcli/arborist": "^9.1.10",
+    "@npmcli/config": "^10.5.0",
     "@pnpm/logger": "^1001.0.1",
-    "@pnpm/types": "^1001.0.1",
+    "@pnpm/types": "^1001.3.0",
     "consola": "^3.4.2",
-    "fs-extra": "^11.3.2",
+    "fs-extra": "^11.3.3",
     "get-or-throw": "^2.1.0",
     "get-tsconfig": "^4.13.0",
-    "glob": "^11.0.3",
+    "glob": "^13.0.0",
     "outdent": "^0.8.0",
     "pnpm_lockfile_file_v8": "npm:@pnpm/lockfile-file@8",
     "pnpm_lockfile_file_v9": "npm:@pnpm/lockfile-file@9",
     "pnpm_prune_lockfile_v8": "npm:@pnpm/prune-lockfile@5",
     "pnpm_prune_lockfile_v9": "npm:@pnpm/prune-lockfile@6",
-    "remeda": "^2.32.0",
+    "remeda": "^2.33.4",
     "source-map-support": "^0.5.21",
     "strip-json-comments": "^5.0.3",
     "tar-fs": "^3.1.1",
-    "yaml": "^2.8.1"
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
-    "@codecompose/typescript-config": "^2.2.0",
+    "@codecompose/typescript-config": "^2.3.0",
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.0.10",
     "@types/npmcli__config": "^6.0.3",
     "@types/source-map-support": "^0.5.10",
     "@types/tar-fs": "^2.0.4",
-    "oxlint": "^1.30.0",
-    "oxlint-tsgolint": "^0.8.3",
-    "prettier": "^3.7.1",
-    "prettier-plugin-jsdoc": "^1.5.0",
-    "tsdown": "^0.16.8",
+    "oxlint": "^1.41.0",
+    "oxlint-tsgolint": "^0.11.1",
+    "prettier": "^3.8.1",
+    "prettier-plugin-jsdoc": "^1.8.0",
+    "tsdown": "0.20.0-beta.4",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.14"
+    "vitest": "^4.0.17"
   },
-  "packageManager": "pnpm@9.0.0+sha256.bdfc9a7b372b5c462176993e586492603e20da5864d2f8881edc2462482c76fa",
-  "main": "./dist/index.mjs",
-  "module": "./dist/index.mjs"
+  "packageManager": "pnpm@9.0.0+sha256.bdfc9a7b372b5c462176993e586492603e20da5864d2f8881edc2462482c76fa"
 }
