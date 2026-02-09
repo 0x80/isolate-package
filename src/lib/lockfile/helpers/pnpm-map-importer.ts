@@ -1,4 +1,3 @@
-import { got } from "get-or-throw";
 import path from "node:path";
 import type {
   ProjectSnapshot,
@@ -49,9 +48,20 @@ function pnpmMapDependenciesLinks(
       return value;
     }
 
+    const directory = directoryByPackageName[key];
+
+    /**
+     * Skip link remapping for packages not in the internal dependencies map.
+     * These are external packages that happen to be linked (e.g. via file:
+     * protocol) and don't need their paths adjusted.
+     */
+    if (directory === undefined) {
+      return value;
+    }
+
     /** Replace backslashes with forward slashes to support Windows Git Bash */
     const relativePath = path
-      .relative(importerPath, got(directoryByPackageName, key))
+      .relative(importerPath, directory)
       .replace(path.sep, path.posix.sep);
 
     return relativePath.startsWith(".")
