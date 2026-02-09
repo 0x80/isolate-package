@@ -99,10 +99,16 @@ const cli = meow(
  * returns `false` for unset boolean flags, making it impossible to distinguish
  * "not passed" from "explicitly set to false" via `--no-<flag>`.
  */
-function wasFlagExplicitlyPassed(flagName: string): boolean {
+function wasFlagExplicitlyPassed(
+  flagName: string,
+  shortFlag?: string
+): boolean {
   const kebab = flagName.replace(/[A-Z]/g, (l) => `-${l.toLowerCase()}`);
   return process.argv.some(
-    (arg) => arg === `--${kebab}` || arg === `--no-${kebab}`
+    (arg) =>
+      arg === `--${kebab}` ||
+      arg === `--no-${kebab}` ||
+      (shortFlag !== undefined && arg === `-${shortFlag}`)
   );
 }
 
@@ -143,7 +149,7 @@ const cliOverrides: IsolateConfig = filterObjectUndefined({
   ...(wasFlagExplicitlyPassed("forceNpm") && {
     forceNpm: cli.flags.forceNpm,
   }),
-  ...(wasFlagExplicitlyPassed("includeDevDependencies") && {
+  ...(wasFlagExplicitlyPassed("includeDevDependencies", "d") && {
     includeDevDependencies: cli.flags.includeDevDependencies,
   }),
   ...(wasFlagExplicitlyPassed("omitPackageManager") && {
