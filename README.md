@@ -6,6 +6,7 @@
 - [Usage](#usage)
 - [Troubleshooting](#troubleshooting)
 - [Prerequisites](#prerequisites)
+- [CLI Flags](#cli-flags)
 - [Configuration Options](#configuration-options)
 - [PNPM Patched Dependencies](#pnpm-patched-dependencies)
 - [API](#api)
@@ -68,14 +69,17 @@ are not using Typescript.
 
 By default the isolated output will become available at `./isolate`.
 
+All [configuration options](#configuration-options) can also be set via
+[CLI flags](#cli-flags), which take precedence over the config file.
+
 If you are here to improve your Firebase deployments check out the
 [Firebase quick start guide](./docs/firebase.md#a-quick-start).
 
 ## Troubleshooting
 
-If something is not working as expected, add an `isolate.config.json` file, and
-set `"logLevel"` to `"debug"`. This should give you detailed feedback in the
-console.
+If something is not working as expected, run `npx isolate --log-level debug` or
+add an `isolate.config.json` file with `"logLevel"` set to `"debug"`. This
+should give you detailed feedback in the console.
 
 In addition define an environment variable to debug the configuration being used
 by setting `DEBUG_ISOLATE_CONFIG=true` before you execute `isolate`.
@@ -170,6 +174,31 @@ You can, however, declare multiple workspace packages directories. Personally, I
 prefer to use `["packages/*", "apps/*", "services/*"]`. It is only the structure
 inside them that should be flat.
 
+## CLI Flags
+
+All configuration options can be passed as CLI flags, which take precedence over
+values in `isolate.config.json`. Run `npx isolate --help` for the full list.
+
+| Flag                                | Short | Type     | Config Key               |
+| ----------------------------------- | ----- | -------- | ------------------------ |
+| `--build-dir-name <name>`          | `-b`  | string   | `buildDirName`           |
+| `--include-dev-dependencies`        | `-d`  | boolean  | `includeDevDependencies` |
+| `--isolate-dir-name <name>`        | `-o`  | string   | `isolateDirName`         |
+| `--log-level <level>`              | `-l`  | string   | `logLevel`               |
+| `--target-package-path <path>`     | `-t`  | string   | `targetPackagePath`      |
+| `--tsconfig-path <path>`           |       | string   | `tsconfigPath`           |
+| `--workspace-packages <glob>`      | `-w`  | string[] | `workspacePackages`      |
+| `--workspace-root <path>`          | `-r`  | string   | `workspaceRoot`          |
+| `--force-npm`                       | `-f`  | boolean  | `forceNpm`               |
+| `--pick-from-scripts <name>`       | `-p`  | string[] | `pickFromScripts`        |
+| `--omit-from-scripts <name>`       |       | string[] | `omitFromScripts`        |
+| `--omit-package-manager`            |       | boolean  | `omitPackageManager`     |
+
+Array flags are repeatable, for example:
+`npx isolate --pick-from-scripts build --pick-from-scripts start`
+
+Boolean flags support `--no-` negation, for example: `--no-force-npm`.
+
 ## Configuration Options
 
 For most users no configuration should be necessary.
@@ -177,6 +206,7 @@ For most users no configuration should be necessary.
 You can configure the isolate process by placing a `isolate.config.json` file in
 the package that you want to isolate, except when you're
 [deploying to Firebase from the root of the workspace](#deploying-firebase-from-the-root).
+Alternatively, all options can be set via [CLI flags](#cli-flags).
 
 For the config file to be picked up, you will have to execute `isolate` from the
 same location, as it uses the current working directory.
