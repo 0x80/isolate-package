@@ -186,7 +186,7 @@ values in `isolate.config.json`. Run `npx isolate --help` for the full list.
 | `--isolate-dir-name <name>`        | `-o`  | string   | `isolateDirName`         |
 | `--log-level <level>`              | `-l`  | string   | `logLevel`               |
 | `--target-package-path <path>`     | `-t`  | string   | `targetPackagePath`      |
-| `--tsconfig-path <path>`           |       | string   | `tsconfigPath`           |
+| `--tsconfig-path <path>`           | `-c`  | string   | `tsconfigPath`           |
 | `--workspace-packages <glob>`      | `-w`  | string[] | `workspacePackages`      |
 | `--workspace-root <path>`          | `-r`  | string   | `workspaceRoot`          |
 | `--force-npm`                       |       | boolean  | `forceNpm`               |

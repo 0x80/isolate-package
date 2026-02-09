@@ -26,7 +26,7 @@ const cli = meow(
       -o, --isolate-dir-name <name>          Name of the isolate output directory (default: isolate)
       -l, --log-level <level>                Log level: info, debug, warn, error (default: info)
       -t, --target-package-path <path>       Path to the target package
-          --tsconfig-path <path>             Path to tsconfig.json (default: ./tsconfig.json)
+      -c, --tsconfig-path <path>             Path to tsconfig.json (default: ./tsconfig.json)
       -w, --workspace-packages <glob>        Workspace package globs (repeatable)
       -r, --workspace-root <path>            Path to the workspace root (default: ../..)
           --force-npm                        Force npm lockfile generation
@@ -64,6 +64,7 @@ const cli = meow(
       },
       tsconfigPath: {
         type: "string",
+        shortFlag: "c",
       },
       workspacePackages: {
         type: "string",
