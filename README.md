@@ -189,7 +189,7 @@ values in `isolate.config.json`. Run `npx isolate --help` for the full list.
 | `--tsconfig-path <path>`           |       | string   | `tsconfigPath`           |
 | `--workspace-packages <glob>`      | `-w`  | string[] | `workspacePackages`      |
 | `--workspace-root <path>`          | `-r`  | string   | `workspaceRoot`          |
-| `--force-npm`                       | `-f`  | boolean  | `forceNpm`               |
+| `--force-npm`                       |       | boolean  | `forceNpm`               |
 | `--pick-from-scripts <name>`       | `-p`  | string[] | `pickFromScripts`        |
 | `--omit-from-scripts <name>`       |       | string[] | `omitFromScripts`        |
 | `--omit-package-manager`            |       | boolean  | `omitPackageManager`     |

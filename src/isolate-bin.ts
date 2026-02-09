@@ -29,7 +29,7 @@ const cli = meow(
           --tsconfig-path <path>             Path to tsconfig.json (default: ./tsconfig.json)
       -w, --workspace-packages <glob>        Workspace package globs (repeatable)
       -r, --workspace-root <path>            Path to the workspace root (default: ../..)
-      -f, --force-npm                        Force npm lockfile generation
+          --force-npm                        Force npm lockfile generation
       -p, --pick-from-scripts <name>         Scripts to include (repeatable)
           --omit-from-scripts <name>         Scripts to exclude (repeatable)
           --omit-package-manager             Omit the packageManager field from the manifest
@@ -76,7 +76,6 @@ const cli = meow(
       },
       forceNpm: {
         type: "boolean",
-        shortFlag: "f",
       },
       pickFromScripts: {
         type: "string",
