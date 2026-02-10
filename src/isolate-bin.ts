@@ -90,11 +90,10 @@ const cli = meow(
   }
 );
 
-const cliOverrides = buildCliOverrides(cli.flags, process.argv);
-const fileConfig = loadConfigFromFile();
-const mergedConfig = { ...fileConfig, ...cliOverrides };
-
 async function run() {
+  const cliOverrides = buildCliOverrides(cli.flags, process.argv);
+  const fileConfig = loadConfigFromFile();
+  const mergedConfig = { ...fileConfig, ...cliOverrides };
   await isolate(mergedConfig);
 }
 
