@@ -38,8 +38,8 @@ export function pnpmMapImporter(
 
 /**
  * Remap internal dependency links to point to the isolated directory structure,
- * and remove links to non-internal packages (e.g. locally linked external
- * packages) that won't exist in the isolated output.
+ * and remove link: entries for non-internal packages that won't exist in the
+ * isolated output.
  */
 function pnpmMapDependenciesLinks(
   importerPath: string,
@@ -56,7 +56,7 @@ function pnpmMapDependenciesLinks(
 
       /**
        * Remove entries for packages not in the internal dependencies map. These
-       * are external packages that happen to be linked (e.g. via file: protocol)
+       * are external packages that happen to be linked via the link: protocol
        * and won't exist in the isolated output.
        */
       if (directory === undefined) {
