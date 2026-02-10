@@ -86,12 +86,19 @@ describe("buildCliOverrides", () => {
     const flags: ParsedFlags = {
       ...defaultFlags,
       buildDirName: "build",
-      workspaceRoot: "../..",
+      workspaceRoot: "../../..",
     };
-    const argv = ["node", "isolate", "--build-dir-name", "build"];
+    const argv = [
+      "node",
+      "isolate",
+      "--build-dir-name",
+      "build",
+      "-r",
+      "../../..",
+    ];
     const overrides = buildCliOverrides(flags, argv);
     expect(overrides.buildDirName).toBe("build");
-    expect(overrides.workspaceRoot).toBe("../..");
+    expect(overrides.workspaceRoot).toBe("../../..");
   });
 
   it("omits empty array flags", () => {
