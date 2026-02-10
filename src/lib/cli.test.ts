@@ -174,7 +174,10 @@ describe("buildCliOverrides", () => {
 
   describe("precedence: config file values are overridden by CLI flags", () => {
     it("CLI string flags override config file", () => {
-      const fileConfig = { isolateDirName: "output", logLevel: "info" as const };
+      const fileConfig = {
+        isolateDirName: "output",
+        logLevel: "info" as const,
+      };
       const flags: ParsedFlags = {
         ...defaultFlags,
         isolateDirName: "custom-isolate",
