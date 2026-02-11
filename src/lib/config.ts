@@ -39,7 +39,7 @@ const configDefaults: IsolateConfigResolved = {
 const validConfigKeys = Object.keys(configDefaults);
 const CONFIG_FILE_NAME = "isolate.config.json";
 
-function loadConfigFromFile(): IsolateConfig {
+export function loadConfigFromFile(): IsolateConfig {
   const configFilePath = path.join(process.cwd(), CONFIG_FILE_NAME);
   return fs.existsSync(configFilePath)
     ? readTypedJsonSync<IsolateConfig>(configFilePath)

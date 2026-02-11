@@ -1,6 +1,6 @@
 {
   "name": "isolate-package",
-  "version": "1.27.0-3",
+  "version": "1.27.0-8",
   "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
   "author": "Thijs Koerselman",
   "license": "MIT",
@@ -57,6 +57,7 @@
     "get-or-throw": "^2.1.0",
     "get-tsconfig": "^4.13.0",
     "glob": "^11.0.3",
+    "meow": "^13.0.0",
     "outdent": "^0.8.0",
     "pnpm_lockfile_file_v8": "npm:@pnpm/lockfile-file@8",
     "pnpm_lockfile_file_v9": "npm:@pnpm/lockfile-file@9",
