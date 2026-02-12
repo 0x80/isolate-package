@@ -16,7 +16,8 @@ on:
           - premajor
           - prerelease
       preid:
-        description: "Prerelease identifier (alpha, beta, rc). Only used with pre* bumps."
+        description:
+          "Prerelease identifier (alpha, beta, rc). Only used with pre* bumps."
         required: false
         type: string
       dry-run:
@@ -110,7 +111,8 @@ jobs:
 
       - name: Publish to npm
         if: ${{ inputs.dry-run == false }}
-        run: npm publish --provenance --tag ${{ steps.version.outputs.dist_tag }}
+        run:
+          npm publish --provenance --tag ${{ steps.version.outputs.dist_tag }}
 
       - name: Push commit and tag
         if: ${{ inputs.dry-run == false }}
