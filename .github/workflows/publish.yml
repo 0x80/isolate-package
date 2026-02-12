@@ -78,12 +78,12 @@ jobs:
       - name: Bump version
         id: version
         run: |
-          ARGS="${{ inputs.bump }}"
+          ARGS=("${{ inputs.bump }}")
           if [[ "${{ inputs.bump }}" == pre* && -n "${{ inputs.preid }}" ]]; then
-            ARGS="$ARGS --preid ${{ inputs.preid }}"
+            ARGS+=(--preid "${{ inputs.preid }}")
           fi
 
-          npm version $ARGS --git-tag-version true
+          npm version "${ARGS[@]}" --git-tag-version true
 
           VERSION=$(node -p "require('./package.json').version")
           TAG="v${VERSION}"
