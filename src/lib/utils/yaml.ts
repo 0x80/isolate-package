@@ -10,7 +10,8 @@ export function readTypedYamlSync<T>(filePath: string) {
     return data as T;
   } catch (err) {
     throw new Error(
-      `Failed to read YAML from ${filePath}: ${getErrorMessage(err)}`
+      `Failed to read YAML from ${filePath}: ${getErrorMessage(err)}`,
+      { cause: err }
     );
   }
 }
