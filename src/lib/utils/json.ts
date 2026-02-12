@@ -12,7 +12,8 @@ export function readTypedJsonSync<T>(filePath: string) {
     return data;
   } catch (err) {
     throw new Error(
-      `Failed to read JSON from ${filePath}: ${getErrorMessage(err)}`
+      `Failed to read JSON from ${filePath}: ${getErrorMessage(err)}`,
+      { cause: err }
     );
   }
 }
@@ -26,7 +27,8 @@ export async function readTypedJson<T>(filePath: string) {
     return data;
   } catch (err) {
     throw new Error(
-      `Failed to read JSON from ${filePath}: ${getErrorMessage(err)}`
+      `Failed to read JSON from ${filePath}: ${getErrorMessage(err)}`,
+      { cause: err }
     );
   }
 }

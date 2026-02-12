@@ -42,7 +42,7 @@
     "dev": "tsdown --watch",
     "test": "vitest run",
     "format": "prettier --write .",
-    "lint": "oxlint --type-aware",
+    "lint": "oxlint -c .oxlintrc.json --type-aware",
     "check-format": "prettier --check .",
     "check-types": "tsc --noEmit",
     "prepare": "pnpm check-types && pnpm build"
