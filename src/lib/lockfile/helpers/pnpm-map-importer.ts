@@ -1,11 +1,8 @@
-import { got } from "get-or-throw";
 import path from "node:path";
 import type {
   ProjectSnapshot,
   ResolvedDependencies,
 } from "pnpm_lockfile_file_v8";
-
-import { mapValues } from "remeda";
 
 /** Convert dependency links */
 export function pnpmMapImporter(
@@ -39,23 +36,43 @@ export function pnpmMapImporter(
   };
 }
 
+/**
+ * Remap internal dependency links to point to the isolated directory structure,
+ * and remove link: entries for non-internal packages that won't exist in the
+ * isolated output.
+ */
 function pnpmMapDependenciesLinks(
   importerPath: string,
   def: ResolvedDependencies,
   directoryByPackageName: { [packageName: string]: string }
 ): ResolvedDependencies {
-  return mapValues(def, (value, key) => {
-    if (!value.startsWith("link:")) {
-      return value;
-    }
+  return Object.fromEntries(
+    Object.entries(def).flatMap(([key, value]) => {
+      if (!value.startsWith("link:")) {
+        return [[key, value]];
+      }
 
-    /** Replace backslashes with forward slashes to support Windows Git Bash */
-    const relativePath = path
-      .relative(importerPath, got(directoryByPackageName, key))
-      .replace(path.sep, path.posix.sep);
+      const directory = directoryByPackageName[key];
 
-    return relativePath.startsWith(".")
-      ? `link:${relativePath}`
-      : `link:./${relativePath}`;
-  });
+      /**
+       * Remove entries for packages not in the internal dependencies map. These
+       * are external packages that happen to be linked via the link: protocol
+       * and won't exist in the isolated output.
+       */
+      if (directory === undefined) {
+        return [];
+      }
+
+      /** Replace backslashes with forward slashes to support Windows Git Bash */
+      const relativePath = path
+        .relative(importerPath, directory)
+        .replace(path.sep, path.posix.sep);
+
+      const linkValue = relativePath.startsWith(".")
+        ? `link:${relativePath}`
+        : `link:./${relativePath}`;
+
+      return [[key, linkValue]];
+    })
+  );
 }
