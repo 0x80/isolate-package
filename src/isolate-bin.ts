@@ -87,7 +87,7 @@ const cli = meow(
         type: "boolean",
       },
     },
-  }
+  },
 );
 
 async function run() {

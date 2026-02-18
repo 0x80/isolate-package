@@ -61,7 +61,7 @@ export async function generatePnpmLockfile({
             : workspaceRootDir,
           {
             ignoreIncompatible: false,
-          }
+          },
         )
       : await readWantedLockfile_v8(
           isRush
@@ -69,7 +69,7 @@ export async function generatePnpmLockfile({
             : workspaceRootDir,
           {
             ignoreIncompatible: false,
-          }
+          },
         );
 
     assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
@@ -84,7 +84,7 @@ export async function generatePnpmLockfile({
         assert(pkg, `Package ${name} not found in packages registry`);
 
         return [name, pkg.rootRelativeDir];
-      })
+      }),
     );
 
     const relevantImporterIds = [
@@ -115,12 +115,12 @@ export async function generatePnpmLockfile({
      * only for parsing.
      */
     const relevantImporterIdsWithPrefix = relevantImporterIds.map((x) =>
-      isRush ? `../../${x}` : x
+      isRush ? `../../${x}` : x,
     );
 
     lockfile.importers = Object.fromEntries(
       Object.entries(
-        pick(lockfile.importers, relevantImporterIdsWithPrefix)
+        pick(lockfile.importers, relevantImporterIdsWithPrefix),
       ).map(([prefixedImporterId, importer]) => {
         const importerId = isRush
           ? prefixedImporterId.replace("../../", "")
@@ -147,7 +147,7 @@ export async function generatePnpmLockfile({
             directoryByPackageName,
           }),
         ];
-      })
+      }),
     );
 
     log.debug("Pruning the lockfile");

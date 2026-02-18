@@ -12,14 +12,14 @@ const validLogLevels: readonly LogLevel[] = ["info", "debug", "warn", "error"];
 export function wasFlagExplicitlyPassed(
   flagName: string,
   argv: string[],
-  shortFlag?: string
+  shortFlag?: string,
 ): boolean {
   const kebab = flagName.replace(/[A-Z]/g, (l) => `-${l.toLowerCase()}`);
   return argv.some(
     (arg) =>
       arg === `--${kebab}` ||
       arg === `--no-${kebab}` ||
-      (shortFlag !== undefined && arg === `-${shortFlag}`)
+      (shortFlag !== undefined && arg === `-${shortFlag}`),
   );
 }
 
@@ -34,7 +34,7 @@ export function parseLogLevel(value: string | undefined): LogLevel | undefined {
 
   if (!validLogLevels.includes(value as LogLevel)) {
     throw new Error(
-      `Invalid log level: "${value}". Must be one of: ${validLogLevels.join(", ")}`
+      `Invalid log level: "${value}". Must be one of: ${validLogLevels.join(", ")}`,
     );
   }
 
@@ -64,7 +64,7 @@ export type ParsedFlags = {
  */
 export function buildCliOverrides(
   flags: ParsedFlags,
-  argv: string[]
+  argv: string[],
 ): IsolateConfig {
   const logLevel = parseLogLevel(flags.logLevel);
 

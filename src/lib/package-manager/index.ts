@@ -10,7 +10,7 @@ let packageManager: PackageManager | undefined;
 export function usePackageManager() {
   if (!packageManager) {
     throw Error(
-      "No package manager detected. Make sure to call detectPackageManager() before usePackageManager()"
+      "No package manager detected. Make sure to call detectPackageManager() before usePackageManager()",
     );
   }
 
@@ -25,7 +25,7 @@ export function usePackageManager() {
 export function detectPackageManager(workspaceRootDir: string): PackageManager {
   if (isRushWorkspace(workspaceRootDir)) {
     packageManager = inferFromFiles(
-      path.join(workspaceRootDir, "common/config/rush")
+      path.join(workspaceRootDir, "common/config/rush"),
     );
   } else {
     /**

@@ -16,8 +16,7 @@ on:
           - premajor
           - prerelease
       preid:
-        description:
-          "Prerelease identifier (alpha, beta, rc). Only used with pre* bumps."
+        description: "Prerelease identifier (alpha, beta, rc). Only used with pre* bumps."
         required: false
         type: string
       dry_run:

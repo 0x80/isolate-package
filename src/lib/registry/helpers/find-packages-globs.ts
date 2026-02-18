@@ -21,18 +21,18 @@ export function findPackagesGlobs(workspaceRootDir: string) {
   switch (packageManager.name) {
     case "pnpm": {
       const workspaceConfig = readTypedYamlSync<{ packages: string[] }>(
-        path.join(workspaceRootDir, "pnpm-workspace.yaml")
+        path.join(workspaceRootDir, "pnpm-workspace.yaml"),
       );
 
       if (!workspaceConfig) {
         throw new Error(
-          "pnpm-workspace.yaml file is empty. Please specify packages configuration."
+          "pnpm-workspace.yaml file is empty. Please specify packages configuration.",
         );
       }
 
       assert(
         workspaceConfig.packages,
-        "packages property must be defined in pnpm-workspace.yaml"
+        "packages property must be defined in pnpm-workspace.yaml",
       );
 
       const { packages: globs } = workspaceConfig;
@@ -45,16 +45,16 @@ export function findPackagesGlobs(workspaceRootDir: string) {
     case "npm": {
       const workspaceRootManifestPath = path.join(
         workspaceRootDir,
-        "package.json"
+        "package.json",
       );
 
       const { workspaces } = readTypedJsonSync<{ workspaces: string[] }>(
-        workspaceRootManifestPath
+        workspaceRootManifestPath,
       );
 
       if (!workspaces) {
         throw new Error(
-          `No workspaces field found in ${workspaceRootManifestPath}`
+          `No workspaces field found in ${workspaceRootManifestPath}`,
         );
       }
 
@@ -70,7 +70,7 @@ export function findPackagesGlobs(workspaceRootDir: string) {
 
         assert(
           workspacesObject.packages,
-          "workspaces.packages must be an array"
+          "workspaces.packages must be an array",
         );
 
         return workspacesObject.packages;

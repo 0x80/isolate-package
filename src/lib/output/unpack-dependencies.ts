@@ -9,7 +9,7 @@ export async function unpackDependencies(
   packedFilesByName: Record<string, string>,
   packagesRegistry: PackagesRegistry,
   tmpDir: string,
-  isolateDir: string
+  isolateDir: string,
 ) {
   const log = useLogger();
 
@@ -33,9 +33,9 @@ export async function unpackDependencies(
       log.debug(
         `Moved package files to ${getIsolateRelativeLogPath(
           destinationDir,
-          isolateDir
-        )}`
+          isolateDir,
+        )}`,
       );
-    })
+    }),
   );
 }

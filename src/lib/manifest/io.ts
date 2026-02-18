@@ -9,10 +9,10 @@ export async function readManifest(packageDir: string) {
 
 export async function writeManifest(
   outputDir: string,
-  manifest: PackageManifest
+  manifest: PackageManifest,
 ) {
   await fs.writeFile(
     path.join(outputDir, "package.json"),
-    JSON.stringify(manifest, null, 2)
+    JSON.stringify(manifest, null, 2),
   );
 }

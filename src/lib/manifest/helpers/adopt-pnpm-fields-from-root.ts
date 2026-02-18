@@ -10,14 +10,14 @@ import { isRushWorkspace, readTypedJson } from "~/lib/utils";
  */
 export async function adoptPnpmFieldsFromRoot(
   targetPackageManifest: PackageManifest,
-  workspaceRootDir: string
+  workspaceRootDir: string,
 ): Promise<PackageManifest> {
   if (isRushWorkspace(workspaceRootDir)) {
     return targetPackageManifest;
   }
 
   const rootPackageManifest = await readTypedJson<ProjectManifest>(
-    path.join(workspaceRootDir, "package.json")
+    path.join(workspaceRootDir, "package.json"),
   );
 
   const { overrides, onlyBuiltDependencies, ignoredBuiltDependencies } =

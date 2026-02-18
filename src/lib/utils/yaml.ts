@@ -11,7 +11,7 @@ export function readTypedYamlSync<T>(filePath: string) {
   } catch (err) {
     throw new Error(
       `Failed to read YAML from ${filePath}: ${getErrorMessage(err)}`,
-      { cause: err }
+      { cause: err },
     );
   }
 }

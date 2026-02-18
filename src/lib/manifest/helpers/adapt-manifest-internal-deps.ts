@@ -23,14 +23,14 @@ export function adaptManifestInternalDeps({
       ? patchInternalEntries(
           dependencies,
           packagesRegistry,
-          parentRootRelativeDir
+          parentRootRelativeDir,
         )
       : undefined,
     devDependencies: devDependencies
       ? patchInternalEntries(
           devDependencies,
           packagesRegistry,
-          parentRootRelativeDir
+          parentRootRelativeDir,
         )
       : undefined,
   };

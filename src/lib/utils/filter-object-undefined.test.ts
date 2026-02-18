@@ -8,7 +8,7 @@ describe("filterObjectUndefined", () => {
         a: "a",
         b: undefined,
         c: "c",
-      })
+      }),
     ).toEqual({
       a: "a",
       c: "c",

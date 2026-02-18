@@ -46,7 +46,7 @@ export async function adaptTargetPackageManifest({
     ...inputManifest,
     dependencies: await resolveCatalogDependencies(
       inputManifest.dependencies,
-      workspaceRootDir
+      workspaceRootDir,
     ),
   };
 
@@ -59,7 +59,7 @@ export async function adaptTargetPackageManifest({
          */
         await adoptPnpmFieldsFromRoot(
           manifestWithResolvedCatalogs,
-          workspaceRootDir
+          workspaceRootDir,
         )
       : /** For other package managers we replace the links to internal dependencies */
         adaptManifestInternalDeps({

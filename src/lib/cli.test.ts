@@ -36,7 +36,7 @@ describe("wasFlagExplicitlyPassed", () => {
   it("detects a short flag", () => {
     const argv = ["node", "isolate", "-d"];
     expect(wasFlagExplicitlyPassed("includeDevDependencies", argv, "d")).toBe(
-      true
+      true,
     );
   });
 
@@ -70,7 +70,7 @@ describe("parseLogLevel", () => {
 
   it("throws for an invalid log level", () => {
     expect(() => parseLogLevel("verbose")).toThrow(
-      'Invalid log level: "verbose"'
+      'Invalid log level: "verbose"',
     );
   });
 });
@@ -168,7 +168,7 @@ describe("buildCliOverrides", () => {
     const flags: ParsedFlags = { ...defaultFlags, logLevel: "verbose" };
     const argv = ["node", "isolate", "--log-level", "verbose"];
     expect(() => buildCliOverrides(flags, argv)).toThrow(
-      'Invalid log level: "verbose"'
+      'Invalid log level: "verbose"',
     );
   });
 

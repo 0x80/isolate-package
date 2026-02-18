@@ -14,7 +14,7 @@ import type { PackageManifest, PackagesRegistry } from "../types";
 export function listInternalPackages(
   manifest: PackageManifest,
   packagesRegistry: PackagesRegistry,
-  { includeDevDependencies = false } = {}
+  { includeDevDependencies = false } = {},
 ): string[] {
   const allWorkspacePackageNames = Object.keys(packagesRegistry);
 
@@ -32,8 +32,8 @@ export function listInternalPackages(
       listInternalPackages(
         got(packagesRegistry, packageName).manifest,
         packagesRegistry,
-        { includeDevDependencies }
-      )
+        { includeDevDependencies },
+      ),
   );
 
   return unique(internalPackageNames.concat(nestedInternalPackageNames));

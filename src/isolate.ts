@@ -44,7 +44,7 @@ export function createIsolator(config?: IsolateConfig) {
     const log = useLogger();
 
     const { version: libraryVersion } = await readTypedJson<PackageManifest>(
-      path.join(path.join(__dirname, "..", "package.json"))
+      path.join(path.join(__dirname, "..", "package.json")),
     );
 
     log.debug("Using isolate-package version", libraryVersion);
@@ -70,20 +70,20 @@ export function createIsolator(config?: IsolateConfig) {
 
     assert(
       fs.existsSync(buildOutputDir),
-      `Failed to find build output path at ${buildOutputDir}. Please make sure you build the source before isolating it.`
+      `Failed to find build output path at ${buildOutputDir}. Please make sure you build the source before isolating it.`,
     );
 
     log.debug("Workspace root resolved to", workspaceRootDir);
     log.debug(
       "Isolate target package",
-      getRootRelativeLogPath(targetPackageDir, workspaceRootDir)
+      getRootRelativeLogPath(targetPackageDir, workspaceRootDir),
     );
 
     const isolateDir = path.join(targetPackageDir, config.isolateDirName);
 
     log.debug(
       "Isolate output directory",
-      getRootRelativeLogPath(isolateDir, workspaceRootDir)
+      getRootRelativeLogPath(isolateDir, workspaceRootDir),
     );
 
     if (fs.existsSync(isolateDir)) {
@@ -97,13 +97,13 @@ export function createIsolator(config?: IsolateConfig) {
     await fs.ensureDir(tmpDir);
 
     const targetPackageManifest = await readTypedJson<PackageManifest>(
-      path.join(targetPackageDir, "package.json")
+      path.join(targetPackageDir, "package.json"),
     );
 
     /** Validate mandatory fields for the target package */
     validateManifestMandatoryFields(
       targetPackageManifest,
-      getRootRelativeLogPath(targetPackageDir, workspaceRootDir)
+      getRootRelativeLogPath(targetPackageDir, workspaceRootDir),
     );
 
     const packageManager = detectPackageManager(workspaceRootDir);
@@ -111,7 +111,7 @@ export function createIsolator(config?: IsolateConfig) {
     log.debug(
       "Detected package manager",
       packageManager.name,
-      packageManager.version
+      packageManager.version,
     );
 
     if (shouldUsePnpmPack()) {
@@ -124,7 +124,7 @@ export function createIsolator(config?: IsolateConfig) {
      */
     const packagesRegistry = await createPackagesRegistry(
       workspaceRootDir,
-      config.workspacePackages
+      config.workspacePackages,
     );
 
     const internalPackageNames = listInternalPackages(
@@ -132,7 +132,7 @@ export function createIsolator(config?: IsolateConfig) {
       packagesRegistry,
       {
         includeDevDependencies: config.includeDevDependencies,
-      }
+      },
     );
 
     /**
@@ -144,7 +144,7 @@ export function createIsolator(config?: IsolateConfig) {
       packagesRegistry,
       {
         includeDevDependencies: false,
-      }
+      },
     );
 
     /** Validate mandatory fields for all internal packages that will be isolated */
@@ -155,7 +155,7 @@ export function createIsolator(config?: IsolateConfig) {
       validateManifestMandatoryFields(
         packageDef.manifest,
         getRootRelativeLogPath(packageDef.absoluteDir, workspaceRootDir),
-        isProductionDependency
+        isProductionDependency,
       );
     }
 
@@ -169,7 +169,7 @@ export function createIsolator(config?: IsolateConfig) {
       packedFilesByName,
       packagesRegistry,
       tmpDir,
-      isolateDir
+      isolateDir,
     );
 
     /** Adapt the manifest files for all the unpacked local dependencies */
@@ -250,10 +250,10 @@ export function createIsolator(config?: IsolateConfig) {
           Object.entries(copiedPatches).map(([spec, patchFile]) => [
             spec,
             patchFile.path,
-          ])
+          ]),
         );
         log.debug(
-          `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`
+          `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
         );
       }
 
@@ -281,8 +281,8 @@ export function createIsolator(config?: IsolateConfig) {
         const packagesFolderNames = unique(
           internalPackageNames.map(
             (name) =>
-              path.parse(got(packagesRegistry, name).rootRelativeDir).dir
-          )
+              path.parse(got(packagesRegistry, name).rootRelativeDir).dir,
+          ),
         );
 
         log.debug("Generating pnpm-workspace.yaml for Rush workspace");
@@ -296,7 +296,7 @@ export function createIsolator(config?: IsolateConfig) {
       } else {
         fs.copyFileSync(
           path.join(workspaceRootDir, "pnpm-workspace.yaml"),
-          path.join(isolateDir, "pnpm-workspace.yaml")
+          path.join(isolateDir, "pnpm-workspace.yaml"),
         );
       }
     }
@@ -321,7 +321,7 @@ export function createIsolator(config?: IsolateConfig) {
      */
     log.debug(
       "Deleting temp directory",
-      getRootRelativeLogPath(tmpDir, workspaceRootDir)
+      getRootRelativeLogPath(tmpDir, workspaceRootDir),
     );
     await fs.remove(tmpDir);
 

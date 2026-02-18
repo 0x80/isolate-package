@@ -50,13 +50,13 @@ export function filterPatchedDependencies<T>({
 
     /** Package not found in dependencies or devDependencies */
     log.debug(
-      `Excluding patch: ${packageSpec} (package "${packageName}" not in target dependencies)`
+      `Excluding patch: ${packageSpec} (package "${packageName}" not in target dependencies)`,
     );
     excludedCount++;
   }
 
   log.debug(
-    `Filtered patches: ${includedCount} included, ${excludedCount} excluded`
+    `Filtered patches: ${includedCount} included, ${excludedCount} excluded`,
   );
 
   return Object.keys(filteredPatches).length > 0 ? filteredPatches : undefined;

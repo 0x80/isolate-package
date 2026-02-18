@@ -14,7 +14,7 @@ import type { PackageManifest } from "../types";
 export function validateManifestMandatoryFields(
   manifest: PackageManifest,
   packagePath: string,
-  requireFilesField = true
+  requireFilesField = true,
 ): void {
   const log = useLogger();
   const missingFields: string[] = [];
