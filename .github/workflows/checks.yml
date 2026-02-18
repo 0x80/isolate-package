@@ -10,7 +10,8 @@ on:
 concurrency:
   # Skip concurrency restriction when called from another workflow
   # This prevents deadlocks between parent workflow and this one
-  group: ${{ github.event_name == 'workflow_call' && format('{0}-{1}', github.workflow,
+  group:
+    ${{ github.event_name == 'workflow_call' && format('{0}-{1}', github.workflow,
     github.run_id) || format('{0}-{1}', github.workflow, github.ref) }}
   cancel-in-progress: true
 
