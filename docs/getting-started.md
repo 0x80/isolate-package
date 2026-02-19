@@ -89,7 +89,7 @@ inside them that should be flat.
 
 Run `pnpm install isolate-package -D` or the equivalent for `npm` or `yarn`.
 
-I recommended using `pnpm` over `npm` or `yarn`. Besides being fast and
+I recommend using `pnpm` over `npm` or `yarn`. Besides being fast and
 efficient, PNPM has better support for monorepos.
 
 ## Usage
