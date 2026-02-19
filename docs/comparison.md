@@ -27,13 +27,13 @@ support.
 
 ## Key differences
 
-| | **pnpm deploy** | **isolate-package** |
-| --- | --- | --- |
-| Package managers | PNPM only | NPM, PNPM, Yarn, Bun |
-| Output | Installed `node_modules` | Manifests + pruned lockfile |
-| Install step | Performed during deploy | Performed by deployment target |
-| Firebase compatible | No | Yes |
-| Lockfile included | No | Yes |
+|                     | **pnpm deploy**          | **isolate-package**            |
+| ------------------- | ------------------------ | ------------------------------ |
+| Package managers    | PNPM only                | NPM, PNPM, Yarn, Bun           |
+| Output              | Installed `node_modules` | Manifests + pruned lockfile    |
+| Install step        | Performed during deploy  | Performed by deployment target |
+| Firebase compatible | No                       | Yes                            |
+| Lockfile included   | No                       | Yes                            |
 
 ## Firebase compatibility
 
