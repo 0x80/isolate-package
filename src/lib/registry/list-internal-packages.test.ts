@@ -169,8 +169,8 @@ describe("listInternalPackages", () => {
     );
   });
 
-  it("should detect a longer cycle and log a warning", () => {
-    /** A depends on B, B depends on C, C depends on B */
+  it("should detect a cycle in nested dependencies and log a warning", () => {
+    /** App depends on A, A depends on B, B depends on C, C depends on B */
     const cManifest: PackageManifest = {
       name: "c",
       version: "1.0.0",
