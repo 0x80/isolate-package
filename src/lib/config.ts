@@ -90,9 +90,15 @@ function loadTsConfig(filePath: string): IsolateConfig {
 
     return parsed;
   } catch (error) {
-    throw new Error(`Failed to load config from ${filePath}`, {
-      cause: error,
-    });
+    const stderr =
+      error instanceof Error && "stderr" in error
+        ? String(error.stderr).trim()
+        : "";
+    const detail = stderr || (error instanceof Error ? error.message : "");
+    throw new Error(
+      `Failed to load config from ${filePath}${detail ? `: ${detail}` : ""}`,
+      { cause: error },
+    );
   }
 }
 
