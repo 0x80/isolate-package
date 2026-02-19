@@ -161,7 +161,12 @@ describe("serializeWithTrailingCommas", () => {
   });
 
   it("should handle boolean and null values", () => {
-    const input = { enabled: true, disabled: false, empty: null, list: [true, null, 42] };
+    const input = {
+      enabled: true,
+      disabled: false,
+      empty: null,
+      list: [true, null, 42],
+    };
     const result = serializeWithTrailingCommas(input);
     /** Trailing commas after each value type */
     expect(result).toContain("true,");
