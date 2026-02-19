@@ -78,7 +78,8 @@ If you are here to improve your Firebase deployments check out the
 ## Troubleshooting
 
 If something is not working as expected, run `npx isolate --log-level debug` or
-add an `isolate.config.json` file with `"logLevel"` set to `"debug"`. This
+add an `isolate.config.json` (or `.ts` / `.js`) file with `logLevel` set to
+`"debug"`. This
 should give you detailed feedback in the console.
 
 In addition define an environment variable to debug the configuration being used
@@ -177,7 +178,7 @@ inside them that should be flat.
 ## CLI Flags
 
 All configuration options can be passed as CLI flags, which take precedence over
-values in `isolate.config.json`. Run `npx isolate --help` for the full list.
+values in the config file. Run `npx isolate --help` for the full list.
 
 | Flag                           | Short | Type     | Config Key               |
 | ------------------------------ | ----- | -------- | ------------------------ |
@@ -203,10 +204,27 @@ Boolean flags support `--no-` negation, for example: `--no-force-npm`.
 
 For most users no configuration should be necessary.
 
-You can configure the isolate process by placing a `isolate.config.json` file in
-the package that you want to isolate, except when you're
+You can configure the isolate process by placing a config file in the package
+that you want to isolate, except when you're
 [deploying to Firebase from the root of the workspace](#deploying-firebase-from-the-root).
 Alternatively, all options can be set via [CLI flags](#cli-flags).
+
+The following config file formats are supported (in order of precedence):
+
+- `isolate.config.ts` — TypeScript (requires Node 22.6+ for native TS support)
+- `isolate.config.js` — JavaScript (ESM)
+- `isolate.config.json` — JSON
+
+TypeScript and JavaScript config files should use a default export. You can use
+the `defineConfig` helper for type checking:
+
+```ts
+import { defineConfig } from "isolate-package";
+
+export default defineConfig({
+  workspaceRoot: "../..",
+});
+```
 
 For the config file to be picked up, you will have to execute `isolate` from the
 same location, as it uses the current working directory.
@@ -390,8 +408,8 @@ await isolate({
 });
 ```
 
-If no configuration is passed in, the process will try to read
-`isolate.config.json` from the current working directory.
+If no configuration is passed in, the process will try to read from
+`isolate.config.{ts,js,json}` in the current working directory.
 
 ### getInternalPackageNames
 
