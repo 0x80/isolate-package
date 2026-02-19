@@ -237,9 +237,49 @@ describe("listInternalPackages", () => {
     const withDev = listInternalPackages(appManifest, registry, {
       includeDevDependencies: true,
     });
-    expect(withDev).toEqual(expect.arrayContaining(["dev-lib"]));
+    expect(withDev).toEqual(["dev-lib"]);
     expect(mockWarn).toHaveBeenCalledWith(
       expect.stringContaining("Circular dependency detected"),
     );
+  });
+
+  it("should handle name clash where internal package shares a name with an external dependency", () => {
+    /**
+     * Simulates the scenario from issue #138: an internal package named
+     * "config" exists in the workspace, while another package depends on the
+     * npm "config" package. Because both resolve to the same name in the
+     * registry, the tool follows a false internal reference and hits a cycle.
+     */
+    const configManifest: PackageManifest = {
+      name: "config",
+      version: "1.0.0",
+    };
+
+    const serverManifest: PackageManifest = {
+      name: "server",
+      version: "1.0.0",
+      /** References the npm "config" package, not the workspace one */
+      dependencies: { config: "^3.0.0" },
+    };
+
+    const appManifest: PackageManifest = {
+      name: "app",
+      version: "1.0.0",
+      dependencies: { server: "workspace:*", config: "workspace:*" },
+    };
+
+    const registry: PackagesRegistry = {
+      app: entry(appManifest),
+      server: entry(serverManifest),
+      config: entry(configManifest),
+    };
+
+    const result = listInternalPackages(appManifest, registry);
+    expect(result).toEqual(
+      expect.arrayContaining(["server", "config"]),
+    );
+    expect(result).toHaveLength(2);
+    /** "config" is already visited when server references it — no cycle */
+    expect(mockWarn).not.toHaveBeenCalled();
   });
 });

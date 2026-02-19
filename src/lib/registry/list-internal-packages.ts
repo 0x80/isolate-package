@@ -5,7 +5,7 @@ import type { PackageManifest, PackagesRegistry } from "../types";
 /**
  * Recursively collect internal packages, tracking visited nodes and the current
  * ancestor chain to detect cycles. When a cycle is detected, the package is
- * still included in the result but recursion is stopped and a warning is logged.
+ * excluded from the result, recursion is stopped, and a warning is logged.
  */
 function collectInternalPackages(
   manifest: PackageManifest,
@@ -28,10 +28,8 @@ function collectInternalPackages(
   const result: string[] = [];
 
   for (const packageName of internalPackageNames) {
-    result.push(packageName);
-
     if (ancestors.has(packageName)) {
-      /** Cycle detected — log a warning and skip recursion */
+      /** Cycle detected — log a warning, skip adding and recursion */
       const log = useLogger();
       log.warn(
         `Circular dependency detected: "${packageName}" depends on itself through the dependency chain. This is likely caused by a workspace package name clashing with an external npm dependency.`,
@@ -39,8 +37,10 @@ function collectInternalPackages(
       continue;
     }
 
+    result.push(packageName);
+
     if (visited.has(packageName)) {
-      /** Already fully processed (diamond dependency) — skip silently */
+      /** Already fully processed (diamond dependency) — skip recursion */
       continue;
     }
 
@@ -76,7 +76,7 @@ export function listInternalPackages(
   { includeDevDependencies = false } = {},
 ): string[] {
   const visited = new Set<string>();
-  const ancestors = new Set<string>();
+  const ancestors = new Set<string>(manifest.name ? [manifest.name] : []);
 
   const result = collectInternalPackages(
     manifest,
