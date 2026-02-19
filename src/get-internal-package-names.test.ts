@@ -185,4 +185,29 @@ describe("getInternalPackageNames", () => {
     const result = await getInternalPackageNames({ workspaceRoot: "../.." });
     expect(result).toEqual([]);
   });
+
+  it("loads config from isolate.config.json when no config is passed", async () => {
+    const targetDir = await createWorkspace(tempDir, {
+      targetDeps: { "@test/shared": "0.0.0" },
+      targetDevDeps: { "@test/dev-tool": "0.0.0" },
+      packages: [
+        { name: "@test/shared", dir: "shared" },
+        { name: "@test/dev-tool", dir: "dev-tool" },
+      ],
+    });
+
+    /** Write config file with includeDevDependencies enabled */
+    await fs.writeJson(path.join(targetDir, "isolate.config.json"), {
+      workspaceRoot: "../..",
+      includeDevDependencies: true,
+    });
+
+    process.chdir(targetDir);
+
+    const result = await getInternalPackageNames();
+    expect(result).toEqual(
+      expect.arrayContaining(["@test/shared", "@test/dev-tool"]),
+    );
+    expect(result).toHaveLength(2);
+  });
 });
