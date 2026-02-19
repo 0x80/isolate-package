@@ -4,7 +4,7 @@ export default defineConfig({
   title: "Isolate Package",
   description:
     "Isolate a monorepo workspace package into a self-contained directory with all internal dependencies and an adapted lockfile.",
-  base: "/isolate-package/",
+  base: "/",
   cleanUrls: true,
 
   themeConfig: {
