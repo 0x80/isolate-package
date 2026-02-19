@@ -1,7 +1,7 @@
 {
   "name": "isolate-package",
   "version": "1.27.0",
-  "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
+  "description": "Isolate monorepo packages to form a self-contained deployable unit",
   "keywords": [
     "ci",
     "deploy",
@@ -27,8 +27,7 @@
   },
   "files": [
     "src",
-    "dist",
-    "docs"
+    "dist"
   ],
   "type": "module",
   "types": "./dist/index.d.mts",
@@ -45,7 +44,10 @@
     "lint": "oxlint -c .oxlintrc.json --type-aware",
     "check-format": "oxfmt --check",
     "check-types": "tsc --noEmit",
-    "prepare": "pnpm check-types && pnpm build"
+    "prepare": "pnpm check-types && pnpm build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@npmcli/arborist": "^9.3.0",
@@ -81,6 +83,7 @@
     "oxlint-tsgolint": "^0.14.0",
     "tsdown": "0.20.3",
     "typescript": "6.0.0-beta",
+    "vitepress": "^1.6.3",
     "vitest": "^4.0.18"
   },
   "engines": {
