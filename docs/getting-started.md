@@ -16,20 +16,15 @@ How dependencies are listed with regards to versioning is not important, because
 packages are matched based on their name. For example the following flavors all
 work (some depending on your package manager):
 
-```jsonc
-// package.json
-{
-  "dependencies": {
-    "shared-package": "0.0.0",
-    "shared-package": "*",
-    "shared-package": "workspace:*",
-    "shared-package": "../shared-package",
-  },
-}
+```
+"shared-package": "0.0.0"
+"shared-package": "*"
+"shared-package": "workspace:*"
+"shared-package": "../shared-package"
 ```
 
-So if the a package name can be found as part of the workspace definition, it
-will be processed regardless of its version specifier.
+So if a package name can be found as part of the workspace definition, it will be
+processed regardless of its version specifier.
 
 ### Define "version" field in each package manifest
 
