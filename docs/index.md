@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "Isolate Package"
   text: "Deploy packages in isolation"
-  tagline: "Isolate monorepo packages to form a self-contained deployable unit."
+  tagline: "Isolate monorepo packages with their internal dependencies to form a self-contained deployable unit."
   actions:
     - theme: brand
       text: Get Started
