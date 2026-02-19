@@ -393,6 +393,38 @@ await isolate({
 If no configuration is passed in, the process will try to read
 `isolate.config.json` from the current working directory.
 
+### getInternalPackageNames
+
+Returns the list of internal workspace packages that the target package depends
+on. This is useful for tools like tsup that need to know which packages to
+bundle rather than treat as external.
+
+```ts
+import { getInternalPackageNames } from "isolate-package";
+
+const packageNames = await getInternalPackageNames();
+```
+
+It reads from `isolate.config.{ts,js,json}` in the current working directory,
+or you can pass a configuration object directly:
+
+```ts
+const packageNames = await getInternalPackageNames({
+  workspaceRoot: "../..",
+});
+```
+
+For example, in a tsup config:
+
+```ts
+import { defineConfig } from "tsup";
+import { getInternalPackageNames } from "isolate-package";
+
+export default defineConfig(async () => ({
+  noExternal: await getInternalPackageNames(),
+}));
+```
+
 ## The internal packages strategy
 
 An alternative approach to using internal dependencies in a Typescript monorepo
@@ -409,9 +441,9 @@ In summary this is how it works:
    package manifests of those dependencies point directly to the Typescript
    source (and types).
 2. You configure the bundler of your target package to include the source code
-   for those internal packages in its output bundle. In the case of TSUP for the
-   [API service in the mono-ts](https://github.com/0x80/mono-ts/blob/main/services/api/tsup.config.ts)
-   that configuration is: `noExternal: ["@mono/common"]`
+   for those internal packages in its output bundle. In the case of TSUP, you
+   can use [`getInternalPackageNames`](#getinternalpackagenames) for this:
+   `noExternal: await getInternalPackageNames()`
 3. When `isolate` runs, it does the same thing as always. It detects the
    internal packages, copies them to the isolate output folder and adjusts any
    links.
