@@ -46,7 +46,7 @@ vi.mock("~/lib/logger", () => ({
 
 const fs = vi.mocked((await import("fs-extra")).default);
 const { filterPatchedDependencies, readTypedJson } = vi.mocked(
-  await import("~/lib/utils")
+  await import("~/lib/utils"),
 );
 
 describe("copyPatches", () => {
@@ -146,7 +146,7 @@ describe("copyPatches", () => {
     expect(fs.ensureDir).toHaveBeenCalledWith("/workspace/isolate/patches");
     expect(fs.copy).toHaveBeenCalledWith(
       "/workspace/patches/lodash.patch",
-      "/workspace/isolate/patches/lodash.patch"
+      "/workspace/isolate/patches/lodash.patch",
     );
   });
 
@@ -190,7 +190,7 @@ describe("copyPatches", () => {
     });
     expect(fs.copy).toHaveBeenCalledWith(
       "/workspace/patches/vitest.patch",
-      "/workspace/isolate/patches/vitest.patch"
+      "/workspace/isolate/patches/vitest.patch",
     );
   });
 
@@ -303,11 +303,11 @@ describe("copyPatches", () => {
     expect(fs.copy).toHaveBeenCalledTimes(2);
     expect(fs.copy).toHaveBeenCalledWith(
       "/workspace/patches/v1/fix.patch",
-      "/workspace/isolate/patches/v1/fix.patch"
+      "/workspace/isolate/patches/v1/fix.patch",
     );
     expect(fs.copy).toHaveBeenCalledWith(
       "/workspace/patches/v2/fix.patch",
-      "/workspace/isolate/patches/v2/fix.patch"
+      "/workspace/isolate/patches/v2/fix.patch",
     );
   });
 
@@ -346,11 +346,11 @@ describe("copyPatches", () => {
       "lodash@4.17.21": { path: "some/nested/path/lodash.patch", hash: "" },
     });
     expect(fs.ensureDir).toHaveBeenCalledWith(
-      "/workspace/isolate/some/nested/path"
+      "/workspace/isolate/some/nested/path",
     );
     expect(fs.copy).toHaveBeenCalledWith(
       "/workspace/some/nested/path/lodash.patch",
-      "/workspace/isolate/some/nested/path/lodash.patch"
+      "/workspace/isolate/some/nested/path/lodash.patch",
     );
   });
 

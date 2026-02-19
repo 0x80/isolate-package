@@ -2,26 +2,34 @@
   "name": "isolate-package",
   "version": "1.27.0",
   "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
-  "author": "Thijs Koerselman",
-  "license": "MIT",
   "keywords": [
-    "monorepo",
-    "turborepo",
-    "workspaces",
-    "workspace",
-    "isolate",
-    "package",
-    "deploy",
-    "firebase",
     "ci",
+    "deploy",
     "docker",
+    "firebase",
+    "isolate",
+    "lockfile",
+    "monorepo",
+    "package",
     "prune",
-    "lockfile"
+    "turborepo",
+    "workspace",
+    "workspaces"
   ],
+  "license": "MIT",
+  "author": "Thijs Koerselman",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/0x80/isolate-package.git"
   },
+  "bin": {
+    "isolate": "dist/isolate-bin.mjs"
+  },
+  "files": [
+    "src",
+    "dist",
+    "docs"
+  ],
   "type": "module",
   "types": "./dist/index.d.mts",
   "exports": {
@@ -29,21 +37,13 @@
     "./isolate-bin": "./dist/isolate-bin.mjs",
     "./package.json": "./package.json"
   },
-  "files": [
-    "src",
-    "dist",
-    "docs"
-  ],
-  "bin": {
-    "isolate": "dist/isolate-bin.mjs"
-  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run",
-    "format": "prettier --write .",
+    "format": "oxfmt",
     "lint": "oxlint -c .oxlintrc.json --type-aware",
-    "check-format": "prettier --check .",
+    "check-format": "oxfmt --check",
     "check-types": "tsc --noEmit",
     "prepare": "pnpm check-types && pnpm build"
   },
@@ -56,8 +56,8 @@
     "fs-extra": "^11.3.3",
     "get-or-throw": "^2.1.0",
     "get-tsconfig": "^4.13.6",
-    "glob": "^13.0.2",
-    "meow": "^13.0.0",
+    "glob": "^13.0.5",
+    "meow": "^14.0.0",
     "outdent": "^0.8.0",
     "pnpm_lockfile_file_v8": "npm:@pnpm/lockfile-file@8",
     "pnpm_lockfile_file_v9": "npm:@pnpm/lockfile-file@9",
@@ -70,18 +70,17 @@
     "yaml": "^2.8.2"
   },
   "devDependencies": {
-    "@codecompose/typescript-config": "^2.3.0",
+    "@codecompose/typescript-config": "^3.0.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.2.3",
     "@types/npmcli__config": "^6.0.3",
     "@types/source-map-support": "^0.5.10",
     "@types/tar-fs": "^2.0.4",
-    "oxlint": "^1.47.0",
-    "oxlint-tsgolint": "^0.12.0",
-    "prettier": "^3.8.1",
-    "prettier-plugin-jsdoc": "^1.8.0",
+    "oxfmt": "^0.33.0",
+    "oxlint": "^1.48.0",
+    "oxlint-tsgolint": "^0.14.0",
     "tsdown": "0.20.3",
-    "typescript": "^5.9.3",
+    "typescript": "6.0.0-beta",
     "vitest": "^4.0.18"
   },
   "packageManager": "pnpm@9.0.0+sha256.bdfc9a7b372b5c462176993e586492603e20da5864d2f8881edc2462482c76fa"

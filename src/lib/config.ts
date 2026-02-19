@@ -49,7 +49,7 @@ export function loadConfigFromFile(): IsolateConfig {
 function validateConfig(config: IsolateConfig) {
   const log = useLogger();
   const foreignKeys = Object.keys(config).filter(
-    (key) => !validConfigKeys.includes(key)
+    (key) => !validConfigKeys.includes(key),
   );
 
   if (!isEmpty(foreignKeys)) {
@@ -58,7 +58,7 @@ function validateConfig(config: IsolateConfig) {
 }
 
 export function resolveConfig(
-  initialConfig?: IsolateConfig
+  initialConfig?: IsolateConfig,
 ): IsolateConfigResolved {
   setLogLevel(process.env.DEBUG_ISOLATE_CONFIG ? "debug" : "info");
   const log = useLogger();

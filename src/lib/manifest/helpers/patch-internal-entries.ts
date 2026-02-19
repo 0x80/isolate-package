@@ -6,7 +6,7 @@ import type { PackagesRegistry } from "../../types";
 export function patchInternalEntries(
   dependencies: Record<string, string>,
   packagesRegistry: PackagesRegistry,
-  parentRootRelativeDir?: string
+  parentRootRelativeDir?: string,
 ) {
   const log = useLogger();
   const allWorkspacePackageNames = Object.keys(packagesRegistry);
@@ -37,6 +37,6 @@ export function patchInternalEntries(
       } else {
         return [key, value];
       }
-    })
+    }),
   );
 }

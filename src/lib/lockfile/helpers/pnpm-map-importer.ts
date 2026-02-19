@@ -14,14 +14,14 @@ export function pnpmMapImporter(
   }: {
     includeDevDependencies: boolean;
     directoryByPackageName: { [packageName: string]: string };
-  }
+  },
 ): ProjectSnapshot {
   return {
     dependencies: dependencies
       ? pnpmMapDependenciesLinks(
           importerPath,
           dependencies,
-          directoryByPackageName
+          directoryByPackageName,
         )
       : undefined,
     devDependencies:
@@ -29,7 +29,7 @@ export function pnpmMapImporter(
         ? pnpmMapDependenciesLinks(
             importerPath,
             devDependencies,
-            directoryByPackageName
+            directoryByPackageName,
           )
         : undefined,
     ...rest,
@@ -44,7 +44,7 @@ export function pnpmMapImporter(
 function pnpmMapDependenciesLinks(
   importerPath: string,
   def: ResolvedDependencies,
-  directoryByPackageName: { [packageName: string]: string }
+  directoryByPackageName: { [packageName: string]: string },
 ): ResolvedDependencies {
   return Object.fromEntries(
     Object.entries(def).flatMap(([key, value]) => {
@@ -73,6 +73,6 @@ function pnpmMapDependenciesLinks(
         : `link:./${relativePath}`;
 
       return [[key, linkValue]];
-    })
+    }),
   );
 }

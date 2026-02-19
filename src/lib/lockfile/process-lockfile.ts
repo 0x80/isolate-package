@@ -69,7 +69,7 @@ export async function processLockfile({
         });
       } else {
         log.warn(
-          "Detected modern version of Yarn. Using NPM lockfile fallback."
+          "Detected modern version of Yarn. Using NPM lockfile fallback.",
         );
 
         await generateNpmLockfile({
@@ -98,7 +98,7 @@ export async function processLockfile({
     }
     case "bun": {
       log.warn(
-        `Ouput lockfiles for Bun are not yet supported. Using NPM for output`
+        `Ouput lockfiles for Bun are not yet supported. Using NPM for output`,
       );
       await generateNpmLockfile({
         workspaceRootDir,
@@ -110,7 +110,7 @@ export async function processLockfile({
     }
     default:
       log.warn(
-        `Unexpected package manager ${name as string}. Using NPM for output`
+        `Unexpected package manager ${name as string}. Using NPM for output`,
       );
       await generateNpmLockfile({
         workspaceRootDir,

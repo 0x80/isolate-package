@@ -32,7 +32,7 @@ export async function pack(srcDir: string, dstDir: string) {
             }
 
             resolve(stdout);
-          }
+          },
         );
       })
     : await new Promise<string>((resolve, reject) => {
@@ -45,7 +45,7 @@ export async function pack(srcDir: string, dstDir: string) {
             }
 
             resolve(stdout);
-          }
+          },
         );
       });
 
@@ -61,7 +61,7 @@ export async function pack(srcDir: string, dstDir: string) {
 
   if (!fs.existsSync(filePath)) {
     log.error(
-      `The response from pack could not be resolved to an existing file: ${filePath}`
+      `The response from pack could not be resolved to an existing file: ${filePath}`,
     );
   } else {
     log.debug(`Packed (temp)/${fileName}`);

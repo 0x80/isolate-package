@@ -39,7 +39,7 @@ export async function adaptInternalPackageManifests({
         ...strippedManifest,
         dependencies: await resolveCatalogDependencies(
           strippedManifest.dependencies,
-          workspaceRootDir
+          workspaceRootDir,
         ),
       };
 
@@ -59,8 +59,8 @@ export async function adaptInternalPackageManifests({
 
       await writeManifest(
         path.join(isolateDir, rootRelativeDir),
-        outputManifest
+        outputManifest,
       );
-    })
+    }),
   );
 }

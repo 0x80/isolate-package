@@ -13,7 +13,7 @@ vi.mock("~/lib/utils", () => ({
 }));
 
 const { isRushWorkspace, readTypedJson } = vi.mocked(
-  await import("~/lib/utils")
+  await import("~/lib/utils"),
 );
 
 describe("adoptPnpmFieldsFromRoot", () => {

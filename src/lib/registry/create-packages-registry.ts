@@ -13,19 +13,19 @@ import { findPackagesGlobs } from "./helpers";
  */
 export async function createPackagesRegistry(
   workspaceRootDir: string,
-  workspacePackagesOverride: string[] | undefined
+  workspacePackagesOverride: string[] | undefined,
 ): Promise<PackagesRegistry> {
   const log = useLogger();
 
   if (workspacePackagesOverride) {
     log.debug(
-      `Override workspace packages via config: ${workspacePackagesOverride.join(", ")}`
+      `Override workspace packages via config: ${workspacePackagesOverride.join(", ")}`,
     );
   }
 
   const allPackages = listWorkspacePackages(
     workspacePackagesOverride,
-    workspaceRootDir
+    workspaceRootDir,
   );
 
   const registry: PackagesRegistry = (
@@ -36,14 +36,14 @@ export async function createPackagesRegistry(
 
         if (!fs.existsSync(manifestPath)) {
           log.warn(
-            `Ignoring directory ${rootRelativeDir} because it does not contain a package.json file`
+            `Ignoring directory ${rootRelativeDir} because it does not contain a package.json file`,
           );
           return;
         } else {
           log.debug(`Registering package ${rootRelativeDir}`);
 
           const manifest = await readTypedJson<PackageManifest>(
-            path.join(absoluteDir, "package.json")
+            path.join(absoluteDir, "package.json"),
           );
 
           return {
@@ -52,7 +52,7 @@ export async function createPackagesRegistry(
             absoluteDir,
           };
         }
-      })
+      }),
     )
   ).reduce<PackagesRegistry>((acc, info) => {
     if (info) {
@@ -70,11 +70,11 @@ type RushConfig = {
 
 function listWorkspacePackages(
   workspacePackagesOverride: string[] | undefined,
-  workspaceRootDir: string
+  workspaceRootDir: string,
 ) {
   if (isRushWorkspace(workspaceRootDir)) {
     const rushConfig = readTypedJsonSync<RushConfig>(
-      path.join(workspaceRootDir, "rush.json")
+      path.join(workspaceRootDir, "rush.json"),
     );
 
     return rushConfig.projects.map(({ projectFolder }) => projectFolder);

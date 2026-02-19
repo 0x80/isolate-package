@@ -18,7 +18,7 @@ export function inferFromFiles(workspaceRoot: string): PackageManager {
       } catch (err) {
         throw new Error(
           `Failed to find package manager version for ${name}: ${getErrorMessage(err)}`,
-          { cause: err }
+          { cause: err },
         );
       }
     }

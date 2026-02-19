@@ -13,7 +13,7 @@ export function inferFromManifest(workspaceRoot: string) {
 
   const { packageManager: packageManagerString } =
     readTypedJsonSync<PackageManifest>(
-      path.join(workspaceRoot, "package.json")
+      path.join(workspaceRoot, "package.json"),
     );
 
   if (!packageManagerString) {
@@ -28,14 +28,14 @@ export function inferFromManifest(workspaceRoot: string) {
 
   assert(
     supportedPackageManagerNames.includes(name),
-    `Package manager "${name}" is not currently supported`
+    `Package manager "${name}" is not currently supported`,
   );
 
   const lockfileName = getLockfileFileName(name);
 
   assert(
     fs.existsSync(path.join(workspaceRoot, lockfileName)),
-    `Manifest declares ${name} to be the packageManager, but failed to find ${lockfileName} in workspace root`
+    `Manifest declares ${name} to be the packageManager, but failed to find ${lockfileName} in workspace root`,
   );
 
   return {

@@ -14,7 +14,7 @@ import { readTypedJson } from "~/lib/utils";
  */
 export async function resolveCatalogDependencies(
   dependencies: Record<string, string> | undefined,
-  workspaceRootDir: string
+  workspaceRootDir: string,
 ): Promise<Record<string, string> | undefined> {
   if (!dependencies) {
     return undefined;
@@ -61,12 +61,12 @@ export async function resolveCatalogDependencies(
 
       if (catalogVersion) {
         log.debug(
-          `Resolving catalog dependency ${packageName}: "${specifier}" -> "${catalogVersion}"`
+          `Resolving catalog dependency ${packageName}: "${specifier}" -> "${catalogVersion}"`,
         );
         resolved[packageName] = catalogVersion;
       } else {
         log.warn(
-          `Catalog dependency ${packageName} references "${specifier}" but it's not found in the catalog. Keeping original specifier.`
+          `Catalog dependency ${packageName} references "${specifier}" but it's not found in the catalog. Keeping original specifier.`,
         );
       }
     }

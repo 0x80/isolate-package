@@ -28,11 +28,11 @@ export async function copyPatches({
   let workspaceRootManifest: PackageManifest;
   try {
     workspaceRootManifest = await readTypedJson<PackageManifest>(
-      path.join(workspaceRootDir, "package.json")
+      path.join(workspaceRootDir, "package.json"),
     );
   } catch (error) {
     log.warn(
-      `Could not read workspace root package.json: ${error instanceof Error ? error.message : String(error)}`
+      `Could not read workspace root package.json: ${error instanceof Error ? error.message : String(error)}`,
     );
     return {};
   }
@@ -45,7 +45,7 @@ export async function copyPatches({
   }
 
   log.debug(
-    `Found ${Object.keys(patchedDependencies).length} patched dependencies in workspace`
+    `Found ${Object.keys(patchedDependencies).length} patched dependencies in workspace`,
   );
 
   const filteredPatches = filterPatchedDependencies({
@@ -69,7 +69,7 @@ export async function copyPatches({
 
     if (!fs.existsSync(sourcePatchPath)) {
       log.warn(
-        `Patch file not found: ${getRootRelativeLogPath(sourcePatchPath, workspaceRootDir)}`
+        `Patch file not found: ${getRootRelativeLogPath(sourcePatchPath, workspaceRootDir)}`,
       );
       continue;
     }
@@ -106,7 +106,7 @@ export async function copyPatches({
  * Since the file content is the same after copying, the hash remains valid.
  */
 async function readLockfilePatchedDependencies(
-  workspaceRootDir: string
+  workspaceRootDir: string,
 ): Promise<Record<string, PatchFile> | undefined> {
   try {
     const { majorVersion } = usePackageManager();

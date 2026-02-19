@@ -21,7 +21,7 @@ describe("validateManifestMandatoryFields", () => {
     };
 
     expect(() =>
-      validateManifestMandatoryFields(validManifest, packagePath)
+      validateManifestMandatoryFields(validManifest, packagePath),
     ).not.toThrow();
   });
 
@@ -32,7 +32,7 @@ describe("validateManifestMandatoryFields", () => {
     };
 
     expect(() =>
-      validateManifestMandatoryFields(devPackageManifest, packagePath, false)
+      validateManifestMandatoryFields(devPackageManifest, packagePath, false),
     ).not.toThrow();
   });
 
@@ -42,7 +42,7 @@ describe("validateManifestMandatoryFields", () => {
     } as PackageManifest;
 
     expect(() =>
-      validateManifestMandatoryFields(invalidDevManifest, packagePath, false)
+      validateManifestMandatoryFields(invalidDevManifest, packagePath, false),
     ).toThrow(/missing mandatory fields: version/);
   });
 
@@ -53,7 +53,7 @@ describe("validateManifestMandatoryFields", () => {
     } as PackageManifest;
 
     expect(() =>
-      validateManifestMandatoryFields(invalidManifest, packagePath)
+      validateManifestMandatoryFields(invalidManifest, packagePath),
     ).toThrow(/missing mandatory fields: version/);
   });
 
@@ -64,7 +64,7 @@ describe("validateManifestMandatoryFields", () => {
     } as PackageManifest;
 
     expect(() =>
-      validateManifestMandatoryFields(invalidManifest, packagePath)
+      validateManifestMandatoryFields(invalidManifest, packagePath),
     ).toThrow(/missing mandatory fields: files/);
   });
 
@@ -76,7 +76,7 @@ describe("validateManifestMandatoryFields", () => {
     };
 
     expect(() =>
-      validateManifestMandatoryFields(invalidManifest, packagePath)
+      validateManifestMandatoryFields(invalidManifest, packagePath),
     ).toThrow(/missing mandatory fields: files/);
   });
 
@@ -88,7 +88,7 @@ describe("validateManifestMandatoryFields", () => {
     };
 
     expect(() =>
-      validateManifestMandatoryFields(invalidManifest, packagePath)
+      validateManifestMandatoryFields(invalidManifest, packagePath),
     ).toThrow(/missing mandatory fields: files/);
   });
 
@@ -98,7 +98,7 @@ describe("validateManifestMandatoryFields", () => {
     } as PackageManifest;
 
     expect(() =>
-      validateManifestMandatoryFields(invalidManifest, packagePath)
+      validateManifestMandatoryFields(invalidManifest, packagePath),
     ).toThrow(/missing mandatory fields: version, files/);
   });
 
@@ -108,11 +108,11 @@ describe("validateManifestMandatoryFields", () => {
     } as PackageManifest;
 
     expect(() =>
-      validateManifestMandatoryFields(invalidManifest, packagePath)
+      validateManifestMandatoryFields(invalidManifest, packagePath),
     ).toThrow(/missing mandatory fields: version, files/);
 
     expect(() =>
-      validateManifestMandatoryFields(invalidManifest, packagePath)
+      validateManifestMandatoryFields(invalidManifest, packagePath),
     ).toThrow(/See the documentation for more details/);
   });
 });
