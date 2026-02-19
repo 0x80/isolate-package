@@ -31,6 +31,10 @@ export default defineConfig({
             text: "Patched Dependencies",
             link: "/patched-dependencies",
           },
+          {
+            text: "Comparison with pnpm deploy",
+            link: "/comparison",
+          },
           { text: "Troubleshooting", link: "/troubleshooting" },
         ],
       },
