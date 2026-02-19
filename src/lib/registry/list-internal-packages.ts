@@ -30,9 +30,10 @@ function collectInternalPackages(
   for (const packageName of internalPackageNames) {
     if (ancestors.has(packageName)) {
       /** Cycle detected — log a warning, skip adding and recursion */
+      const chain = [...ancestors, packageName].join(" → ");
       const log = useLogger();
       log.warn(
-        `Circular dependency detected: "${packageName}" depends on itself through the dependency chain. This is likely caused by a workspace package name clashing with an external npm dependency.`,
+        `Circular dependency detected: ${chain}. This is likely caused by a workspace package name clashing with an external npm dependency.`,
       );
       continue;
     }

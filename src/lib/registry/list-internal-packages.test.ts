@@ -163,8 +163,9 @@ describe("listInternalPackages", () => {
     const result = listInternalPackages(appManifest, registry);
     expect(result).toEqual(expect.arrayContaining(["a", "b"]));
     expect(result).toHaveLength(2);
+    /** Chain: app → a → b → a */
     expect(mockWarn).toHaveBeenCalledWith(
-      expect.stringContaining("Circular dependency detected"),
+      expect.stringContaining("app → a → b → a"),
     );
   });
 
@@ -204,8 +205,9 @@ describe("listInternalPackages", () => {
     const result = listInternalPackages(appManifest, registry);
     expect(result).toEqual(expect.arrayContaining(["a", "b", "c"]));
     expect(result).toHaveLength(3);
+    /** Chain: app → a → b → c → b */
     expect(mockWarn).toHaveBeenCalledWith(
-      expect.stringContaining("Circular dependency detected"),
+      expect.stringContaining("app → a → b → c → b"),
     );
   });
 
@@ -238,8 +240,9 @@ describe("listInternalPackages", () => {
       includeDevDependencies: true,
     });
     expect(withDev).toEqual(["dev-lib"]);
+    /** Chain: app → dev-lib → app */
     expect(mockWarn).toHaveBeenCalledWith(
-      expect.stringContaining("Circular dependency detected"),
+      expect.stringContaining("app → dev-lib → app"),
     );
   });
 
