@@ -31,11 +31,11 @@ concurrency:
 
 jobs:
   checks:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(inputs.bump, 'pre')
     uses: ./.github/workflows/checks.yml
 
   publish:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(inputs.bump, 'pre')
     needs: checks
     runs-on: ubuntu-latest
     # Authentication is handled via OIDC trusted publishing (id-token),
