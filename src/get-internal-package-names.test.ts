@@ -14,17 +14,20 @@ vi.mock("~/lib/logger", () => ({
   setLogLevel: vi.fn(),
 }));
 
+const packageManagerResult = {
+  name: "pnpm",
+  version: "9.0.0",
+  majorVersion: 9,
+};
+
+const mockDetectPackageManager = vi.fn(
+  (_workspaceRootDir: string) => packageManagerResult,
+);
+
 vi.mock("~/lib/package-manager", () => ({
-  usePackageManager: () => ({
-    name: "pnpm",
-    version: "9.0.0",
-    majorVersion: 9,
-  }),
-  detectPackageManager: vi.fn(() => ({
-    name: "pnpm",
-    version: "9.0.0",
-    majorVersion: 9,
-  })),
+  usePackageManager: () => packageManagerResult,
+  detectPackageManager: (workspaceRootDir: string) =>
+    mockDetectPackageManager(workspaceRootDir),
 }));
 
 /**
@@ -105,6 +108,7 @@ describe("getInternalPackageNames", () => {
 
     const result = await getInternalPackageNames({ workspaceRoot: "../.." });
     expect(result).toEqual(["@test/shared"]);
+    expect(mockDetectPackageManager).toHaveBeenCalled();
   });
 
   it("excludes devDependencies by default", async () => {
