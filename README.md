@@ -24,7 +24,7 @@ Run the command from the monorepo package you would like to isolate.
 ## Documentation
 
 For full documentation visit
-[0x80.github.io/isolate-package](https://0x80.github.io/isolate-package/).
+[isolate-package.codecompose.dev](https://isolate-package.codecompose.dev/).
 
 ## License
 

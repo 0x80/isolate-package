@@ -23,8 +23,8 @@ work (some depending on your package manager):
     "shared-package": "0.0.0",
     "shared-package": "*",
     "shared-package": "workspace:*",
-    "shared-package": "../shared-package"
-  }
+    "shared-package": "../shared-package",
+  },
 }
 ```
 
@@ -62,7 +62,7 @@ directory. For example:
 ```jsonc
 // package.json
 {
-  "files": ["dist"]
+  "files": ["dist"],
 }
 ```
 

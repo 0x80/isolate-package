@@ -91,8 +91,8 @@ Here's an example using [Turborepo](https://turbo.build/):
 {
   "functions": {
     "source": "./isolate",
-    "predeploy": ["turbo build", "isolate"]
-  }
+    "predeploy": ["turbo build", "isolate"],
+  },
 }
 ```
 
@@ -118,7 +118,7 @@ the monorepo you will have to place a configuration file called
 ```jsonc
 // isolate.config.json
 {
-  "targetPackagePath": "./packages/your-firebase-package"
+  "targetPackagePath": "./packages/your-firebase-package",
 }
 ```
 
@@ -129,7 +129,7 @@ The Firebase configuration should then look something like this:
 {
   "functions": {
     "source": "./packages/your-firebase-package/isolate",
-    "predeploy": ["turbo build", "isolate"]
-  }
+    "predeploy": ["turbo build", "isolate"],
+  },
 }
 ```
