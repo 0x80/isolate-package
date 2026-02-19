@@ -22,7 +22,7 @@ target package, its internal dependencies as `file:` references, and a pruned
 lockfile. No install is performed — the deployment target is expected to run its
 own `install` step.
 
-It works with PNPM, NPM, Bun, and Yarn (classic and modern).
+It works with PNPM, NPM, Bun, and Yarn.
 
 ## Key differences
 
