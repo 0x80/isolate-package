@@ -197,7 +197,8 @@ export function createIsolator(config?: IsolateConfig) {
      * dependencies are a pnpm-specific feature.
      */
     const shouldCopyPatches =
-      packageManager.name === "pnpm" && !config.forceNpm;
+      (packageManager.name === "pnpm" || packageManager.name === "bun") &&
+      !config.forceNpm;
 
     const copiedPatches = shouldCopyPatches
       ? await copyPatches({
@@ -291,6 +292,18 @@ export function createIsolator(config?: IsolateConfig) {
       }
     }
 
+    if (packageManager.name === "bun" && !config.forceNpm) {
+      /** Add workspaces field to the manifest so Bun treats the isolate as a workspace */
+      const manifest = await readManifest(isolateDir);
+      const workspaceGlobs = unique(
+        internalPackageNames.map(
+          (name) => path.parse(got(packagesRegistry, name).rootRelativeDir).dir,
+        ),
+      ).map((x) => path.join(x, "/*"));
+      manifest.workspaces = workspaceGlobs;
+      await writeManifest(isolateDir, manifest);
+    }
+
     /**
      * If there is an .npmrc file in the workspace root, copy it to the isolate
      * because the settings there could affect how the lockfile is resolved.
@@ -303,6 +316,13 @@ export function createIsolator(config?: IsolateConfig) {
     if (fs.existsSync(npmrcPath)) {
       fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
       log.debug("Copied .npmrc file to the isolate output");
+    }
+
+    const bunfigPath = path.join(workspaceRootDir, "bunfig.toml");
+
+    if (fs.existsSync(bunfigPath)) {
+      fs.copyFileSync(bunfigPath, path.join(isolateDir, "bunfig.toml"));
+      log.debug("Copied bunfig.toml file to the isolate output");
     }
 
     /**

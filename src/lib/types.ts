@@ -11,6 +11,7 @@ export interface PatchFile {
 
 export type PackageManifest = PnpmPackageManifest & {
   packageManager?: string;
+  workspaces?: string[];
   pnpm?: {
     patchedDependencies?: Record<string, string>;
     [key: string]: unknown;

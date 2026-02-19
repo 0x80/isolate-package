@@ -34,16 +34,6 @@ vi.mock("pnpm_lockfile_file_v9", () => ({
   readWantedLockfile: vi.fn(() => Promise.resolve(null)),
 }));
 
-/** Mock the logger */
-vi.mock("~/lib/logger", () => ({
-  useLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  }),
-}));
-
 const fs = vi.mocked((await import("fs-extra")).default);
 const { filterPatchedDependencies, readTypedJson } = vi.mocked(
   await import("~/lib/utils"),
