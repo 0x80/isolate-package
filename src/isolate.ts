@@ -318,11 +318,13 @@ export function createIsolator(config?: IsolateConfig) {
       log.debug("Copied .npmrc file to the isolate output");
     }
 
-    const bunfigPath = path.join(workspaceRootDir, "bunfig.toml");
+    if (packageManager.name === "bun") {
+      const bunfigPath = path.join(workspaceRootDir, "bunfig.toml");
 
-    if (fs.existsSync(bunfigPath)) {
-      fs.copyFileSync(bunfigPath, path.join(isolateDir, "bunfig.toml"));
-      log.debug("Copied bunfig.toml file to the isolate output");
+      if (fs.existsSync(bunfigPath)) {
+        fs.copyFileSync(bunfigPath, path.join(isolateDir, "bunfig.toml"));
+        log.debug("Copied bunfig.toml file to the isolate output");
+      }
     }
 
     /**
