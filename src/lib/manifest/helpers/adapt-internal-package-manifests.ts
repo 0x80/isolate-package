@@ -44,10 +44,11 @@ export async function adaptInternalPackageManifests({
       };
 
       const outputManifest =
-        packageManager.name === "pnpm" && !forceNpm
+        (packageManager.name === "pnpm" || packageManager.name === "bun") &&
+        !forceNpm
           ? /**
-             * For PNPM the output itself is a workspace so we can preserve the specifiers
-             * with "workspace:*" in the output manifest.
+             * For PNPM and Bun the output itself is a workspace so we can preserve
+             * the specifiers with "workspace:*" in the output manifest.
              */
             manifestWithResolvedCatalogs
           : /** For other package managers we replace the links to internal dependencies */
