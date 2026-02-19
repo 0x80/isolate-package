@@ -40,22 +40,26 @@ const configDefaults: IsolateConfigResolved = {
 
 const validConfigKeys = Object.keys(configDefaults);
 const CONFIG_FILE_NAME_TS = "isolate.config.ts";
+const CONFIG_FILE_NAME_JS = "isolate.config.js";
 const CONFIG_FILE_NAME_JSON = "isolate.config.json";
 
 /**
- * Load a TypeScript config file by spawning a Node subprocess with
- * --experimental-strip-types. This keeps the function synchronous while
- * allowing us to import the TS module.
+ * Load a JS or TS config file by spawning a Node subprocess. For TS files,
+ * --experimental-strip-types is added so Node can handle TypeScript natively.
+ * This keeps the function synchronous while allowing us to import the module.
  */
-function loadTsConfig(filePath: string): IsolateConfig {
+const CONFIG_JSON_DELIMITER = "__ISOLATE_CONFIG_JSON__";
+
+function loadModuleConfig(filePath: string): IsolateConfig {
   const fileUrl = pathToFileURL(filePath).href;
+  const isTypeScript = filePath.endsWith(".ts");
   const script = `import(process.argv[1])
     .then(m => {
       if (m.default === undefined) {
         process.stderr.write("Config file has no default export");
         process.exit(1);
       }
-      process.stdout.write(JSON.stringify(m.default));
+      process.stdout.write("${CONFIG_JSON_DELIMITER}" + JSON.stringify(m.default) + "${CONFIG_JSON_DELIMITER}");
     })
     .catch(err => {
       process.stderr.write(String(err));
@@ -66,7 +70,7 @@ function loadTsConfig(filePath: string): IsolateConfig {
     const result = execFileSync(
       process.execPath,
       [
-        "--experimental-strip-types",
+        ...(isTypeScript ? ["--experimental-strip-types"] : []),
         "--no-warnings",
         "--input-type=module",
         "-e",
@@ -76,7 +80,13 @@ function loadTsConfig(filePath: string): IsolateConfig {
       { encoding: "utf8" },
     );
 
-    const parsed = JSON.parse(result);
+    const jsonMatch = result.split(CONFIG_JSON_DELIMITER)[1];
+
+    if (jsonMatch === undefined) {
+      throw new Error("Failed to extract config JSON from subprocess output");
+    }
+
+    const parsed = JSON.parse(jsonMatch);
 
     if (
       typeof parsed !== "object" ||
@@ -104,20 +114,33 @@ function loadTsConfig(filePath: string): IsolateConfig {
 
 export function loadConfigFromFile(): IsolateConfig {
   const log = useLogger();
-  const tsConfigPath = path.join(process.cwd(), CONFIG_FILE_NAME_TS);
-  const jsonConfigPath = path.join(process.cwd(), CONFIG_FILE_NAME_JSON);
+  const cwd = process.cwd();
+  const tsConfigPath = path.join(cwd, CONFIG_FILE_NAME_TS);
+  const jsConfigPath = path.join(cwd, CONFIG_FILE_NAME_JS);
+  const jsonConfigPath = path.join(cwd, CONFIG_FILE_NAME_JSON);
 
   const tsExists = fs.existsSync(tsConfigPath);
+  const jsExists = fs.existsSync(jsConfigPath);
   const jsonExists = fs.existsSync(jsonConfigPath);
 
-  if (tsExists && jsonExists) {
+  const existingFiles = [
+    tsExists && CONFIG_FILE_NAME_TS,
+    jsExists && CONFIG_FILE_NAME_JS,
+    jsonExists && CONFIG_FILE_NAME_JSON,
+  ].filter(Boolean);
+
+  if (existingFiles.length > 1) {
     log.warn(
-      `Found both ${CONFIG_FILE_NAME_TS} and ${CONFIG_FILE_NAME_JSON}. Using ${CONFIG_FILE_NAME_TS}.`,
+      `Found multiple config files: ${existingFiles.join(", ")}. Using ${existingFiles[0]}.`,
     );
   }
 
   if (tsExists) {
-    return loadTsConfig(tsConfigPath);
+    return loadModuleConfig(tsConfigPath);
+  }
+
+  if (jsExists) {
+    return loadModuleConfig(jsConfigPath);
   }
 
   if (jsonExists) {

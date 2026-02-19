@@ -81,7 +81,20 @@ describe("loadConfigFromFile", () => {
     expect(config).toEqual({ isolateDirName: "defined" });
   });
 
-  it("prefers TypeScript config and warns when both exist", async () => {
+  it("loads a JavaScript config file", async () => {
+    await fs.writeFile(
+      path.join(tempDir, "isolate.config.js"),
+      `export default { isolateDirName: "from-js", workspaceRoot: "../.." };`,
+    );
+
+    const config = loadConfigFromFile();
+    expect(config).toEqual({
+      isolateDirName: "from-js",
+      workspaceRoot: "../..",
+    });
+  });
+
+  it("prefers TypeScript config and warns when multiple exist", async () => {
     await fs.writeJson(path.join(tempDir, "isolate.config.json"), {
       isolateDirName: "from-json",
     });
@@ -93,7 +106,23 @@ describe("loadConfigFromFile", () => {
     const config = loadConfigFromFile();
     expect(config).toEqual({ isolateDirName: "from-ts" });
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Found both"),
+      expect.stringContaining("Found multiple config files"),
+    );
+  });
+
+  it("prefers JavaScript config over JSON", async () => {
+    await fs.writeJson(path.join(tempDir, "isolate.config.json"), {
+      isolateDirName: "from-json",
+    });
+    await fs.writeFile(
+      path.join(tempDir, "isolate.config.js"),
+      `export default { isolateDirName: "from-js" };`,
+    );
+
+    const config = loadConfigFromFile();
+    expect(config).toEqual({ isolateDirName: "from-js" });
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("Found multiple config files"),
     );
   });
 
