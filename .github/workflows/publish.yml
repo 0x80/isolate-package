@@ -19,6 +19,10 @@ on:
         description: "Prerelease identifier (alpha, beta, rc). Only used with pre* bumps."
         required: false
         type: string
+      explicit_version:
+        description: "Explicit version (e.g. 2.0.0-beta.1). Overrides bump and preid when set."
+        required: false
+        type: string
       dry_run:
         description: "Dry run — skip publish, push, and release"
         required: false
@@ -31,11 +35,11 @@ concurrency:
 
 jobs:
   checks:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(inputs.bump, 'pre') || inputs.explicit_version != ''
     uses: ./.github/workflows/checks.yml
 
   publish:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(inputs.bump, 'pre') || inputs.explicit_version != ''
     needs: checks
     runs-on: ubuntu-latest
     # Authentication is handled via OIDC trusted publishing (id-token),
@@ -86,13 +90,17 @@ jobs:
         env:
           BUMP: ${{ inputs.bump }}
           PREID: ${{ inputs.preid }}
+          EXPLICIT_VERSION: ${{ inputs.explicit_version }}
         run: |
-          ARGS=("$BUMP")
-          if [[ "$BUMP" == pre* && -n "$PREID" ]]; then
-            ARGS+=(--preid "$PREID")
+          if [[ -n "$EXPLICIT_VERSION" ]]; then
+            npm version "$EXPLICIT_VERSION" --git-tag-version true
+          else
+            ARGS=("$BUMP")
+            if [[ "$BUMP" == pre* && -n "$PREID" ]]; then
+              ARGS+=(--preid "$PREID")
+            fi
+            npm version "${ARGS[@]}" --git-tag-version true
           fi
-
-          npm version "${ARGS[@]}" --git-tag-version true
 
           VERSION=$(node -p "require('./package.json').version")
           TAG="v${VERSION}"
