@@ -13,10 +13,14 @@ vi.mock("fs-extra", () => ({
 }));
 
 /** Mock the utils */
-vi.mock("~/lib/utils", () => ({
-  getErrorMessage: vi.fn((err: Error) => err.message),
-  readTypedJsonSync: vi.fn(),
-}));
+vi.mock("~/lib/utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("~/lib/utils")>();
+  return {
+    getErrorMessage: vi.fn((err: Error) => err.message),
+    getPackageName: actual.getPackageName,
+    readTypedJsonSync: vi.fn(),
+  };
+});
 
 const fs = vi.mocked((await import("fs-extra")).default);
 const { readTypedJsonSync } = vi.mocked(await import("~/lib/utils"));

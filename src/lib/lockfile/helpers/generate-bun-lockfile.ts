@@ -3,7 +3,11 @@ import { got } from "get-or-throw";
 import path from "node:path";
 import { useLogger } from "~/lib/logger";
 import type { PackagesRegistry } from "~/lib/types";
-import { getErrorMessage, readTypedJsonSync } from "~/lib/utils";
+import {
+  getErrorMessage,
+  getPackageName,
+  readTypedJsonSync,
+} from "~/lib/utils";
 
 type BunWorkspaceEntry = {
   name?: string;
@@ -315,12 +319,7 @@ export async function generateBunLockfile({
       for (const [spec, patchPath] of Object.entries(
         lockfile.patchedDependencies,
       )) {
-        /**
-         * The key format is "package@version" - extract the package name to
-         * check if it's in the filtered packages
-         */
-        const atIndex = spec.lastIndexOf("@");
-        const packageName = atIndex > 0 ? spec.slice(0, atIndex) : spec;
+        const packageName = getPackageName(spec);
         if (filteredPackages[packageName] !== undefined) {
           outputPatches[spec] = patchPath;
         }
