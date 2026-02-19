@@ -56,7 +56,10 @@ async function createWorkspace(
   );
 
   /** Write a pnpm lockfile so package manager detection works */
-  await fs.writeFile(path.join(rootDir, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
+  await fs.writeFile(
+    path.join(rootDir, "pnpm-lock.yaml"),
+    "lockfileVersion: '9.0'\n",
+  );
 
   /** Write target package manifest */
   await fs.ensureDir(targetDir);
