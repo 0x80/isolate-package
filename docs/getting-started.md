@@ -95,7 +95,7 @@ efficient, PNPM has better support for monorepos.
 ## Usage
 
 ::: warning
-If you plan use this for Firebase deployments, and you want to preserve live
+If you plan to use this for Firebase deployments, and you want to preserve live
 code updates when running the local emulators, you will want to use
 [firebase-tools-with-isolate](https://github.com/0x80/firebase-tools-with-isolate)
 instead.
