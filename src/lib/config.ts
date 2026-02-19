@@ -50,22 +50,38 @@ const CONFIG_FILE_NAME_JSON = "isolate.config.json";
 function loadTsConfig(filePath: string): IsolateConfig {
   const fileUrl = pathToFileURL(filePath).href;
   const script = `import(process.argv[1])
-    .then(m => process.stdout.write(JSON.stringify(m.default)))`;
+    .then(m => {
+      if (m.default === undefined) {
+        process.stderr.write("Config file has no default export");
+        process.exit(1);
+      }
+      process.stdout.write(JSON.stringify(m.default));
+    })
+    .catch(err => {
+      process.stderr.write(String(err));
+      process.exit(1);
+    })`;
 
-  const result = execFileSync(
-    process.execPath,
-    [
-      "--experimental-strip-types",
-      "--no-warnings",
-      "--input-type=module",
-      "-e",
-      script,
-      fileUrl,
-    ],
-    { encoding: "utf8" },
-  );
+  try {
+    const result = execFileSync(
+      process.execPath,
+      [
+        "--experimental-strip-types",
+        "--no-warnings",
+        "--input-type=module",
+        "-e",
+        script,
+        fileUrl,
+      ],
+      { encoding: "utf8" },
+    );
 
-  return JSON.parse(result);
+    return JSON.parse(result);
+  } catch (error) {
+    throw new Error(`Failed to load config from ${filePath}`, {
+      cause: error,
+    });
+  }
 }
 
 export function loadConfigFromFile(): IsolateConfig {

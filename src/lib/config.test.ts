@@ -97,20 +97,13 @@ describe("loadConfigFromFile", () => {
     );
   });
 
-  it("throws on malformed TypeScript config", async () => {
+  it("throws when the config file has no default export", async () => {
     await fs.writeFile(
       path.join(tempDir, "isolate.config.ts"),
-      `export default "not an object";`,
+      `export const config = { isolateDirName: "oops" };`,
     );
 
-    /**
-     * JSON.parse will fail because the subprocess writes a JSON string
-     * value instead of an object, but it's still valid JSON. The real
-     * failure would come from validateConfig or the consumer. Here we
-     * just verify it doesn't crash and returns whatever the file exports.
-     */
-    const config = loadConfigFromFile();
-    expect(config).toBe("not an object");
+    expect(() => loadConfigFromFile()).toThrow("Failed to load config from");
   });
 
   it("throws when the TypeScript file has a syntax error", async () => {
@@ -119,7 +112,7 @@ describe("loadConfigFromFile", () => {
       `export default {{{`,
     );
 
-    expect(() => loadConfigFromFile()).toThrow();
+    expect(() => loadConfigFromFile()).toThrow("Failed to load config from");
   });
 });
 
