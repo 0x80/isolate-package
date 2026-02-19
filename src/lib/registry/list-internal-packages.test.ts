@@ -275,9 +275,7 @@ describe("listInternalPackages", () => {
     };
 
     const result = listInternalPackages(appManifest, registry);
-    expect(result).toEqual(
-      expect.arrayContaining(["server", "config"]),
-    );
+    expect(result).toEqual(expect.arrayContaining(["server", "config"]));
     expect(result).toHaveLength(2);
     /** "config" is already visited when server references it — no cycle */
     expect(mockWarn).not.toHaveBeenCalled();
