@@ -54,7 +54,7 @@ By setting this option to `true` you are forcing the isolate output to use NPM.
 A package-lock file will be generated based on the contents of node_modules and
 therefore should match the versions in your original lockfile.
 
-This way you can enjoy using PNPM, Yarn, or Bun for your monorepo, while your
+This way you can enjoy using PNPM, Bun, or Yarn for your monorepo, while your
 deployment requires NPM.
 
 ### buildDirName

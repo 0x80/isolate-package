@@ -87,8 +87,8 @@ inside them that should be flat.
 
 ## Installation
 
-Run `pnpm install isolate-package -D` or the equivalent for `npm`, `yarn`, or
-`bun`.
+Run `pnpm install isolate-package -D` or the equivalent for `npm`, `bun`, or
+`yarn`.
 
 ## Usage
 
