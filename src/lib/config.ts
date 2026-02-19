@@ -48,7 +48,8 @@ const CONFIG_FILE_NAME_JSON = "isolate.config.json";
  * allowing us to import the TS module.
  */
 function loadTsConfig(filePath: string): IsolateConfig {
-  const script = `import('${pathToFileURL(filePath).href}')
+  const fileUrl = pathToFileURL(filePath).href;
+  const script = `import(process.argv[1])
     .then(m => process.stdout.write(JSON.stringify(m.default)))`;
 
   const result = execFileSync(
@@ -59,6 +60,7 @@ function loadTsConfig(filePath: string): IsolateConfig {
       "--input-type=module",
       "-e",
       script,
+      fileUrl,
     ],
     { encoding: "utf8" },
   );
