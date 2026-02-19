@@ -4,8 +4,9 @@ import type { PackageManifest, PackagesRegistry } from "../types";
 
 /**
  * Recursively collect internal packages, tracking visited nodes and the current
- * ancestor chain to detect cycles. When a cycle is detected, the package is
- * excluded from the result, recursion is stopped, and a warning is logged.
+ * ancestor chain to detect cycles. When a cycle is detected, the cyclic
+ * reference is not followed, preventing infinite recursion, and a warning is
+ * logged.
  */
 function collectInternalPackages(
   manifest: PackageManifest,
