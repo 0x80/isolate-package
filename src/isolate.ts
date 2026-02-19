@@ -193,8 +193,8 @@ export function createIsolator(config?: IsolateConfig) {
 
     /**
      * Copy patch files before generating lockfile so the lockfile contains the
-     * correct paths. Only copy patches when output uses pnpm, since patched
-     * dependencies are a pnpm-specific feature.
+     * correct paths. Only copy patches when output uses pnpm or bun, since
+     * patched dependencies are stored in their lockfiles.
      */
     const shouldCopyPatches =
       (packageManager.name === "pnpm" || packageManager.name === "bun") &&
