@@ -246,29 +246,32 @@ describe("listInternalPackages", () => {
     );
   });
 
-  it("should handle name clash where internal package shares a name with an external dependency", () => {
+  it("should handle name clash that creates a false cycle (issue #138)", () => {
     /**
-     * Simulates the scenario from issue #138: an internal package named
-     * "config" exists in the workspace, while another package depends on the
-     * npm "config" package. Because both resolve to the same name in the
-     * registry, the tool follows a false internal reference and hits a cycle.
+     * Reproduces the crash from issue #138: internal "config" depends on
+     * "server", and "server" depends on the npm "config" package. Because
+     * both the internal and external package share the name "config", the
+     * tool misidentifies the external reference as internal, creating a
+     * cycle: config → server → config. Without cycle detection this causes
+     * "Maximum call stack size exceeded".
      */
     const configManifest: PackageManifest = {
       name: "config",
       version: "1.0.0",
+      dependencies: { server: "workspace:*" },
     };
 
     const serverManifest: PackageManifest = {
       name: "server",
       version: "1.0.0",
-      /** References the npm "config" package, not the workspace one */
+      /** Intended as npm "config", but misidentified as the internal one */
       dependencies: { config: "^3.0.0" },
     };
 
     const appManifest: PackageManifest = {
       name: "app",
       version: "1.0.0",
-      dependencies: { server: "workspace:*", config: "workspace:*" },
+      dependencies: { config: "workspace:*" },
     };
 
     const registry: PackagesRegistry = {
@@ -278,9 +281,11 @@ describe("listInternalPackages", () => {
     };
 
     const result = listInternalPackages(appManifest, registry);
-    expect(result).toEqual(expect.arrayContaining(["server", "config"]));
+    expect(result).toEqual(expect.arrayContaining(["config", "server"]));
     expect(result).toHaveLength(2);
-    /** "config" is already visited when server references it — no cycle */
-    expect(mockWarn).not.toHaveBeenCalled();
+    /** The false cycle config → server → config is detected and warned about */
+    expect(mockWarn).toHaveBeenCalledWith(
+      expect.stringContaining("app → config → server → config"),
+    );
   });
 });
