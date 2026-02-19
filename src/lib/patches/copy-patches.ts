@@ -37,7 +37,10 @@ export async function copyPatches({
     return {};
   }
 
-  const patchedDependencies = workspaceRootManifest.pnpm?.patchedDependencies;
+  /** PNPM stores patches under pnpm.patchedDependencies, Bun at the top level */
+  const patchedDependencies =
+    workspaceRootManifest.pnpm?.patchedDependencies ??
+    workspaceRootManifest.patchedDependencies;
 
   if (!patchedDependencies || Object.keys(patchedDependencies).length === 0) {
     log.debug("No patched dependencies found in workspace root package.json");
@@ -58,9 +61,15 @@ export async function copyPatches({
     return {};
   }
 
-  /** Read the lockfile to get the hashes for each patch */
+  /**
+   * Read the pnpm lockfile to get patch hashes. Bun doesn't store hashes in
+   * its lockfile so we skip this for Bun.
+   */
+  const { name: packageManagerName } = usePackageManager();
   const lockfilePatchedDependencies =
-    await readLockfilePatchedDependencies(workspaceRootDir);
+    packageManagerName === "pnpm"
+      ? await readLockfilePatchedDependencies(workspaceRootDir)
+      : undefined;
 
   const copiedPatches: Record<string, PatchFile> = {};
 
@@ -84,7 +93,7 @@ export async function copyPatches({
     const originalPatchFile = lockfilePatchedDependencies?.[packageSpec];
     const hash = originalPatchFile?.hash ?? "";
 
-    if (!hash) {
+    if (packageManagerName === "pnpm" && !hash) {
       log.warn(`No hash found for patch ${packageSpec} in lockfile`);
     }
 
