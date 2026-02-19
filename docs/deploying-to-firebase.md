@@ -22,7 +22,7 @@ related to Firebase.
 
 If you are not completely confident that your monorepo setup is solid, I advise
 you to check out my in-depth boilerplate at
-[mono-ts](https://github.com/0x80/mono-ts) where many different aspects are
+[typescript-monorepo](https://github.com/0x80/typescript-monorepo) where many different aspects are
 discussed and `isolate-package` is used to demonstrate Firebase deployments.
 
 ## Quick Start

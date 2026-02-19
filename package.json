@@ -1,7 +1,7 @@
 {
   "name": "isolate-package",
   "version": "1.27.0",
-  "description": "Isolate a monorepo package with its shared dependencies to form a self-contained directory, compatible with Firebase deploy",
+  "description": "Isolate monorepo packages to form a self-contained deployable unit",
   "keywords": [
     "ci",
     "deploy",

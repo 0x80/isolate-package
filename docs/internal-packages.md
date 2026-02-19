@@ -6,7 +6,7 @@ is
 in which the package manifest entries point directly to Typescript source files,
 to omit intermediate build steps. The approach is compatible with
 isolate-package and showcased in
-[my example monorepo setup](https://github.com/0x80/mono-ts).
+[my example monorepo setup](https://github.com/0x80/typescript-monorepo).
 
 ## How It Works
 

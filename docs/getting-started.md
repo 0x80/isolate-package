@@ -129,4 +129,4 @@ Run `npx isolate-package isolate` from the monorepo package you would like to
 isolate.
 
 If you would like to see an example of a modern monorepo with this tool
-integrated, check out [mono-ts](https://github.com/0x80/mono-ts).
+integrated, check out [typescript-monorepo](https://github.com/0x80/typescript-monorepo).
