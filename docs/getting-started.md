@@ -108,7 +108,7 @@ you build the package first.
 
 The `isolate` binary will try to infer your build output location from a
 `tsconfig` file, but see the [buildDirName configuration](/configuration#builddirname)
-if you are not using Typescript.
+if you are not using TypeScript.
 
 By default the isolated output will become available at `./isolate`.
 

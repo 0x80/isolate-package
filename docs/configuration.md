@@ -62,7 +62,7 @@ deployment requires NPM.
 Type: `string | undefined`, default: `undefined`
 
 The name of the build output directory name. When undefined it is automatically
-detected via `tsconfig.json`. When you are not using Typescript you can use this
+detected via `tsconfig.json`. When you are not using TypeScript you can use this
 setting to specify where the build output files are located.
 
 ### includeDevDependencies
@@ -130,7 +130,7 @@ Type: `string`, default: `"./tsconfig.json"`
 
 The path to the `tsconfig.json` file relative to the package you want to
 isolate. The tsconfig is only used for reading the `compilerOptions.outDir`
-setting. If no tsconfig is found, possibly because you are not using Typescript
+setting. If no tsconfig is found, possibly because you are not using TypeScript
 in your project, the process will fall back to the `buildDirName` setting.
 
 ### workspacePackages
