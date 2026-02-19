@@ -6,6 +6,8 @@ on:
     paths:
       - "docs/**"
       - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/docs.yml"
 
 permissions:
   contents: read
