@@ -1,19 +1,10 @@
-# Firebase
+# Deploying to Firebase
 
-<!-- TOC -->
-
-- [Motivation](#motivation)
-- [Example](#example)
-- [Quick Start](#quick-start)
-- [Firebase Tools With Isolate](#firebase-tools-with-isolate)
-- [Deploying from multiple packages](#deploying-from-multiple-packages)
-- [Deploying from the root](#deploying-from-the-root)
-
-<!-- /TOC -->
-
-> !! There is
-> [a fork of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate),
-> where isolate-package is integrated.
+::: tip
+There is
+[a fork of firebase-tools](https://github.com/0x80/firebase-tools-with-isolate),
+where isolate-package is integrated.
+:::
 
 ## Motivation
 
@@ -30,7 +21,7 @@ related to Firebase.
 ## Example
 
 If you are not completely confident that your monorepo setup is solid, I advise
-you to check out my in-dept boilerplate at
+you to check out my in-depth boilerplate at
 [mono-ts](https://github.com/0x80/mono-ts) where many different aspects are
 discussed and `isolate-package` is used to demonstrate Firebase deployments.
 
@@ -43,7 +34,7 @@ This section describes the steps required for Firebase deployment, assuming:
   deploy to Firebase, hereafter referred to as the "target package".
 
 If your setup diverges from a traditional one, please continue reading the
-[Prerequisites](../README.md#prerequisites) section.
+[prerequisites](/getting-started#prerequisites) section.
 
 1. In the target package, install `isolate-package` and `firebase-tools` by
    running `pnpm add isolate-package firebase-tools -D` or the Yarn / NPM
@@ -79,13 +70,13 @@ worry about things breaking. I will sync the fork with the upstream
 firebase-tools on a regular basis. The fork versions will match the
 firebase-tools versions for clarity.
 
-## Deploying from multiple packages
+## Deploying from Multiple Packages
 
 You can deploy to Firebase from multiple packages in your monorepo, in which
 case you co-locate your `firebase.json` file with the source code, and not in
 the root of the monorepo. If you do want to keep the firebase config in the
 root, read the instructions for
-[deploying to Firebase from the root](#deploying-to-firebase-from-the-root).
+[deploying from the root](#deploying-from-the-root).
 
 In order to deploy to Firebase, the `functions.source` setting in
 `firebase.json` needs to point to the isolated output folder, which would be
@@ -95,7 +86,7 @@ The `predeploy` phase should first build and then isolate the output.
 
 Here's an example using [Turborepo](https://turbo.build/):
 
-```cjson
+```jsonc
 // firebase.json
 {
   "functions": {
@@ -114,17 +105,17 @@ information,
 [read this](https://firebase.google.com/docs/functions/beta/organize-functions).
 
 Make sure your Firebase package adheres to the things mentioned in
-[prerequisites](../README.md#prerequisites) and its package manifest contains
-the field `"main"`, or `"module"` if you set `"type": "module"`, so Firebase
-knows the entry point to your source code.
+[prerequisites](/getting-started#prerequisites) and its package manifest
+contains the field `"main"`, or `"module"` if you set `"type": "module"`, so
+Firebase knows the entry point to your source code.
 
-## Deploying from the root
+## Deploying from the Root
 
 If, for some reason, you choose to keep the `firebase.json` file in the root of
 the monorepo you will have to place a configuration file called
 `isolate.config.json` in the root with the following content:
 
-```cjson
+```jsonc
 // isolate.config.json
 {
   "targetPackagePath": "./packages/your-firebase-package"
@@ -133,7 +124,7 @@ the monorepo you will have to place a configuration file called
 
 The Firebase configuration should then look something like this:
 
-```cjson
+```jsonc
 // firebase.json
 {
   "functions": {

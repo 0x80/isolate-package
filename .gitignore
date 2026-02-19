@@ -4,5 +4,9 @@ dist
 .DS_Store
 tsconfig.tsbuildinfo
 
+# VitePress
+docs/.vitepress/cache
+docs/.vitepress/dist
+
 # Claude Code local settings
 .claude/settings.local.json
