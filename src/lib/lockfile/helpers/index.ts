@@ -1,3 +1,4 @@
+export * from "./generate-bun-lockfile";
 export * from "./generate-npm-lockfile";
 export * from "./generate-pnpm-lockfile";
 export * from "./generate-yarn-lockfile";

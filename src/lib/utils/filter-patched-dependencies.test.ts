@@ -1,16 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { PackageManifest } from "~/lib/types";
 import { filterPatchedDependencies } from "./filter-patched-dependencies";
-
-/** Mock the logger */
-vi.mock("~/lib/logger", () => ({
-  useLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  }),
-}));
 
 describe("filterPatchedDependencies", () => {
   it("should return undefined when patchedDependencies is undefined", () => {

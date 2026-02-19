@@ -87,10 +87,8 @@ inside them that should be flat.
 
 ## Installation
 
-Run `pnpm install isolate-package -D` or the equivalent for `npm` or `yarn`.
-
-I recommend using `pnpm` over `npm` or `yarn`. Besides being fast and
-efficient, PNPM has better support for monorepos.
+Run `pnpm install isolate-package -D` or the equivalent for `npm`, `bun`, or
+`yarn`.
 
 ## Usage
 

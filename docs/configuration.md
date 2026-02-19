@@ -54,7 +54,7 @@ By setting this option to `true` you are forcing the isolate output to use NPM.
 A package-lock file will be generated based on the contents of node_modules and
 therefore should match the versions in your original lockfile.
 
-This way you can enjoy using PNPM or Yarn for your monorepo, while your
+This way you can enjoy using PNPM, Bun, or Yarn for your monorepo, while your
 deployment requires NPM.
 
 ### buildDirName
@@ -139,7 +139,7 @@ Type: `string[] | undefined`, default: `undefined`
 
 When workspacePackages is not defined, `isolate` will try to find the packages
 in the workspace by looking up the settings in `pnpm-workspace.yaml` or
-`package.json` files depending on the detected package manager.
+`package.json` depending on the detected package manager.
 
 In case this fails, you can override this process by specifying globs manually.
 For example `"workspacePackages": ["packages/*", "apps/*"]`. Paths are relative
