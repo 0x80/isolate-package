@@ -4,7 +4,7 @@ import assert from "node:assert";
 import path from "node:path";
 import { unique } from "remeda";
 import type { IsolateConfig } from "./lib/config";
-import { resolveConfig } from "./lib/config";
+import { resolveConfig, resolveWorkspacePaths } from "./lib/config";
 import { processLockfile } from "./lib/lockfile";
 import { setLogLevel, useLogger } from "./lib/logger";
 import {
@@ -49,18 +49,8 @@ export function createIsolator(config?: IsolateConfig) {
 
     log.debug("Using isolate-package version", libraryVersion);
 
-    /**
-     * If a targetPackagePath is set, we assume the configuration lives in the
-     * root of the workspace. If targetPackagePath is undefined (the default),
-     * we assume that the configuration lives in the target package directory.
-     */
-    const targetPackageDir = config.targetPackagePath
-      ? path.join(process.cwd(), config.targetPackagePath)
-      : process.cwd();
-
-    const workspaceRootDir = config.targetPackagePath
-      ? process.cwd()
-      : path.join(targetPackageDir, config.workspaceRoot);
+    const { targetPackageDir, workspaceRootDir } =
+      resolveWorkspacePaths(config);
 
     const buildOutputDir = await getBuildOutputDir({
       targetPackageDir,

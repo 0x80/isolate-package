@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { IsolateConfig } from "./lib/config";
-import { resolveConfig } from "./lib/config";
+import { resolveConfig, resolveWorkspacePaths } from "./lib/config";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
 import { readTypedJson } from "./lib/utils";
@@ -17,14 +17,8 @@ export async function getInternalPackageNames(
   config?: IsolateConfig,
 ): Promise<string[]> {
   const resolvedConfig = resolveConfig(config);
-
-  const targetPackageDir = resolvedConfig.targetPackagePath
-    ? path.join(process.cwd(), resolvedConfig.targetPackagePath)
-    : process.cwd();
-
-  const workspaceRootDir = resolvedConfig.targetPackagePath
-    ? process.cwd()
-    : path.join(targetPackageDir, resolvedConfig.workspaceRoot);
+  const { targetPackageDir, workspaceRootDir } =
+    resolveWorkspacePaths(resolvedConfig);
 
   const targetPackageManifest = await readTypedJson<PackageManifest>(
     path.join(targetPackageDir, "package.json"),

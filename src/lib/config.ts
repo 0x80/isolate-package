@@ -166,6 +166,23 @@ function validateConfig(config: IsolateConfig) {
   }
 }
 
+/**
+ * Resolve the target package directory and workspace root directory from the
+ * configuration. When targetPackagePath is set, the config is assumed to live
+ * at the workspace root. Otherwise it lives in the target package directory.
+ */
+export function resolveWorkspacePaths(config: IsolateConfigResolved) {
+  const targetPackageDir = config.targetPackagePath
+    ? path.join(process.cwd(), config.targetPackagePath)
+    : process.cwd();
+
+  const workspaceRootDir = config.targetPackagePath
+    ? process.cwd()
+    : path.join(targetPackageDir, config.workspaceRoot);
+
+  return { targetPackageDir, workspaceRootDir };
+}
+
 export function resolveConfig(
   initialConfig?: IsolateConfig,
 ): IsolateConfigResolved {
