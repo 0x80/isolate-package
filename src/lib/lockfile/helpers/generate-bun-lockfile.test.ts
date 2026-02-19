@@ -160,6 +160,19 @@ describe("serializeWithTrailingCommas", () => {
     expect(parsed).toEqual(input);
   });
 
+  it("should handle boolean and null values", () => {
+    const input = { enabled: true, disabled: false, empty: null, list: [true, null, 42] };
+    const result = serializeWithTrailingCommas(input);
+    /** Trailing commas after each value type */
+    expect(result).toContain("true,");
+    expect(result).toContain("false,");
+    expect(result).toContain("null,");
+    expect(result).toContain("42,");
+    /** Round-trips correctly */
+    const parsed = JSON.parse(result.replace(/,(\s*[}\]])/g, "$1"));
+    expect(parsed).toEqual(input);
+  });
+
   it("should produce valid content that round-trips through strip-json-comments", () => {
     const input = { key: "value", arr: [1, 2] };
     const result = serializeWithTrailingCommas(input);
