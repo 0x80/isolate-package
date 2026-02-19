@@ -106,6 +106,15 @@ describe("loadConfigFromFile", () => {
     expect(() => loadConfigFromFile()).toThrow("Failed to load config from");
   });
 
+  it("throws when the default export is not an object", async () => {
+    await fs.writeFile(
+      path.join(tempDir, "isolate.config.ts"),
+      `export default "not an object";`,
+    );
+
+    expect(() => loadConfigFromFile()).toThrow("Failed to load config from");
+  });
+
   it("throws when the TypeScript file has a syntax error", async () => {
     await fs.writeFile(
       path.join(tempDir, "isolate.config.ts"),

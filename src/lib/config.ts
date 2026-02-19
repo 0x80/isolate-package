@@ -76,7 +76,19 @@ function loadTsConfig(filePath: string): IsolateConfig {
       { encoding: "utf8" },
     );
 
-    return JSON.parse(result);
+    const parsed = JSON.parse(result);
+
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      throw new Error(
+        `Expected default export to be an object, got ${typeof parsed}`,
+      );
+    }
+
+    return parsed;
   } catch (error) {
     throw new Error(`Failed to load config from ${filePath}`, {
       cause: error,
