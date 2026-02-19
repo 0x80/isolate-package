@@ -38,12 +38,12 @@ function collectInternalPackages(
       continue;
     }
 
-    result.push(packageName);
-
     if (visited.has(packageName)) {
-      /** Already fully processed (diamond dependency) — skip recursion */
+      /** Already fully processed (diamond dependency) — skip silently */
       continue;
     }
+
+    result.push(packageName);
 
     ancestors.add(packageName);
     const nested = collectInternalPackages(
