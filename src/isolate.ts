@@ -318,7 +318,7 @@ export function createIsolator(config?: IsolateConfig) {
       log.debug("Copied .npmrc file to the isolate output");
     }
 
-    if (packageManager.name === "bun") {
+    if (packageManager.name === "bun" && !config.forceNpm) {
       const bunfigPath = path.join(workspaceRootDir, "bunfig.toml");
 
       if (fs.existsSync(bunfigPath)) {
