@@ -199,10 +199,10 @@ export async function generateBunLockfile({
     const lockfile = readTypedJsonSync<BunLockfile>(lockfilePath);
 
     /** Compute workspace keys for the target and internal deps */
-    const targetWorkspaceKey = path.relative(
-      workspaceRootDir,
-      targetPackageDir,
-    );
+    const targetWorkspaceKey = path
+      .relative(workspaceRootDir, targetPackageDir)
+      .split(path.sep)
+      .join(path.posix.sep);
 
     const internalDepWorkspaceKeys = new Map<string, string>();
     for (const name of internalDepPackageNames) {
