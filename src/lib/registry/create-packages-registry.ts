@@ -79,18 +79,16 @@ function listWorkspacePackages(
 
     return rushConfig.projects.map(({ projectFolder }) => projectFolder);
   } else {
-    const currentDir = process.cwd();
-    process.chdir(workspaceRootDir);
-
     const packagesGlobs =
       workspacePackagesOverride ?? findPackagesGlobs(workspaceRootDir);
 
     const allPackages = packagesGlobs
-      .flatMap((glob) => globSync(glob))
+      .flatMap((glob) => globSync(glob, { cwd: workspaceRootDir }))
       /** Make sure to filter any loose files that might hang around. */
-      .filter((dir) => fs.lstatSync(dir).isDirectory());
+      .filter((dir) =>
+        fs.lstatSync(path.join(workspaceRootDir, dir)).isDirectory(),
+      );
 
-    process.chdir(currentDir);
     return allPackages;
   }
 }
