@@ -43,7 +43,7 @@ describe("validateManifestMandatoryFields", () => {
 
     expect(() =>
       validateManifestMandatoryFields(invalidDevManifest, packagePath, false),
-    ).toThrow(/missing mandatory fields: version/);
+    ).toThrow(/missing the "version" field/);
   });
 
   it("should throw error when version field is missing", () => {
@@ -54,7 +54,7 @@ describe("validateManifestMandatoryFields", () => {
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath),
-    ).toThrow(/missing mandatory fields: version/);
+    ).toThrow(/missing the "version" field/);
   });
 
   it("should throw error when files field is missing", () => {
@@ -65,7 +65,7 @@ describe("validateManifestMandatoryFields", () => {
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath),
-    ).toThrow(/missing mandatory fields: files/);
+    ).toThrow(/missing the "files" field/);
   });
 
   it("should throw error when files field is empty array", () => {
@@ -77,7 +77,7 @@ describe("validateManifestMandatoryFields", () => {
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath),
-    ).toThrow(/missing mandatory fields: files/);
+    ).toThrow(/missing the "files" field/);
   });
 
   it("should throw error when files field is not an array", () => {
@@ -89,7 +89,7 @@ describe("validateManifestMandatoryFields", () => {
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath),
-    ).toThrow(/missing mandatory fields: files/);
+    ).toThrow(/missing the "files" field/);
   });
 
   it("should throw error when both fields are missing", () => {
@@ -99,20 +99,29 @@ describe("validateManifestMandatoryFields", () => {
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath),
-    ).toThrow(/missing mandatory fields: version, files/);
+    ).toThrow(/missing mandatory fields in its package\.json: version, files/);
   });
 
-  it("should include helpful error message", () => {
+  it("should include documentation URL in error message", () => {
     const invalidManifest = {
       name: "test-package",
     } as PackageManifest;
 
     expect(() =>
       validateManifestMandatoryFields(invalidManifest, packagePath),
-    ).toThrow(/missing mandatory fields: version, files/);
+    ).toThrow(
+      /See https:\/\/isolate-package\.codecompose\.dev\/getting-started#prerequisites/,
+    );
+
+    const singleFieldManifest = {
+      name: "test-package",
+      version: "1.0.0",
+    } as PackageManifest;
 
     expect(() =>
-      validateManifestMandatoryFields(invalidManifest, packagePath),
-    ).toThrow(/See the documentation for more details/);
+      validateManifestMandatoryFields(singleFieldManifest, packagePath),
+    ).toThrow(
+      /See https:\/\/isolate-package\.codecompose\.dev\/getting-started#define-files-field-in-each-package-manifest/,
+    );
   });
 });
