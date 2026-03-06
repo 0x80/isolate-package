@@ -123,6 +123,8 @@ describe("adaptInternalPackageManifests", () => {
       workspaceRootDir: "/workspace",
     });
 
+    expect(writeManifest).toHaveBeenCalledOnce();
+
     const writtenManifest = writeManifest.mock.calls[0]![1];
 
     expect(writtenManifest.devDependencies).toBeUndefined();
