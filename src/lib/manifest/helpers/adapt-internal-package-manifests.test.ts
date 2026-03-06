@@ -18,15 +18,12 @@ vi.mock("./resolve-catalog-dependencies", () => ({
   resolveCatalogDependencies: vi.fn((deps) => Promise.resolve(deps)),
 }));
 
-const { usePackageManager } = vi.mocked(
-  await import("~/lib/package-manager"),
-);
+const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
 
 const { writeManifest } = vi.mocked(await import("../io"));
 
-const { adaptInternalPackageManifests } = await import(
-  "./adapt-internal-package-manifests"
-);
+const { adaptInternalPackageManifests } =
+  await import("./adapt-internal-package-manifests");
 
 describe("adaptInternalPackageManifests", () => {
   beforeEach(() => {
