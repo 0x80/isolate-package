@@ -31,8 +31,8 @@ export async function adaptInternalPackageManifests({
     internalPackageNames.map(async (packageName) => {
       const { manifest, rootRelativeDir } = got(packagesRegistry, packageName);
 
-      /** Dev dependencies and scripts are never included for internal deps */
-      const strippedManifest = omit(manifest, ["scripts", "devDependencies"]);
+      /** Dev dependencies are never included for internal deps */
+      const strippedManifest = omit(manifest, ["devDependencies"]);
 
       /** Resolve catalog dependencies before adapting internal deps */
       const manifestWithResolvedCatalogs = {
