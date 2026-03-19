@@ -46,9 +46,8 @@ vi.mock("~/lib/logger", () => ({
 }));
 
 const fs = vi.mocked((await import("fs-extra")).default);
-const { filterPatchedDependencies, readTypedJson, readTypedYamlSync } = vi.mocked(
-  await import("~/lib/utils"),
-);
+const { filterPatchedDependencies, readTypedJson, readTypedYamlSync } =
+  vi.mocked(await import("~/lib/utils"));
 
 describe("copyPatches", () => {
   beforeEach(() => {
@@ -68,7 +67,9 @@ describe("copyPatches", () => {
   };
 
   it("should return empty object when workspace root package.json cannot be read", async () => {
-    readTypedYamlSync.mockImplementation(() => { throw new Error("File not found") });
+    readTypedYamlSync.mockImplementation(() => {
+      throw new Error("File not found");
+    });
     readTypedJson.mockRejectedValue(new Error("File not found"));
 
     const result = await copyPatches({
@@ -82,32 +83,51 @@ describe("copyPatches", () => {
   });
 
   // Repeat these tests for each combination of config formats
-  describe.for(['yamlOnly', 'yamlAndJson', 'jsonYamlEmpty', 'jsonYamlError'] as const)('valid config tests: %s', (mode) => {
+  describe.for([
+    "yamlOnly",
+    "yamlAndJson",
+    "jsonYamlEmpty",
+    "jsonYamlError",
+  ] as const)("valid config tests: %s", (mode) => {
     // Helper to set up mocks for the correct manifest file for this test scenario
     const mockManifest = (settings: PnpmSettings | undefined) => {
-      switch(mode) {
-        case'yamlOnly': {
+      switch (mode) {
+        case "yamlOnly": {
           readTypedYamlSync.mockReturnValue(settings ?? {});
           readTypedJson.mockResolvedValue({ name: "test", version: "1.0.0" });
           break;
         }
-        case'yamlAndJson': {
+        case "yamlAndJson": {
           readTypedYamlSync.mockReturnValue(settings ?? {});
-          readTypedJson.mockResolvedValue({ name: "test", version: "1.0.0", pnpm: settings });
+          readTypedJson.mockResolvedValue({
+            name: "test",
+            version: "1.0.0",
+            pnpm: settings,
+          });
           break;
         }
-        case 'jsonYamlEmpty': {
+        case "jsonYamlEmpty": {
           readTypedYamlSync.mockReturnValue({});
-          readTypedJson.mockResolvedValue({ name: "test", version: "1.0.0", pnpm: settings });
+          readTypedJson.mockResolvedValue({
+            name: "test",
+            version: "1.0.0",
+            pnpm: settings,
+          });
           break;
         }
-        case 'jsonYamlError': {
-          readTypedYamlSync.mockImplementation(() => { throw new Error("File not found") });
-          readTypedJson.mockResolvedValue({ name: "test", version: "1.0.0", pnpm: settings });
+        case "jsonYamlError": {
+          readTypedYamlSync.mockImplementation(() => {
+            throw new Error("File not found");
+          });
+          readTypedJson.mockResolvedValue({
+            name: "test",
+            version: "1.0.0",
+            pnpm: settings,
+          });
           break;
         }
       }
-    }
+    };
 
     it("should return empty object when no patchedDependencies in workspace root", async () => {
       mockManifest(undefined);

@@ -30,16 +30,20 @@ export async function copyPatches({
 
   // First try reading the pnpm-workspace.yaml file
   try {
-    const pnpmSettings = readTypedYamlSync<PnpmSettings>(path.join(workspaceRootDir, "pnpm-workspace.yaml"));
+    const pnpmSettings = readTypedYamlSync<PnpmSettings>(
+      path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+    );
     patchedDependencies = pnpmSettings?.patchedDependencies;
-  } catch(error) {
+  } catch (error) {
     log.warn(
       `Could not read pnpm-workspace.yaml: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 
   if (!patchedDependencies || Object.keys(patchedDependencies).length === 0) {
-    log.debug("No patched dependencies found in pnpm-workspace.yaml; Falling back to workspace root package.json");
+    log.debug(
+      "No patched dependencies found in pnpm-workspace.yaml; Falling back to workspace root package.json",
+    );
 
     try {
       const workspaceRootManifest = await readTypedJson<PackageManifest>(
