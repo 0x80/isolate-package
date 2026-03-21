@@ -4,12 +4,13 @@ import { readWantedLockfile as readWantedLockfile_v8 } from "pnpm_lockfile_file_
 import { readWantedLockfile as readWantedLockfile_v9 } from "pnpm_lockfile_file_v9";
 import { useLogger } from "~/lib/logger";
 import { usePackageManager } from "~/lib/package-manager";
-import type { PackageManifest, PatchFile } from "~/lib/types";
+import type { PackageManifest, PatchFile, PnpmSettings } from "~/lib/types";
 import {
   filterPatchedDependencies,
   getRootRelativeLogPath,
   isRushWorkspace,
   readTypedJson,
+  readTypedYamlSync,
 } from "~/lib/utils";
 
 export async function copyPatches({
@@ -25,19 +26,36 @@ export async function copyPatches({
 }): Promise<Record<string, PatchFile>> {
   const log = useLogger();
 
-  let workspaceRootManifest: PackageManifest;
+  let patchedDependencies: Record<string, string> | undefined;
+
+  // First try reading the pnpm-workspace.yaml file
   try {
-    workspaceRootManifest = await readTypedJson<PackageManifest>(
-      path.join(workspaceRootDir, "package.json"),
+    const pnpmSettings = readTypedYamlSync<PnpmSettings>(
+      path.join(workspaceRootDir, "pnpm-workspace.yaml"),
     );
+    patchedDependencies = pnpmSettings?.patchedDependencies;
   } catch (error) {
     log.warn(
-      `Could not read workspace root package.json: ${error instanceof Error ? error.message : String(error)}`,
+      `Could not read pnpm-workspace.yaml: ${error instanceof Error ? error.message : String(error)}`,
     );
-    return {};
   }
 
-  const patchedDependencies = workspaceRootManifest.pnpm?.patchedDependencies;
+  if (!patchedDependencies || Object.keys(patchedDependencies).length === 0) {
+    log.debug(
+      "No patched dependencies found in pnpm-workspace.yaml; Falling back to workspace root package.json",
+    );
+
+    try {
+      const workspaceRootManifest = await readTypedJson<PackageManifest>(
+        path.join(workspaceRootDir, "package.json"),
+      );
+      patchedDependencies = workspaceRootManifest?.pnpm?.patchedDependencies;
+    } catch (error) {
+      log.warn(
+        `Could not read workspace root package.json: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
 
   if (!patchedDependencies || Object.keys(patchedDependencies).length === 0) {
     log.debug("No patched dependencies found in workspace root package.json");
