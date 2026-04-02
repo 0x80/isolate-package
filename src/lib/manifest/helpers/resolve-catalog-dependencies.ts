@@ -13,6 +13,8 @@ interface CatalogSource {
   catalogs?: CatalogsMap;
 }
 
+const catalogSourceCache = new Map<string, Promise<CatalogSource>>();
+
 /**
  * Loads catalog definitions by checking pnpm-workspace.yaml first (pnpm
  * format), then falling back to the root package.json (Bun format).
@@ -32,41 +34,58 @@ interface CatalogSource {
 async function loadCatalogSource(
   workspaceRootDir: string,
 ): Promise<CatalogSource> {
-  // Try pnpm-workspace.yaml first
-  const workspaceYamlPath = path.join(
-    workspaceRootDir,
-    "pnpm-workspace.yaml",
-  );
-
-  if (await fs.pathExists(workspaceYamlPath)) {
-    const rawContent = await fs.readFile(workspaceYamlPath, "utf-8");
-    const yamlConfig = yaml.parse(rawContent) as CatalogSource | null;
-
-    if (yamlConfig?.catalog || yamlConfig?.catalogs) {
-      return {
-        catalog: yamlConfig.catalog,
-        catalogs: yamlConfig.catalogs,
-      };
-    }
+  if (catalogSourceCache.has(workspaceRootDir)) {
+    return catalogSourceCache.get(workspaceRootDir)!;
   }
 
-  // Fall back to package.json (Bun format)
-  const rootManifestPath = path.join(workspaceRootDir, "package.json");
-  const rootManifest = await readTypedJson<
-    PackageManifest & {
-      catalog?: CatalogMap;
-      catalogs?: CatalogsMap;
-      workspaces?: {
+  const loadPromise = (async () => {
+    const log = useLogger();
+
+    // Try pnpm-workspace.yaml first
+    const workspaceYamlPath = path.join(
+      workspaceRootDir,
+      "pnpm-workspace.yaml",
+    );
+
+    if (await fs.pathExists(workspaceYamlPath)) {
+      try {
+        const rawContent = await fs.readFile(workspaceYamlPath, "utf-8");
+        const yamlConfig = yaml.parse(rawContent) as CatalogSource | null;
+
+        if (yamlConfig?.catalog || yamlConfig?.catalogs) {
+          return {
+            catalog: yamlConfig.catalog,
+            catalogs: yamlConfig.catalogs,
+          };
+        }
+      } catch (err) {
+        log.warn(
+          `Failed to parse ${workspaceYamlPath}: ${err instanceof Error ? err.message : String(err)}. Falling back to package.json for catalog definitions.`,
+        );
+      }
+    }
+
+    // Fall back to package.json (Bun format)
+    const rootManifestPath = path.join(workspaceRootDir, "package.json");
+    const rootManifest = await readTypedJson<
+      PackageManifest & {
         catalog?: CatalogMap;
         catalogs?: CatalogsMap;
-      };
-    }
-  >(rootManifestPath);
+        workspaces?: {
+          catalog?: CatalogMap;
+          catalogs?: CatalogsMap;
+        };
+      }
+    >(rootManifestPath);
 
-  return {
-    catalog: rootManifest.catalog ?? rootManifest.workspaces?.catalog,
-    catalogs: rootManifest.catalogs ?? rootManifest.workspaces?.catalogs,
-  };
+    return {
+      catalog: rootManifest.catalog ?? rootManifest.workspaces?.catalog,
+      catalogs: rootManifest.catalogs ?? rootManifest.workspaces?.catalogs,
+    };
+  })();
+
+  catalogSourceCache.set(workspaceRootDir, loadPromise);
+  return loadPromise;
 }
 
 /**
