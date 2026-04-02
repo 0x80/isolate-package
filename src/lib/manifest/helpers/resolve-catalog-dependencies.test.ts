@@ -2,13 +2,15 @@ import os from "node:os";
 import path from "node:path";
 import fs from "fs-extra";
 import yaml from "yaml";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const mockLogger = {
+  debug: vi.fn(),
+  warn: vi.fn(),
+};
 
 vi.mock("~/lib/logger", () => ({
-  useLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    warn: vi.fn(),
-  })),
+  useLogger: vi.fn(() => mockLogger),
 }));
 
 const { resolveCatalogDependencies } = await import(
@@ -21,9 +23,11 @@ const { resolveCatalogDependencies } = await import(
  */
 async function createTempWorkspace({
   workspaceYaml,
+  workspaceYamlRaw,
   packageJson,
 }: {
   workspaceYaml?: object;
+  workspaceYamlRaw?: string;
   packageJson?: object;
 }): Promise<string> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "isolate-test-"));
@@ -32,6 +36,12 @@ async function createTempWorkspace({
     await fs.writeFile(
       path.join(dir, "pnpm-workspace.yaml"),
       yaml.stringify(workspaceYaml),
+      "utf-8",
+    );
+  } else if (workspaceYamlRaw !== undefined) {
+    await fs.writeFile(
+      path.join(dir, "pnpm-workspace.yaml"),
+      workspaceYamlRaw,
       "utf-8",
     );
   }
@@ -198,6 +208,89 @@ describe("resolveCatalogDependencies", () => {
       );
 
       expect(result).toEqual({ typescript: "^5.4.0" });
+    });
+
+    it("resolves named catalog: from root-level catalogs field in package.json", async () => {
+      tmpDir = await createTempWorkspace({
+        packageJson: {
+          name: "root",
+          version: "0.0.0",
+          catalogs: {
+            react18: {
+              react: "^18.3.1",
+              "react-dom": "^18.3.1",
+            },
+          },
+        },
+      });
+
+      const result = await resolveCatalogDependencies(
+        {
+          react: "catalog:react18",
+          "react-dom": "catalog:react18",
+        },
+        tmpDir,
+      );
+
+      expect(result).toEqual({
+        react: "^18.3.1",
+        "react-dom": "^18.3.1",
+      });
+    });
+
+    it("resolves named catalog: from workspaces.catalogs in package.json", async () => {
+      tmpDir = await createTempWorkspace({
+        packageJson: {
+          name: "root",
+          version: "0.0.0",
+          workspaces: {
+            packages: ["packages/*"],
+            catalogs: {
+              tools: {
+                typescript: "^5.4.0",
+                eslint: "^8.0.0",
+              },
+            },
+          },
+        },
+      });
+
+      const result = await resolveCatalogDependencies(
+        { typescript: "catalog:tools", eslint: "catalog:tools" },
+        tmpDir,
+      );
+
+      expect(result).toEqual({
+        typescript: "^5.4.0",
+        eslint: "^8.0.0",
+      });
+    });
+  });
+
+  describe("pnpm-workspace.yaml with invalid YAML", () => {
+    it("warns about invalid YAML and falls back to package.json", async () => {
+      tmpDir = await createTempWorkspace({
+        workspaceYamlRaw: "catalog:\n  react: ^18.3.1\n  - invalid format",
+        packageJson: {
+          name: "root",
+          version: "0.0.0",
+          catalog: { react: "^18.0.0" },
+        },
+      });
+
+
+      const result = await resolveCatalogDependencies(
+        { react: "catalog:" },
+        tmpDir,
+      );
+
+      // Verify it fell back to package.json correctly
+      expect(result).toEqual({ react: "^18.0.0" });
+      
+      // Verify a warning was logged
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(`Failed to parse ${path.join(tmpDir, "pnpm-workspace.yaml")}:`),
+      );
     });
   });
 
