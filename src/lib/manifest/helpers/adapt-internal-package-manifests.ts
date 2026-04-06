@@ -41,7 +41,7 @@ export async function adaptInternalPackageManifests({
        * scripts like `postinstall` are preserved because they handle runtime
        * setup (e.g. Prisma client generation).
        */
-      if (strippedManifest.scripts?.prepare) {
+      if (strippedManifest.scripts) {
         strippedManifest.scripts = omit(strippedManifest.scripts, ["prepare"]);
       }
 
