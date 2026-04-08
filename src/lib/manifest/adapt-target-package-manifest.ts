@@ -56,7 +56,8 @@ export async function adaptTargetPackageManifest({
       ? /**
          * For PNPM and Bun the output itself is a workspace so we can preserve
          * the specifiers with "workspace:*" in the output manifest, but we do
-         * want to adopt the pnpm.overrides field from the root package.json.
+         * want to adopt workspace-level fields from the root package.json
+         * (pnpm.overrides for PNPM, top-level overrides for Bun).
          */
         await adoptPnpmFieldsFromRoot(
           manifestWithResolvedCatalogs,

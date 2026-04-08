@@ -340,7 +340,11 @@ export async function generateBunLockfile({
     }
 
     const outputPath = path.join(isolateDir, "bun.lock");
-    await fs.writeFile(outputPath, serializeWithTrailingCommas(outputLockfile));
+    /** Append trailing newline to match Bun's native output format */
+    await fs.writeFile(
+      outputPath,
+      serializeWithTrailingCommas(outputLockfile) + "\n",
+    );
 
     log.debug("Created lockfile at", outputPath);
   } catch (err) {
