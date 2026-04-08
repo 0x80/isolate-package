@@ -48,9 +48,13 @@ export async function copyPatches({
   }
 
   if (!patchedDependencies || Object.keys(patchedDependencies).length === 0) {
-    log.debug(
-      "No patched dependencies found in pnpm-workspace.yaml; Falling back to workspace root package.json",
-    );
+    if (packageManagerName === "pnpm") {
+      log.debug(
+        "No patched dependencies found in pnpm-workspace.yaml; Falling back to workspace root package.json",
+      );
+    } else {
+      log.debug("Reading patched dependencies from workspace root package.json");
+    }
 
     try {
       const workspaceRootManifest = await readTypedJson<PackageManifest>(
