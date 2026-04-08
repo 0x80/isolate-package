@@ -95,6 +95,55 @@ describe("adaptInternalPackageManifests", () => {
     });
   });
 
+  it("should strip the prepare script from internal dependency manifests", async () => {
+    const manifest: PackageManifest = {
+      name: "@repo/common",
+      version: "1.0.0",
+      scripts: {
+        prepare: "npm run clean && npm run build",
+        clean: "del-cli dist",
+        build: "tsdown",
+        postinstall: "prisma generate",
+      },
+      dependencies: {
+        ky: "^1.0.0",
+      },
+      devDependencies: {
+        "del-cli": "^7.0.0",
+        tsdown: "^0.20.0",
+      },
+    };
+
+    const packagesRegistry = createRegistry({
+      "@repo/common": {
+        rootRelativeDir: "packages/common",
+        manifest,
+      },
+    });
+
+    await adaptInternalPackageManifests({
+      internalPackageNames: ["@repo/common"],
+      packagesRegistry,
+      isolateDir: "/output",
+      forceNpm: false,
+      workspaceRootDir: "/workspace",
+    });
+
+    expect(writeManifest).toHaveBeenCalledOnce();
+
+    const writtenManifest = writeManifest.mock.calls[0]![1];
+
+    /** prepare should be stripped because it depends on devDependency binaries */
+    expect(writtenManifest.scripts?.prepare).toBeUndefined();
+
+    /** Other scripts should be preserved */
+    expect(writtenManifest.scripts).toEqual({
+      clean: "del-cli dist",
+      build: "tsdown",
+      postinstall: "prisma generate",
+    });
+  });
+
   it("should strip devDependencies from internal dependency manifests", async () => {
     const manifest: PackageManifest = {
       name: "@repo/shared",
