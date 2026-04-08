@@ -12,9 +12,15 @@ vi.mock("~/lib/utils", () => ({
   readTypedJson: vi.fn(),
 }));
 
+vi.mock("~/lib/package-manager", () => ({
+  usePackageManager: vi.fn(() => ({ name: "pnpm", majorVersion: 9 })),
+}));
+
 const { isRushWorkspace, readTypedJson } = vi.mocked(
   await import("~/lib/utils"),
 );
+
+const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
 
 describe("adoptPnpmFieldsFromRoot", () => {
   beforeEach(() => {
@@ -208,5 +214,60 @@ describe("adoptPnpmFieldsFromRoot", () => {
         onlyBuiltDependencies: ["fsevents"],
       },
     });
+  });
+
+  it("should adopt top-level overrides for Bun", async () => {
+    usePackageManager.mockReturnValue({
+      name: "bun",
+      majorVersion: 1,
+      version: "1.0.0",
+      packageManagerString: "bun@1.0.0",
+    } as ReturnType<typeof usePackageManager>);
+    isRushWorkspace.mockReturnValue(false);
+    readTypedJson.mockResolvedValue({
+      name: "root",
+      version: "1.0.0",
+      overrides: {
+        foo: "^1.0.0",
+      },
+    } as unknown as ProjectManifest);
+
+    const targetManifest: PackageManifest = {
+      name: "test-package",
+      version: "1.0.0",
+    };
+
+    const result = await adoptPnpmFieldsFromRoot(targetManifest, "/workspace");
+
+    expect(result).toEqual({
+      name: "test-package",
+      version: "1.0.0",
+      overrides: {
+        foo: "^1.0.0",
+      },
+    });
+  });
+
+  it("should return original manifest for Bun when no overrides are present", async () => {
+    usePackageManager.mockReturnValue({
+      name: "bun",
+      majorVersion: 1,
+      version: "1.0.0",
+      packageManagerString: "bun@1.0.0",
+    } as ReturnType<typeof usePackageManager>);
+    isRushWorkspace.mockReturnValue(false);
+    readTypedJson.mockResolvedValue({
+      name: "root",
+      version: "1.0.0",
+    } as ProjectManifest);
+
+    const targetManifest: PackageManifest = {
+      name: "test-package",
+      version: "1.0.0",
+    };
+
+    const result = await adoptPnpmFieldsFromRoot(targetManifest, "/workspace");
+
+    expect(result).toEqual(targetManifest);
   });
 });

@@ -4,16 +4,6 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getInternalPackageNames } from "./get-internal-package-names";
 
-vi.mock("~/lib/logger", () => ({
-  useLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  }),
-  setLogLevel: vi.fn(),
-}));
-
 const packageManagerResult = {
   name: "pnpm",
   version: "9.0.0",

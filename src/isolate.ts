@@ -193,11 +193,12 @@ export function createIsolator(config?: IsolateConfig) {
 
     /**
      * Copy patch files before generating lockfile so the lockfile contains the
-     * correct paths. Only copy patches when output uses pnpm, since patched
-     * dependencies are a pnpm-specific feature.
+     * correct paths. Only copy patches when output uses pnpm or bun, since
+     * patched dependencies are stored in their lockfiles.
      */
     const shouldCopyPatches =
-      packageManager.name === "pnpm" && !config.forceNpm;
+      (packageManager.name === "pnpm" || packageManager.name === "bun") &&
+      !config.forceNpm;
 
     const copiedPatches = shouldCopyPatches
       ? await copyPatches({
@@ -229,19 +230,27 @@ export function createIsolator(config?: IsolateConfig) {
       const manifest = await readManifest(isolateDir);
 
       if (hasCopiedPatches) {
-        if (!manifest.pnpm) {
-          manifest.pnpm = {};
-        }
         /**
          * Extract just the paths for the manifest (lockfile needs full
-         * PatchFile)
+         * PatchFile). PNPM stores patches under pnpm.patchedDependencies, Bun
+         * at the top level.
          */
-        manifest.pnpm.patchedDependencies = Object.fromEntries(
+        const patchEntries = Object.fromEntries(
           Object.entries(copiedPatches).map(([spec, patchFile]) => [
             spec,
             patchFile.path,
           ]),
         );
+
+        if (packageManager.name === "bun") {
+          manifest.patchedDependencies = patchEntries;
+        } else {
+          if (!manifest.pnpm) {
+            manifest.pnpm = {};
+          }
+          manifest.pnpm.patchedDependencies = patchEntries;
+        }
+
         log.debug(
           `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
         );
@@ -291,6 +300,18 @@ export function createIsolator(config?: IsolateConfig) {
       }
     }
 
+    if (packageManager.name === "bun" && !config.forceNpm) {
+      /** Add workspaces field to the manifest so Bun treats the isolate as a workspace */
+      const manifest = await readManifest(isolateDir);
+      const workspaceGlobs = unique(
+        internalPackageNames.map(
+          (name) => path.parse(got(packagesRegistry, name).rootRelativeDir).dir,
+        ),
+      ).map((x) => path.join(x, "/*"));
+      manifest.workspaces = workspaceGlobs;
+      await writeManifest(isolateDir, manifest);
+    }
+
     /**
      * If there is an .npmrc file in the workspace root, copy it to the isolate
      * because the settings there could affect how the lockfile is resolved.
@@ -303,6 +324,15 @@ export function createIsolator(config?: IsolateConfig) {
     if (fs.existsSync(npmrcPath)) {
       fs.copyFileSync(npmrcPath, path.join(isolateDir, ".npmrc"));
       log.debug("Copied .npmrc file to the isolate output");
+    }
+
+    if (packageManager.name === "bun" && !config.forceNpm) {
+      const bunfigPath = path.join(workspaceRootDir, "bunfig.toml");
+
+      if (fs.existsSync(bunfigPath)) {
+        fs.copyFileSync(bunfigPath, path.join(isolateDir, "bunfig.toml"));
+        log.debug("Copied bunfig.toml file to the isolate output");
+      }
     }
 
     /**

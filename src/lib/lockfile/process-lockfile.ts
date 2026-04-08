@@ -3,6 +3,7 @@ import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
 import type { PackageManifest, PackagesRegistry, PatchFile } from "../types";
 import {
+  generateBunLockfile,
   generateNpmLockfile,
   generatePnpmLockfile,
   generateYarnLockfile,
@@ -97,15 +98,14 @@ export async function processLockfile({
       break;
     }
     case "bun": {
-      log.warn(
-        `Ouput lockfiles for Bun are not yet supported. Using NPM for output`,
-      );
-      await generateNpmLockfile({
+      await generateBunLockfile({
         workspaceRootDir,
+        targetPackageDir,
         isolateDir,
+        internalDepPackageNames,
+        packagesRegistry,
+        includeDevDependencies: config.includeDevDependencies,
       });
-
-      usedFallbackToNpm = true;
       break;
     }
     default:

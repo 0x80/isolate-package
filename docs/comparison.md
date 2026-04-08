@@ -22,14 +22,13 @@ target package, its internal dependencies as `file:` references, and a pruned
 lockfile. No install is performed — the deployment target is expected to run its
 own `install` step.
 
-It works with NPM, PNPM, Yarn (classic and modern), and has partial Bun
-support.
+It works with PNPM, NPM, Bun, and Yarn.
 
 ## Key differences
 
 |                     | **pnpm deploy**          | **isolate-package**            |
 | ------------------- | ------------------------ | ------------------------------ |
-| Package managers    | PNPM only                | NPM, PNPM, Yarn, Bun           |
+| Package managers    | PNPM only                | PNPM, NPM, Bun, Yarn           |
 | Output              | Installed `node_modules` | Manifests + pruned lockfile    |
 | Install step        | Performed during deploy  | Performed by deployment target |
 | Firebase compatible | No                       | Yes                            |

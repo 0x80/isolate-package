@@ -23,7 +23,7 @@ vi.mock("~/lib/utils", () => ({
 
 /** Mock the package manager */
 vi.mock("~/lib/package-manager", () => ({
-  usePackageManager: vi.fn(() => ({ majorVersion: 9 })),
+  usePackageManager: vi.fn(() => ({ name: "pnpm", majorVersion: 9 })),
 }));
 
 /** Mock the pnpm lockfile readers */
@@ -35,19 +35,10 @@ vi.mock("pnpm_lockfile_file_v9", () => ({
   readWantedLockfile: vi.fn(() => Promise.resolve(null)),
 }));
 
-/** Mock the logger */
-vi.mock("~/lib/logger", () => ({
-  useLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  }),
-}));
-
 const fs = vi.mocked((await import("fs-extra")).default);
 const { filterPatchedDependencies, readTypedJson, readTypedYamlSync } =
   vi.mocked(await import("~/lib/utils"));
+const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
 
 describe("copyPatches", () => {
   beforeEach(() => {
@@ -419,5 +410,52 @@ describe("copyPatches", () => {
       });
       expect(fs.copy).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it("should read top-level patchedDependencies for Bun projects", async () => {
+    usePackageManager.mockReturnValue({
+      name: "bun",
+      majorVersion: 1,
+      version: "1.2.0",
+      packageManagerString: "bun@1.2.0",
+    });
+
+    const targetManifest: PackageManifest = {
+      name: "test",
+      version: "1.0.0",
+      dependencies: { lodash: "^4.0.0" },
+    };
+
+    /** No patches in pnpm-workspace.yaml, so it falls back to package.json */
+    readTypedYamlSync.mockReturnValue({});
+
+    readTypedJson.mockResolvedValue({
+      name: "root",
+      version: "1.0.0",
+      patchedDependencies: {
+        "lodash@4.17.21": "patches/lodash.patch",
+      },
+    } as PackageManifest);
+
+    filterPatchedDependencies.mockReturnValue({
+      "lodash@4.17.21": "patches/lodash.patch",
+    });
+
+    fs.existsSync.mockReturnValue(true);
+
+    const result = await copyPatches({
+      workspaceRootDir: "/workspace",
+      targetPackageManifest: targetManifest,
+      isolateDir: "/workspace/isolate",
+      includeDevDependencies: false,
+    });
+
+    expect(result).toEqual({
+      "lodash@4.17.21": { path: "patches/lodash.patch", hash: "" },
+    });
+    expect(fs.copy).toHaveBeenCalledWith(
+      "/workspace/patches/lodash.patch",
+      "/workspace/isolate/patches/lodash.patch",
+    );
   });
 });

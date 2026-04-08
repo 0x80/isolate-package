@@ -51,11 +51,13 @@ export async function adaptTargetPackageManifest({
   };
 
   const adaptedManifest =
-    packageManager.name === "pnpm" && !forceNpm
+    (packageManager.name === "pnpm" || packageManager.name === "bun") &&
+    !forceNpm
       ? /**
-         * For PNPM the output itself is a workspace so we can preserve the specifiers
-         * with "workspace:*" in the output manifest, but we do want to adopt the
-         * pnpm.overrides field from the root package.json.
+         * For PNPM and Bun the output itself is a workspace so we can preserve
+         * the specifiers with "workspace:*" in the output manifest, but we do
+         * want to adopt workspace-level fields from the root package.json
+         * (pnpm.overrides for PNPM, top-level overrides for Bun).
          */
         await adoptPnpmFieldsFromRoot(
           manifestWithResolvedCatalogs,

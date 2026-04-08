@@ -26,30 +26,46 @@ export async function copyPatches({
 }): Promise<Record<string, PatchFile>> {
   const log = useLogger();
 
+  const { name: packageManagerName } = usePackageManager();
+
   let patchedDependencies: Record<string, string> | undefined;
 
-  // First try reading the pnpm-workspace.yaml file
-  try {
-    const pnpmSettings = readTypedYamlSync<PnpmSettings>(
-      path.join(workspaceRootDir, "pnpm-workspace.yaml"),
-    );
-    patchedDependencies = pnpmSettings?.patchedDependencies;
-  } catch (error) {
-    log.warn(
-      `Could not read pnpm-workspace.yaml: ${error instanceof Error ? error.message : String(error)}`,
-    );
+  /**
+   * Only try reading pnpm-workspace.yaml for pnpm workspaces. Bun workspaces
+   * don't have this file and the warning would be noisy.
+   */
+  if (packageManagerName === "pnpm") {
+    try {
+      const pnpmSettings = readTypedYamlSync<PnpmSettings>(
+        path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+      );
+      patchedDependencies = pnpmSettings?.patchedDependencies;
+    } catch (error) {
+      log.warn(
+        `Could not read pnpm-workspace.yaml: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   if (!patchedDependencies || Object.keys(patchedDependencies).length === 0) {
-    log.debug(
-      "No patched dependencies found in pnpm-workspace.yaml; Falling back to workspace root package.json",
-    );
+    if (packageManagerName === "pnpm") {
+      log.debug(
+        "No patched dependencies found in pnpm-workspace.yaml; Falling back to workspace root package.json",
+      );
+    } else {
+      log.debug(
+        "Reading patched dependencies from workspace root package.json",
+      );
+    }
 
     try {
       const workspaceRootManifest = await readTypedJson<PackageManifest>(
         path.join(workspaceRootDir, "package.json"),
       );
-      patchedDependencies = workspaceRootManifest?.pnpm?.patchedDependencies;
+      /** PNPM stores patches under pnpm.patchedDependencies, Bun at the top level */
+      patchedDependencies =
+        workspaceRootManifest?.pnpm?.patchedDependencies ??
+        workspaceRootManifest?.patchedDependencies;
     } catch (error) {
       log.warn(
         `Could not read workspace root package.json: ${error instanceof Error ? error.message : String(error)}`,
@@ -76,9 +92,14 @@ export async function copyPatches({
     return {};
   }
 
-  /** Read the lockfile to get the hashes for each patch */
+  /**
+   * Read the pnpm lockfile to get patch hashes. Bun doesn't store hashes in
+   * its lockfile so we skip this for Bun.
+   */
   const lockfilePatchedDependencies =
-    await readLockfilePatchedDependencies(workspaceRootDir);
+    packageManagerName === "pnpm"
+      ? await readLockfilePatchedDependencies(workspaceRootDir)
+      : undefined;
 
   const copiedPatches: Record<string, PatchFile> = {};
 
@@ -102,7 +123,7 @@ export async function copyPatches({
     const originalPatchFile = lockfilePatchedDependencies?.[packageSpec];
     const hash = originalPatchFile?.hash ?? "";
 
-    if (!hash) {
+    if (packageManagerName === "pnpm" && !hash) {
       log.warn(`No hash found for patch ${packageSpec} in lockfile`);
     }
 
