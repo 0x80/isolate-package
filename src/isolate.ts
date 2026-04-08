@@ -230,19 +230,27 @@ export function createIsolator(config?: IsolateConfig) {
       const manifest = await readManifest(isolateDir);
 
       if (hasCopiedPatches) {
-        if (!manifest.pnpm) {
-          manifest.pnpm = {};
-        }
         /**
          * Extract just the paths for the manifest (lockfile needs full
-         * PatchFile)
+         * PatchFile). PNPM stores patches under pnpm.patchedDependencies, Bun
+         * at the top level.
          */
-        manifest.pnpm.patchedDependencies = Object.fromEntries(
+        const patchEntries = Object.fromEntries(
           Object.entries(copiedPatches).map(([spec, patchFile]) => [
             spec,
             patchFile.path,
           ]),
         );
+
+        if (packageManager.name === "bun") {
+          manifest.patchedDependencies = patchEntries;
+        } else {
+          if (!manifest.pnpm) {
+            manifest.pnpm = {};
+          }
+          manifest.pnpm.patchedDependencies = patchEntries;
+        }
+
         log.debug(
           `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
         );
