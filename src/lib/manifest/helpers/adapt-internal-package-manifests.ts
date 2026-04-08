@@ -31,8 +31,19 @@ export async function adaptInternalPackageManifests({
     internalPackageNames.map(async (packageName) => {
       const { manifest, rootRelativeDir } = got(packagesRegistry, packageName);
 
-      /** Dev dependencies and scripts are never included for internal deps */
-      const strippedManifest = omit(manifest, ["scripts", "devDependencies"]);
+      /** Dev dependencies are never included for internal deps */
+      const strippedManifest = omit(manifest, ["devDependencies"]);
+
+      /**
+       * Strip the `prepare` script because it runs during `pnpm install` and
+       * typically depends on devDependency binaries (e.g. tsdown, del-cli)
+       * which are not available in the isolated output. Other lifecycle
+       * scripts like `postinstall` are preserved because they handle runtime
+       * setup (e.g. Prisma client generation).
+       */
+      if (strippedManifest.scripts) {
+        strippedManifest.scripts = omit(strippedManifest.scripts, ["prepare"]);
+      }
 
       /** Resolve catalog dependencies before adapting internal deps */
       const manifestWithResolvedCatalogs = {

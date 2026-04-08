@@ -1,6 +1,14 @@
 import { useLogger } from "../logger";
 import type { PackageManifest } from "../types";
 
+/** Maps field names to their documentation URLs */
+const fieldDocUrls: Record<string, string> = {
+  version:
+    "https://isolate-package.codecompose.dev/getting-started#define-version-field-in-each-package-manifest",
+  files:
+    "https://isolate-package.codecompose.dev/getting-started#define-files-field-in-each-package-manifest",
+};
+
 /**
  * Validate that mandatory fields are present in the package manifest. These
  * fields are required for the isolate process to work properly.
@@ -38,7 +46,11 @@ export function validateManifestMandatoryFields(
   }
 
   if (missingFields.length > 0) {
-    const errorMessage = `Package at ${packagePath} is missing mandatory fields: ${missingFields.join(", ")}. See the documentation for more details.`;
+    const field = missingFields[0]!;
+    const errorMessage =
+      missingFields.length === 1
+        ? `Package at ${packagePath} is missing the "${field}" field in its package.json. See ${fieldDocUrls[field] ?? "https://isolate-package.codecompose.dev/getting-started#prerequisites"}`
+        : `Package at ${packagePath} is missing mandatory fields in its package.json: ${missingFields.join(", ")}. See https://isolate-package.codecompose.dev/getting-started#prerequisites`;
 
     log.error(errorMessage);
     throw new Error(errorMessage);

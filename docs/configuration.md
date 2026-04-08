@@ -98,6 +98,15 @@ to preserve all of the other scripts, set it to `["build"]`.
 By default, all scripts are omitted, and the [pickFromScripts](#pickfromscripts)
 configuration overrules this configuration.
 
+::: info Scripts in internal dependencies
+The `pickFromScripts` and `omitFromScripts` options only apply to the target
+package manifest. Internal dependency manifests preserve their scripts by
+default (e.g. for `postinstall` hooks like Prisma client generation), with one
+exception: the `prepare` script is always stripped from internal dependencies
+because it runs during `pnpm install` and typically depends on devDependency
+binaries that are not available in the isolated output.
+:::
+
 ### omitPackageManager
 
 Type: `boolean`, default: `false`
