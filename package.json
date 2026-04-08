@@ -50,44 +50,45 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
-    "@npmcli/arborist": "^9.3.0",
-    "@npmcli/config": "^10.7.0",
+    "@npmcli/arborist": "^9.4.2",
+    "@npmcli/config": "^10.8.1",
     "@pnpm/logger": "^1001.0.1",
     "@pnpm/types": "^1001.3.0",
     "consola": "^3.4.2",
-    "fs-extra": "^11.3.3",
-    "get-or-throw": "^2.1.0",
-    "get-tsconfig": "^4.13.6",
-    "glob": "^13.0.5",
-    "meow": "^14.0.0",
+    "fs-extra": "^11.3.4",
+    "get-or-throw": "^3.0.1",
+    "get-tsconfig": "^4.13.7",
+    "glob": "^13.0.6",
+    "meow": "^14.1.0",
     "outdent": "^0.8.0",
     "pnpm_lockfile_file_v8": "npm:@pnpm/lockfile-file@8",
     "pnpm_lockfile_file_v9": "npm:@pnpm/lockfile-file@9",
     "pnpm_prune_lockfile_v8": "npm:@pnpm/prune-lockfile@5",
     "pnpm_prune_lockfile_v9": "npm:@pnpm/prune-lockfile@6",
-    "remeda": "^2.33.6",
+    "remeda": "^2.33.7",
     "source-map-support": "^0.5.21",
     "strip-json-comments": "^5.0.3",
-    "tar-fs": "^3.1.1",
-    "yaml": "^2.8.2"
+    "tar-fs": "^3.1.2",
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@codecompose/typescript-config": "^3.0.0",
+    "@codecompose/typescript-config": "^3.2.0",
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^25.2.3",
+    "@types/node": "^25.5.2",
     "@types/npmcli__config": "^6.0.3",
     "@types/source-map-support": "^0.5.10",
     "@types/tar-fs": "^2.0.4",
-    "oxfmt": "^0.33.0",
-    "oxlint": "^1.48.0",
-    "oxlint-tsgolint": "^0.14.0",
-    "tsdown": "0.20.3",
-    "typescript": "6.0.0-beta",
+    "oxfmt": "^0.44.0",
+    "oxlint": "^1.59.0",
+    "oxlint-tsgolint": "^0.20.0",
+    "tsdown": "0.21.7",
+    "typescript": "6.0.2",
+    "vite": "^7.0.0",
     "vitepress": "^1.6.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.3"
   },
   "engines": {
-    "node": ">=22.6.0"
+    "node": ">=22.12.0"
   },
   "packageManager": "pnpm@9.0.0+sha256.bdfc9a7b372b5c462176993e586492603e20da5864d2f8881edc2462482c76fa"
 }
