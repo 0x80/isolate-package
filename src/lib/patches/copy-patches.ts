@@ -53,7 +53,9 @@ export async function copyPatches({
         "No patched dependencies found in pnpm-workspace.yaml; Falling back to workspace root package.json",
       );
     } else {
-      log.debug("Reading patched dependencies from workspace root package.json");
+      log.debug(
+        "Reading patched dependencies from workspace root package.json",
+      );
     }
 
     try {

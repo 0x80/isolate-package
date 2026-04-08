@@ -20,9 +20,7 @@ const { isRushWorkspace, readTypedJson } = vi.mocked(
   await import("~/lib/utils"),
 );
 
-const { usePackageManager } = vi.mocked(
-  await import("~/lib/package-manager"),
-);
+const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
 
 describe("adoptPnpmFieldsFromRoot", () => {
   beforeEach(() => {
