@@ -211,7 +211,11 @@ export async function generateBunLockfile({
     const internalDepWorkspaceKeys = new Map<string, string>();
     for (const name of internalDepPackageNames) {
       const pkg = got(packagesRegistry, name);
-      internalDepWorkspaceKeys.set(name, pkg.rootRelativeDir);
+      /** Normalize to POSIX separators for matching bun.lock workspace keys */
+      const workspaceKey = pkg.rootRelativeDir
+        .split(path.sep)
+        .join(path.posix.sep);
+      internalDepWorkspaceKeys.set(name, workspaceKey);
     }
 
     /** Build the filtered workspaces object */
@@ -219,7 +223,13 @@ export async function generateBunLockfile({
 
     /** Remap the target workspace to root ("") */
     const targetEntry = lockfile.workspaces[targetWorkspaceKey];
-    if (targetEntry) {
+    if (!targetEntry) {
+      throw new Error(
+        `Target workspace "${targetWorkspaceKey}" not found in bun.lock. Available workspaces: ${Object.keys(lockfile.workspaces).join(", ")}`,
+      );
+    }
+
+    {
       const entry = { ...targetEntry };
       if (!includeDevDependencies) {
         delete entry.devDependencies;

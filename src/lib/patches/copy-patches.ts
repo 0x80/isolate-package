@@ -26,18 +26,25 @@ export async function copyPatches({
 }): Promise<Record<string, PatchFile>> {
   const log = useLogger();
 
+  const { name: packageManagerName } = usePackageManager();
+
   let patchedDependencies: Record<string, string> | undefined;
 
-  // First try reading the pnpm-workspace.yaml file
-  try {
-    const pnpmSettings = readTypedYamlSync<PnpmSettings>(
-      path.join(workspaceRootDir, "pnpm-workspace.yaml"),
-    );
-    patchedDependencies = pnpmSettings?.patchedDependencies;
-  } catch (error) {
-    log.warn(
-      `Could not read pnpm-workspace.yaml: ${error instanceof Error ? error.message : String(error)}`,
-    );
+  /**
+   * Only try reading pnpm-workspace.yaml for pnpm workspaces. Bun workspaces
+   * don't have this file and the warning would be noisy.
+   */
+  if (packageManagerName === "pnpm") {
+    try {
+      const pnpmSettings = readTypedYamlSync<PnpmSettings>(
+        path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+      );
+      patchedDependencies = pnpmSettings?.patchedDependencies;
+    } catch (error) {
+      log.warn(
+        `Could not read pnpm-workspace.yaml: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   if (!patchedDependencies || Object.keys(patchedDependencies).length === 0) {
@@ -83,7 +90,6 @@ export async function copyPatches({
    * Read the pnpm lockfile to get patch hashes. Bun doesn't store hashes in
    * its lockfile so we skip this for Bun.
    */
-  const { name: packageManagerName } = usePackageManager();
   const lockfilePatchedDependencies =
     packageManagerName === "pnpm"
       ? await readLockfilePatchedDependencies(workspaceRootDir)
