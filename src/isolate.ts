@@ -149,6 +149,35 @@ export function createIsolator(config?: IsolateConfig) {
       );
     }
 
+    /**
+     * Validate that workspace dev dependencies of all packages being packed
+     * have a version field. Even when dev dependencies are not included in the
+     * isolation output, pnpm pack resolves workspace:* specifiers and requires
+     * the version field to be present.
+     */
+    const validatedPackageNames = new Set(internalPackageNames);
+    const manifestsToPack = [
+      targetPackageManifest,
+      ...internalPackageNames.map(
+        (name) => got(packagesRegistry, name).manifest,
+      ),
+    ];
+
+    for (const manifest of manifestsToPack) {
+      for (const depName of Object.keys(manifest.devDependencies ?? {})) {
+        if (validatedPackageNames.has(depName)) continue;
+        const packageDef = packagesRegistry[depName];
+        if (!packageDef) continue;
+
+        validateManifestMandatoryFields(
+          packageDef.manifest,
+          getRootRelativeLogPath(packageDef.absoluteDir, workspaceRootDir),
+          false,
+        );
+        validatedPackageNames.add(depName);
+      }
+    }
+
     const packedFilesByName = await packDependencies({
       internalPackageNames,
       packagesRegistry,
