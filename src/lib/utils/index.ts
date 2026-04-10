@@ -5,7 +5,6 @@ export * from "./get-error-message";
 export * from "./get-package-name";
 export * from "./inspect-value";
 export * from "./is-present";
-export * from "./is-rush-workspace";
 export * from "./json";
 export * from "./log-paths";
 export * from "./pack";

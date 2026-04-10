@@ -55,6 +55,7 @@
     "@pnpm/logger": "^1001.0.1",
     "@pnpm/types": "^1001.3.0",
     "consola": "^3.4.2",
+    "detect-monorepo": "^1.0.0",
     "fs-extra": "^11.3.4",
     "get-or-throw": "^3.0.1",
     "get-tsconfig": "^4.13.7",

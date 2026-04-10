@@ -1,9 +1,10 @@
+import { detectMonorepo } from "detect-monorepo";
 import fs from "fs-extra";
 import { globSync } from "glob";
 import path from "node:path";
 import { useLogger } from "../logger";
 import type { PackageManifest, PackagesRegistry } from "../types";
-import { isRushWorkspace, readTypedJson, readTypedJsonSync } from "../utils";
+import { readTypedJson, readTypedJsonSync } from "../utils";
 import { findPackagesGlobs } from "./helpers";
 
 /**
@@ -72,7 +73,7 @@ function listWorkspacePackages(
   workspacePackagesOverride: string[] | undefined,
   workspaceRootDir: string,
 ) {
-  if (isRushWorkspace(workspaceRootDir)) {
+  if (detectMonorepo(workspaceRootDir)?.kind === "rush") {
     const rushConfig = readTypedJsonSync<RushConfig>(
       path.join(workspaceRootDir, "rush.json"),
     );

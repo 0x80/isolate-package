@@ -1,8 +1,9 @@
+import { detectMonorepo } from "detect-monorepo";
 import fs from "fs-extra";
 import { execSync } from "node:child_process";
 import path from "node:path";
 import { useLogger } from "~/lib/logger";
-import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
+import { getErrorMessage } from "~/lib/utils";
 
 /**
  * Generate an isolated / pruned lockfile, based on the existing lockfile from
@@ -20,9 +21,10 @@ export async function generateYarnLockfile({
 
   log.debug("Generating Yarn lockfile...");
 
-  const origLockfilePath = isRushWorkspace(workspaceRootDir)
-    ? path.join(workspaceRootDir, "common/config/rush", "yarn.lock")
-    : path.join(workspaceRootDir, "yarn.lock");
+  const origLockfilePath =
+    detectMonorepo(workspaceRootDir)?.kind === "rush"
+      ? path.join(workspaceRootDir, "common/config/rush", "yarn.lock")
+      : path.join(workspaceRootDir, "yarn.lock");
 
   const newLockfilePath = path.join(isolateDir, "yarn.lock");
 

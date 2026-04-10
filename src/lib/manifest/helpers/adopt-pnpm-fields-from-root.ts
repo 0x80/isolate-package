@@ -1,8 +1,9 @@
 import type { ProjectManifest, PnpmSettings } from "@pnpm/types";
+import { detectMonorepo } from "detect-monorepo";
 import path from "path";
 import { usePackageManager } from "~/lib/package-manager";
 import type { PackageManifest } from "~/lib/types";
-import { isRushWorkspace, readTypedJson } from "~/lib/utils";
+import { readTypedJson } from "~/lib/utils";
 
 /**
  * Adopts workspace-level fields from the root package manifest. For pnpm this
@@ -13,7 +14,7 @@ export async function adoptPnpmFieldsFromRoot(
   targetPackageManifest: PackageManifest,
   workspaceRootDir: string,
 ): Promise<PackageManifest> {
-  if (isRushWorkspace(workspaceRootDir)) {
+  if (detectMonorepo(workspaceRootDir)?.kind === "rush") {
     return targetPackageManifest;
   }
 

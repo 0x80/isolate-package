@@ -4,7 +4,10 @@ import { generatePnpmLockfile } from "./generate-pnpm-lockfile";
 /** Mock utils */
 vi.mock("~/lib/utils", () => ({
   getErrorMessage: vi.fn((err: Error) => err.message),
-  isRushWorkspace: vi.fn(() => false),
+}));
+
+vi.mock("detect-monorepo", () => ({
+  detectMonorepo: vi.fn(() => ({ rootDir: "/workspace", kind: "pnpm" })),
 }));
 
 /** Mock pnpm v8 lockfile functions */
@@ -57,7 +60,7 @@ const { pruneLockfile: pruneLockfile_v9 } = vi.mocked(
   await import("pnpm_prune_lockfile_v9"),
 );
 
-const { isRushWorkspace } = vi.mocked(await import("~/lib/utils"));
+const { detectMonorepo } = vi.mocked(await import("detect-monorepo"));
 
 /** Reusable lockfile fixture */
 function createMockLockfile() {
@@ -356,7 +359,7 @@ describe("generatePnpmLockfile", () => {
   });
 
   it("should use Rush lockfile path when in a Rush workspace", async () => {
-    isRushWorkspace.mockReturnValue(true);
+    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "rush" });
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
     getLockfileImporterId_v9.mockReturnValue("apps/my-app");

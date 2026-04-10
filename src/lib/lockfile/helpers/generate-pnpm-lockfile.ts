@@ -1,3 +1,4 @@
+import { detectMonorepo } from "detect-monorepo";
 import assert from "node:assert";
 import path from "node:path";
 import {
@@ -15,7 +16,7 @@ import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
 import { pick } from "remeda";
 import { useLogger } from "~/lib/logger";
 import type { PackageManifest, PackagesRegistry, PatchFile } from "~/lib/types";
-import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
+import { getErrorMessage } from "~/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
 export async function generatePnpmLockfile({
@@ -52,7 +53,7 @@ export async function generatePnpmLockfile({
   log.debug("Generating PNPM lockfile...");
 
   try {
-    const isRush = isRushWorkspace(workspaceRootDir);
+    const isRush = detectMonorepo(workspaceRootDir)?.kind === "rush";
 
     const lockfile = useVersion9
       ? await readWantedLockfile_v9(

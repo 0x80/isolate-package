@@ -1,5 +1,5 @@
+import { detectMonorepo } from "detect-monorepo";
 import path from "node:path";
-import { isRushWorkspace } from "../utils/is-rush-workspace";
 import { inferFromFiles, inferFromManifest } from "./helpers";
 import type { PackageManager } from "./names";
 
@@ -23,7 +23,7 @@ export function usePackageManager() {
  * different lockfiles and ask the OS to report the installed version.
  */
 export function detectPackageManager(workspaceRootDir: string): PackageManager {
-  if (isRushWorkspace(workspaceRootDir)) {
+  if (detectMonorepo(workspaceRootDir)?.kind === "rush") {
     packageManager = inferFromFiles(
       path.join(workspaceRootDir, "common/config/rush"),
     );
