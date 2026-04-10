@@ -44,10 +44,16 @@
     "lint": "oxlint -c .oxlintrc.json --type-aware",
     "check-format": "oxfmt --check",
     "check-types": "tsc --noEmit",
-    "prepare": "pnpm check-types && pnpm build",
+    "prepare": "husky && pnpm check-types && pnpm build",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "oxfmt",
+      "oxlint -c .oxlintrc.json"
+    ]
   },
   "dependencies": {
     "@npmcli/arborist": "^9.4.2",
@@ -78,6 +84,8 @@
     "@types/npmcli__config": "^6.0.3",
     "@types/source-map-support": "^0.5.10",
     "@types/tar-fs": "^2.0.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "oxfmt": "^0.44.0",
     "oxlint": "^1.59.0",
     "oxlint-tsgolint": "^0.20.0",
