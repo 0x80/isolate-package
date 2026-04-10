@@ -190,7 +190,7 @@ export function resolveWorkspacePaths(config: IsolateConfigResolved) {
     return { targetPackageDir, workspaceRootDir: process.cwd() };
   }
 
-  if (config.workspaceRoot) {
+  if (config.workspaceRoot !== undefined) {
     return {
       targetPackageDir,
       workspaceRootDir: path.join(targetPackageDir, config.workspaceRoot),
