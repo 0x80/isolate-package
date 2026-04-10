@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { detectMonorepo } from "detect-monorepo";
 import fs from "fs-extra";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -14,7 +15,13 @@ export type IsolateConfigResolved = {
   targetPackagePath?: string;
   tsconfigPath: string;
   workspacePackages?: string[];
-  workspaceRoot: string;
+  /**
+   * Path to the workspace root, relative to the target package directory.
+   * When omitted, the workspace root is auto-detected by walking upward from
+   * the target package directory looking for a pnpm-workspace.yaml, a
+   * package.json with a `workspaces` field, or a rush.json.
+   */
+  workspaceRoot?: string;
   forceNpm: boolean;
   pickFromScripts?: string[];
   omitFromScripts?: string[];
@@ -31,7 +38,7 @@ const configDefaults: IsolateConfigResolved = {
   targetPackagePath: undefined,
   tsconfigPath: "./tsconfig.json",
   workspacePackages: undefined,
-  workspaceRoot: "../..",
+  workspaceRoot: undefined,
   forceNpm: false,
   pickFromScripts: undefined,
   omitFromScripts: undefined,
@@ -170,17 +177,35 @@ function validateConfig(config: IsolateConfig) {
  * Resolve the target package directory and workspace root directory from the
  * configuration. When targetPackagePath is set, the config is assumed to live
  * at the workspace root. Otherwise it lives in the target package directory.
+ *
+ * When `workspaceRoot` is not explicitly set, auto-detect the monorepo root by
+ * walking upward from the target package directory.
  */
 export function resolveWorkspacePaths(config: IsolateConfigResolved) {
   const targetPackageDir = config.targetPackagePath
     ? path.join(process.cwd(), config.targetPackagePath)
     : process.cwd();
 
-  const workspaceRootDir = config.targetPackagePath
-    ? process.cwd()
-    : path.join(targetPackageDir, config.workspaceRoot);
+  if (config.targetPackagePath) {
+    return { targetPackageDir, workspaceRootDir: process.cwd() };
+  }
 
-  return { targetPackageDir, workspaceRootDir };
+  if (config.workspaceRoot !== undefined) {
+    return {
+      targetPackageDir,
+      workspaceRootDir: path.join(targetPackageDir, config.workspaceRoot),
+    };
+  }
+
+  const detected = detectMonorepo(targetPackageDir);
+
+  if (!detected) {
+    throw new Error(
+      `Failed to auto-detect monorepo workspace root from ${targetPackageDir}. Set the 'workspaceRoot' config option explicitly.`,
+    );
+  }
+
+  return { targetPackageDir, workspaceRootDir: detected.rootDir };
 }
 
 export function resolveConfig(

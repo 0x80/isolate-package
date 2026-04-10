@@ -24,7 +24,7 @@ const cli = meow(
       -t, --target-package-path <path>       Path to the target package
       -c, --tsconfig-path <path>             Path to tsconfig.json (default: ./tsconfig.json)
       -w, --workspace-packages <glob>        Workspace package globs (repeatable)
-      -r, --workspace-root <path>            Path to the workspace root (default: ../..)
+      -r, --workspace-root <path>            Path to the workspace root (auto-detected by default)
           --force-npm                        Force npm lockfile generation
       -p, --pick-from-scripts <name>         Scripts to include (repeatable)
           --omit-from-scripts <name>         Scripts to exclude (repeatable)
@@ -32,7 +32,7 @@ const cli = meow(
 
     Examples
       $ isolate --log-level debug
-      $ isolate --force-npm --workspace-root ../..
+      $ isolate --force-npm
       $ isolate --pick-from-scripts build --pick-from-scripts start
   `,
   {
