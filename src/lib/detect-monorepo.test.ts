@@ -145,7 +145,7 @@ describe("detectMonorepo", () => {
       path.join(tmpRoot, "package.json"),
       [
         "{",
-        '  // root manifest',
+        "  // root manifest",
         '  "name": "root",',
         '  "version": "1.0.0",',
         '  "workspaces": ["packages/*"],',
