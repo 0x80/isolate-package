@@ -44,7 +44,7 @@
     "lint": "oxlint -c .oxlintrc.json --type-aware",
     "check-format": "oxfmt --check",
     "check-types": "tsc --noEmit",
-    "prepare": "husky && pnpm check-types && pnpm build",
+    "prepare": "(husky || true) && pnpm check-types && pnpm build",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
