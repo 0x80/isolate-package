@@ -92,7 +92,7 @@
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
       "oxfmt",
-      "oxlint -c .oxlintrc.json"
+      "oxlint -c .oxlintrc.json --type-aware"
     ]
   },
   "engines": {
