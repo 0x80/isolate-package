@@ -23,9 +23,10 @@ export function usePackageManager() {
  * different lockfiles and ask the OS to report the installed version.
  */
 export function detectPackageManager(workspaceRootDir: string): PackageManager {
-  if (detectMonorepo(workspaceRootDir)?.kind === "rush") {
+  const monorepo = detectMonorepo(workspaceRootDir);
+  if (monorepo?.kind === "rush") {
     packageManager = inferFromFiles(
-      path.join(workspaceRootDir, "common/config/rush"),
+      path.join(monorepo.rootDir, "common/config/rush"),
     );
   } else {
     /**

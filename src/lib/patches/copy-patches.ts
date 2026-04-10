@@ -150,11 +150,12 @@ async function readLockfilePatchedDependencies(
   try {
     const { majorVersion } = usePackageManager();
     const useVersion9 = majorVersion >= 9;
-    const isRush = detectMonorepo(workspaceRootDir)?.kind === "rush";
+    const monorepo = detectMonorepo(workspaceRootDir);
 
-    const lockfileDir = isRush
-      ? path.join(workspaceRootDir, "common/config/rush")
-      : workspaceRootDir;
+    const lockfileDir =
+      monorepo?.kind === "rush"
+        ? path.join(monorepo.rootDir, "common/config/rush")
+        : workspaceRootDir;
 
     const lockfile = useVersion9
       ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })

@@ -53,25 +53,19 @@ export async function generatePnpmLockfile({
   log.debug("Generating PNPM lockfile...");
 
   try {
-    const isRush = detectMonorepo(workspaceRootDir)?.kind === "rush";
+    const monorepo = detectMonorepo(workspaceRootDir);
+    const isRush = monorepo?.kind === "rush";
+    const lockfileInputDir = isRush
+      ? path.join(monorepo.rootDir, "common/config/rush")
+      : workspaceRootDir;
 
     const lockfile = useVersion9
-      ? await readWantedLockfile_v9(
-          isRush
-            ? path.join(workspaceRootDir, "common/config/rush")
-            : workspaceRootDir,
-          {
-            ignoreIncompatible: false,
-          },
-        )
-      : await readWantedLockfile_v8(
-          isRush
-            ? path.join(workspaceRootDir, "common/config/rush")
-            : workspaceRootDir,
-          {
-            ignoreIncompatible: false,
-          },
-        );
+      ? await readWantedLockfile_v9(lockfileInputDir, {
+          ignoreIncompatible: false,
+        })
+      : await readWantedLockfile_v8(lockfileInputDir, {
+          ignoreIncompatible: false,
+        });
 
     assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
 

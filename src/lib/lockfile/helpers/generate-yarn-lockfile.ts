@@ -21,9 +21,10 @@ export async function generateYarnLockfile({
 
   log.debug("Generating Yarn lockfile...");
 
+  const monorepo = detectMonorepo(workspaceRootDir);
   const origLockfilePath =
-    detectMonorepo(workspaceRootDir)?.kind === "rush"
-      ? path.join(workspaceRootDir, "common/config/rush", "yarn.lock")
+    monorepo?.kind === "rush"
+      ? path.join(monorepo.rootDir, "common/config/rush", "yarn.lock")
       : path.join(workspaceRootDir, "yarn.lock");
 
   const newLockfilePath = path.join(isolateDir, "yarn.lock");

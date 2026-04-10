@@ -73,9 +73,10 @@ function listWorkspacePackages(
   workspacePackagesOverride: string[] | undefined,
   workspaceRootDir: string,
 ) {
-  if (detectMonorepo(workspaceRootDir)?.kind === "rush") {
+  const monorepo = detectMonorepo(workspaceRootDir);
+  if (monorepo?.kind === "rush") {
     const rushConfig = readTypedJsonSync<RushConfig>(
-      path.join(workspaceRootDir, "rush.json"),
+      path.join(monorepo.rootDir, "rush.json"),
     );
 
     return rushConfig.projects.map(({ projectFolder }) => projectFolder);
