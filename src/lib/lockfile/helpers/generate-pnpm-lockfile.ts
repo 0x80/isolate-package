@@ -1,4 +1,3 @@
-import { detectMonorepo } from "detect-monorepo";
 import assert from "node:assert";
 import path from "node:path";
 import {
@@ -16,7 +15,7 @@ import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
 import { pick } from "remeda";
 import { useLogger } from "~/lib/logger";
 import type { PackageManifest, PackagesRegistry, PatchFile } from "~/lib/types";
-import { getErrorMessage } from "~/lib/utils";
+import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
 export async function generatePnpmLockfile({
@@ -53,19 +52,25 @@ export async function generatePnpmLockfile({
   log.debug("Generating PNPM lockfile...");
 
   try {
-    const monorepo = detectMonorepo(workspaceRootDir);
-    const isRush = monorepo?.kind === "rush";
-    const lockfileInputDir = isRush
-      ? path.join(monorepo.rootDir, "common/config/rush")
-      : workspaceRootDir;
+    const isRush = isRushWorkspace(workspaceRootDir);
 
     const lockfile = useVersion9
-      ? await readWantedLockfile_v9(lockfileInputDir, {
-          ignoreIncompatible: false,
-        })
-      : await readWantedLockfile_v8(lockfileInputDir, {
-          ignoreIncompatible: false,
-        });
+      ? await readWantedLockfile_v9(
+          isRush
+            ? path.join(workspaceRootDir, "common/config/rush")
+            : workspaceRootDir,
+          {
+            ignoreIncompatible: false,
+          },
+        )
+      : await readWantedLockfile_v8(
+          isRush
+            ? path.join(workspaceRootDir, "common/config/rush")
+            : workspaceRootDir,
+          {
+            ignoreIncompatible: false,
+          },
+        );
 
     assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
 

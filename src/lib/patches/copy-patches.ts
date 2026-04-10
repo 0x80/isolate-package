@@ -1,4 +1,3 @@
-import { detectMonorepo } from "detect-monorepo";
 import fs from "fs-extra";
 import path from "node:path";
 import { readWantedLockfile as readWantedLockfile_v8 } from "pnpm_lockfile_file_v8";
@@ -9,6 +8,7 @@ import type { PackageManifest, PatchFile, PnpmSettings } from "~/lib/types";
 import {
   filterPatchedDependencies,
   getRootRelativeLogPath,
+  isRushWorkspace,
   readTypedJson,
   readTypedYamlSync,
 } from "~/lib/utils";
@@ -150,12 +150,11 @@ async function readLockfilePatchedDependencies(
   try {
     const { majorVersion } = usePackageManager();
     const useVersion9 = majorVersion >= 9;
-    const monorepo = detectMonorepo(workspaceRootDir);
+    const isRush = isRushWorkspace(workspaceRootDir);
 
-    const lockfileDir =
-      monorepo?.kind === "rush"
-        ? path.join(monorepo.rootDir, "common/config/rush")
-        : workspaceRootDir;
+    const lockfileDir = isRush
+      ? path.join(workspaceRootDir, "common/config/rush")
+      : workspaceRootDir;
 
     const lockfile = useVersion9
       ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })

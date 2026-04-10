@@ -1,4 +1,3 @@
-import { detectMonorepo } from "detect-monorepo";
 import fs from "fs-extra";
 import { got } from "get-or-throw";
 import assert from "node:assert";
@@ -29,6 +28,7 @@ import type { PackageManifest } from "./lib/types";
 import {
   getDirname,
   getRootRelativeLogPath,
+  isRushWorkspace,
   readTypedJson,
   writeTypedYamlSync,
 } from "./lib/utils";
@@ -305,7 +305,7 @@ export function createIsolator(config?: IsolateConfig) {
        *
        * Rush doesn't have a pnpm-workspace.yaml file, so we generate one.
        */
-      if (detectMonorepo(workspaceRootDir)?.kind === "rush") {
+      if (isRushWorkspace(workspaceRootDir)) {
         const packagesFolderNames = unique(
           internalPackageNames.map(
             (name) =>

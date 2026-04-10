@@ -16,12 +16,9 @@ vi.mock("~/lib/utils", () => ({
   filterPatchedDependencies: vi.fn(),
   getIsolateRelativeLogPath: vi.fn((p: string) => p),
   getRootRelativeLogPath: vi.fn((p: string) => p),
+  isRushWorkspace: vi.fn(() => false),
   readTypedJson: vi.fn(),
   readTypedYamlSync: vi.fn(),
-}));
-
-vi.mock("detect-monorepo", () => ({
-  detectMonorepo: vi.fn(() => ({ rootDir: "/workspace", kind: "pnpm" })),
 }));
 
 /** Mock the package manager */

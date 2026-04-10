@@ -8,19 +8,17 @@ import { adoptPnpmFieldsFromRoot } from "./adopt-pnpm-fields-from-root";
 
 /** Mock the dependencies */
 vi.mock("~/lib/utils", () => ({
+  isRushWorkspace: vi.fn(),
   readTypedJson: vi.fn(),
-}));
-
-vi.mock("detect-monorepo", () => ({
-  detectMonorepo: vi.fn(),
 }));
 
 vi.mock("~/lib/package-manager", () => ({
   usePackageManager: vi.fn(() => ({ name: "pnpm", majorVersion: 9 })),
 }));
 
-const { readTypedJson } = vi.mocked(await import("~/lib/utils"));
-const { detectMonorepo } = vi.mocked(await import("detect-monorepo"));
+const { isRushWorkspace, readTypedJson } = vi.mocked(
+  await import("~/lib/utils"),
+);
 
 const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
 
@@ -34,7 +32,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
   });
 
   it("should return original manifest for Rush workspace", async () => {
-    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "rush" });
+    isRushWorkspace.mockReturnValue(true);
     const targetManifest: PackageManifest = {
       name: "test-package",
       version: "1.0.0",
@@ -43,12 +41,12 @@ describe("adoptPnpmFieldsFromRoot", () => {
     const result = await adoptPnpmFieldsFromRoot(targetManifest, "/workspace");
 
     expect(result).toBe(targetManifest);
-    expect(detectMonorepo).toHaveBeenCalledWith("/workspace");
+    expect(isRushWorkspace).toHaveBeenCalledWith("/workspace");
     expect(readTypedJson).not.toHaveBeenCalled();
   });
 
   it("should return original manifest when no pnpm fields are present", async () => {
-    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "pnpm" });
+    isRushWorkspace.mockReturnValue(false);
     readTypedJson.mockResolvedValue({
       name: "root",
       version: "1.0.0",
@@ -65,7 +63,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
   });
 
   it("should adopt only overrides when only overrides are present", async () => {
-    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "pnpm" });
+    isRushWorkspace.mockReturnValue(false);
     readTypedJson.mockResolvedValue({
       name: "root",
       version: "1.0.0",
@@ -95,7 +93,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
   });
 
   it("should adopt only onlyBuiltDependencies when only onlyBuiltDependencies are present", async () => {
-    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "pnpm" });
+    isRushWorkspace.mockReturnValue(false);
     readTypedJson.mockResolvedValue({
       name: "root",
       version: "1.0.0",
@@ -121,7 +119,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
   });
 
   it("should adopt only ignoredBuiltDependencies when only ignoredBuiltDependencies are present", async () => {
-    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "pnpm" });
+    isRushWorkspace.mockReturnValue(false);
     readTypedJson.mockResolvedValue({
       name: "root",
       version: "1.0.0",
@@ -147,7 +145,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
   });
 
   it("should adopt all pnpm fields when all are present", async () => {
-    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "pnpm" });
+    isRushWorkspace.mockReturnValue(false);
     readTypedJson.mockResolvedValue({
       name: "root",
       version: "1.0.0",
@@ -183,7 +181,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
   });
 
   it("should replace existing pnpm fields in target manifest", async () => {
-    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "pnpm" });
+    isRushWorkspace.mockReturnValue(false);
     readTypedJson.mockResolvedValue({
       name: "root",
       version: "1.0.0",
@@ -225,7 +223,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
       version: "1.0.0",
       packageManagerString: "bun@1.0.0",
     } as ReturnType<typeof usePackageManager>);
-    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "pnpm" });
+    isRushWorkspace.mockReturnValue(false);
     readTypedJson.mockResolvedValue({
       name: "root",
       version: "1.0.0",
@@ -257,7 +255,7 @@ describe("adoptPnpmFieldsFromRoot", () => {
       version: "1.0.0",
       packageManagerString: "bun@1.0.0",
     } as ReturnType<typeof usePackageManager>);
-    detectMonorepo.mockReturnValue({ rootDir: "/workspace", kind: "pnpm" });
+    isRushWorkspace.mockReturnValue(false);
     readTypedJson.mockResolvedValue({
       name: "root",
       version: "1.0.0",
