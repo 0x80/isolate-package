@@ -36,7 +36,7 @@ or you can pass a configuration object directly:
 
 ```ts
 const packageNames = await getInternalPackageNames({
-  workspaceRoot: "../..",
+  includeDevDependencies: true,
 });
 ```
 
@@ -60,6 +60,6 @@ A helper for type-checked configuration files. Use it in `isolate.config.ts` or
 import { defineConfig } from "isolate-package";
 
 export default defineConfig({
-  workspaceRoot: "../..",
+  includeDevDependencies: true,
 });
 ```

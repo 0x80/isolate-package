@@ -22,7 +22,7 @@ the `defineConfig` helper for type checking:
 import { defineConfig } from "isolate-package";
 
 export default defineConfig({
-  workspaceRoot: "../..",
+  includeDevDependencies: true,
 });
 ```
 
@@ -156,29 +156,17 @@ from the root of the workspace.
 
 ### workspaceRoot
 
-Type: `string`, default: `"../.."`
+Type: `string | undefined`, default: `undefined`
 
-The relative path to the root of the workspace / monorepo. In a typical setup
-you will have a `packages` directory and possibly also an `apps` and a
-`services` directory, all of which contain packages. So any package you would
-want to isolate is located 2 levels up from the root.
+The relative path from the target package directory to the root of the
+workspace / monorepo. When omitted, the workspace root is auto-detected by
+walking upward from the target package directory and looking for a
+`pnpm-workspace.yaml`, a `package.json` with a `workspaces` field, or a
+`rush.json`.
 
-For example
+You only need to set this explicitly when auto-detection fails, for example
+when the target package is nested more than a few levels deep inside the
+workspace.
 
-```
-packages
-├─ backend
-│  └─ package.json
-└─ ui
-   └─ package.json
-apps
-├─ admin
-│  └─ package.json
-└─ web
-   └─ package.json
-services
-└─ api
-   └─ package.json
-```
-
-When you use the `targetPackagePath` option, this setting will be ignored.
+When you use the `targetPackagePath` option, this setting is ignored and the
+workspace root is assumed to be the current working directory.
