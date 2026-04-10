@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { readTypedJsonSync } from "./utils/json";
 
 export type MonorepoInfo = {
   /** Absolute path to the monorepo workspace root. */
@@ -34,14 +35,12 @@ export function detectMonorepo(
     const pkgPath = path.join(current, "package.json");
     if (fs.existsSync(pkgPath)) {
       try {
-        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8")) as {
-          workspaces?: unknown;
-        };
+        const pkg = readTypedJsonSync<{ workspaces?: unknown }>(pkgPath);
         if (pkg.workspaces) {
           return { rootDir: current, kind: "workspaces" };
         }
       } catch {
-        // Malformed package.json — ignore and continue upward.
+        /** Malformed package.json — ignore and continue upward. */
       }
     }
     const parent = path.dirname(current);

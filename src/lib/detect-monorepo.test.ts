@@ -140,6 +140,27 @@ describe("detectMonorepo", () => {
     });
   });
 
+  it("parses a package.json containing comments and trailing commas", () => {
+    fs.writeFileSync(
+      path.join(tmpRoot, "package.json"),
+      [
+        "{",
+        '  // root manifest',
+        '  "name": "root",',
+        '  "version": "1.0.0",',
+        '  "workspaces": ["packages/*"],',
+        "}",
+      ].join("\n"),
+    );
+
+    const result = detectMonorepo(tmpRoot);
+
+    expect(result).toEqual({
+      rootDir: tmpRoot,
+      kind: "workspaces",
+    });
+  });
+
   it("ignores a malformed package.json and continues upward", () => {
     fs.writeFileSync(
       path.join(tmpRoot, "pnpm-workspace.yaml"),
