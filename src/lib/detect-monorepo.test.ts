@@ -178,6 +178,36 @@ describe("detectMonorepo", () => {
     });
   });
 
+  it("ignores an unexpected workspaces shape", () => {
+    fs.writeFileSync(
+      path.join(tmpRoot, "package.json"),
+      JSON.stringify({
+        name: "root",
+        version: "1.0.0",
+        workspaces: "packages/*",
+      }),
+    );
+
+    const result = detectMonorepo(tmpRoot);
+
+    expect(result).toBeNull();
+  });
+
+  it("ignores a workspaces object without a packages array", () => {
+    fs.writeFileSync(
+      path.join(tmpRoot, "package.json"),
+      JSON.stringify({
+        name: "root",
+        version: "1.0.0",
+        workspaces: { nohoist: [] },
+      }),
+    );
+
+    const result = detectMonorepo(tmpRoot);
+
+    expect(result).toBeNull();
+  });
+
   it("does not match a package.json without a workspaces field", () => {
     const nested = path.join(tmpRoot, "subdir");
     fs.mkdirSync(nested);

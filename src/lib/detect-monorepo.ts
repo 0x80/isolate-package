@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { readTypedJsonSync } from "./utils/json";
+import { readTypedJsonSync } from "./utils";
 
 export type MonorepoInfo = {
   /** Absolute path to the monorepo workspace root. */
@@ -36,7 +36,7 @@ export function detectMonorepo(
     if (fs.existsSync(pkgPath)) {
       try {
         const pkg = readTypedJsonSync<{ workspaces?: unknown }>(pkgPath);
-        if (pkg.workspaces) {
+        if (hasWorkspacesField(pkg.workspaces)) {
           return { rootDir: current, kind: "workspaces" };
         }
       } catch {
@@ -48,4 +48,18 @@ export function detectMonorepo(
     current = parent;
   }
   return null;
+}
+
+/**
+ * Mirrors the shapes accepted by the rest of the codebase (see
+ * `find-packages-globs.ts`): an array of globs, or a Yarn-style object with a
+ * `packages` array. Anything else is treated as not a workspace root.
+ */
+function hasWorkspacesField(value: unknown): boolean {
+  if (Array.isArray(value)) return true;
+  if (typeof value === "object" && value !== null) {
+    const packages = (value as { packages?: unknown }).packages;
+    return Array.isArray(packages);
+  }
+  return false;
 }
