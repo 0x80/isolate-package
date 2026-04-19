@@ -13,9 +13,8 @@ vi.mock("~/lib/logger", () => ({
   useLogger: vi.fn(() => mockLogger),
 }));
 
-const { resolveCatalogDependencies } = await import(
-  "./resolve-catalog-dependencies"
-);
+const { resolveCatalogDependencies } =
+  await import("./resolve-catalog-dependencies");
 
 /**
  * Creates a temporary directory with optional pnpm-workspace.yaml and
@@ -278,7 +277,6 @@ describe("resolveCatalogDependencies", () => {
         },
       });
 
-
       const result = await resolveCatalogDependencies(
         { react: "catalog:" },
         tmpDir,
@@ -286,10 +284,12 @@ describe("resolveCatalogDependencies", () => {
 
       // Verify it fell back to package.json correctly
       expect(result).toEqual({ react: "^18.0.0" });
-      
+
       // Verify a warning was logged
       expect(mockLogger.warn).toHaveBeenCalledWith(
-        expect.stringContaining(`Failed to parse ${path.join(tmpDir, "pnpm-workspace.yaml")}:`),
+        expect.stringContaining(
+          `Failed to parse ${path.join(tmpDir, "pnpm-workspace.yaml")}:`,
+        ),
       );
     });
   });
