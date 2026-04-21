@@ -72,6 +72,10 @@ describe("processLockfile", () => {
     expect(generateNpmLockfile).toHaveBeenCalledWith({
       workspaceRootDir: "/workspace",
       isolateDir: "/workspace/apps/my-app/isolate",
+      targetPackageName: "my-app",
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+      packagesRegistry: {},
+      internalDepPackageNames: [],
     });
     expect(result).toBe(false);
   });

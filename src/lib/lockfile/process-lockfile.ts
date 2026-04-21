@@ -22,6 +22,7 @@ export async function processLockfile({
   isolateDir,
   internalDepPackageNames,
   targetPackageDir,
+  targetPackageName,
   targetPackageManifest,
   patchedDependencies,
   config,
@@ -39,13 +40,19 @@ export async function processLockfile({
 }) {
   const log = useLogger();
 
+  const npmGeneratorParams = {
+    workspaceRootDir,
+    isolateDir,
+    targetPackageName,
+    targetPackageManifest,
+    packagesRegistry,
+    internalDepPackageNames,
+  };
+
   if (config.forceNpm) {
     log.debug("Forcing to use NPM for isolate output");
 
-    await generateNpmLockfile({
-      workspaceRootDir,
-      isolateDir,
-    });
+    await generateNpmLockfile(npmGeneratorParams);
 
     return true;
   }
@@ -55,10 +62,7 @@ export async function processLockfile({
 
   switch (name) {
     case "npm": {
-      await generateNpmLockfile({
-        workspaceRootDir,
-        isolateDir,
-      });
+      await generateNpmLockfile(npmGeneratorParams);
 
       break;
     }
@@ -73,10 +77,7 @@ export async function processLockfile({
           "Detected modern version of Yarn. Using NPM lockfile fallback.",
         );
 
-        await generateNpmLockfile({
-          workspaceRootDir,
-          isolateDir,
-        });
+        await generateNpmLockfile(npmGeneratorParams);
 
         usedFallbackToNpm = true;
       }
@@ -112,10 +113,7 @@ export async function processLockfile({
       log.warn(
         `Unexpected package manager ${name as string}. Using NPM for output`,
       );
-      await generateNpmLockfile({
-        workspaceRootDir,
-        isolateDir,
-      });
+      await generateNpmLockfile(npmGeneratorParams);
 
       usedFallbackToNpm = true;
   }
