@@ -240,13 +240,33 @@ export function buildIsolatedLockfileJson({
   const outPackages: Record<string, LockfilePackageEntry> = {};
   const srcPackages = srcData.packages;
 
+  const targetPrefix = `${targetImporterLoc}/`;
+
   for (const node of reachable) {
     const origLoc = node.location;
 
     /** The target's self-link has no place in the isolate (root IS the target). */
     if (origLoc === targetLinkLoc) continue;
 
-    const newLoc = origLoc === targetImporterLoc ? "" : origLoc;
+    /**
+     * The target workspace becomes the isolate root, so:
+     *   "packages/app"                         -> ""
+     *   "packages/app/node_modules/<name>"     -> "node_modules/<name>"
+     *   "packages/app/node_modules/a/node_modules/b" -> "node_modules/a/node_modules/b"
+     *
+     * This matters when the target has its own nested version overrides
+     * in the source lockfile — those nested entries need to live at the
+     * isolate's root-level `node_modules` instead of remaining under the
+     * target's old workspace path (which does not exist in the isolate).
+     */
+    let newLoc: string;
+    if (origLoc === targetImporterLoc) {
+      newLoc = "";
+    } else if (origLoc.startsWith(targetPrefix)) {
+      newLoc = origLoc.slice(targetPrefix.length);
+    } else {
+      newLoc = origLoc;
+    }
 
     const srcEntry = srcPackages[origLoc];
     if (!srcEntry) continue;

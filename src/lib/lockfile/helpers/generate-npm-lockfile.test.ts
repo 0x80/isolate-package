@@ -316,4 +316,94 @@ describe("buildIsolatedLockfileJson", () => {
     expect(out.packages[""]!.dependencies).toBeUndefined();
     expect(out.packages[""]!.devDependencies).toBeUndefined();
   });
+
+  /**
+   * Reproduces the scenario from issue #111 (mono-ts): the target workspace
+   * depends on a different version of a package than is hoisted at the root,
+   * so the target has its own nested node_modules entry. The isolated
+   * lockfile must surface that nested version at the root-level
+   * node_modules (because the target becomes the isolate root) and it must
+   * preserve the original resolved/integrity exactly.
+   */
+  it("remaps nested node_modules under the target to the isolate root", () => {
+    const srcData = {
+      name: "root",
+      version: "0.0.0",
+      lockfileVersion: 3,
+      requires: true,
+      packages: {
+        "": { name: "root", version: "0.0.0", workspaces: ["services/*"] },
+        "services/api": {
+          name: "api",
+          version: "1.0.0",
+          dependencies: { "firebase-admin": "^12.0.0" },
+        },
+        "services/other": {
+          name: "other",
+          version: "1.0.0",
+          dependencies: { "firebase-admin": "^11.0.0" },
+        },
+        "node_modules/api": { resolved: "services/api", link: true },
+        "node_modules/other": { resolved: "services/other", link: true },
+        /** Hoisted old version used by the root and "other". */
+        "node_modules/firebase-admin": {
+          version: "11.11.1",
+          resolved:
+            "https://registry.npmjs.org/firebase-admin/-/firebase-admin-11.11.1.tgz",
+          integrity: "sha512-hoisted-v11-integrity",
+        },
+        /** Nested new version used by the target "api". */
+        "services/api/node_modules/firebase-admin": {
+          version: "12.7.0",
+          resolved:
+            "https://registry.npmjs.org/firebase-admin/-/firebase-admin-12.7.0.tgz",
+          integrity: "sha512-nested-v12-integrity",
+        },
+      },
+    };
+
+    const reachable: ReachableNode[] = [
+      {
+        location: "node_modules/api",
+        isLink: true,
+        target: { location: "services/api" },
+      },
+      { location: "services/api", isLink: false },
+      /** Only the nested v12 is reachable from the target. */
+      {
+        location: "services/api/node_modules/firebase-admin",
+        isLink: false,
+      },
+    ];
+
+    const out = buildIsolatedLockfileJson({
+      srcData,
+      reachable,
+      targetImporterLoc: "services/api",
+      targetLinkLoc: "node_modules/api",
+      targetPackageManifest: {
+        name: "api",
+        version: "1.0.0",
+        dependencies: { "firebase-admin": "^12.0.0" },
+      },
+    });
+
+    /** Nested entry is hoisted to the isolate's root node_modules. */
+    expect(out.packages["node_modules/firebase-admin"]).toEqual({
+      version: "12.7.0",
+      resolved:
+        "https://registry.npmjs.org/firebase-admin/-/firebase-admin-12.7.0.tgz",
+      integrity: "sha512-nested-v12-integrity",
+    });
+
+    /** The original nested path must not leak into the output. */
+    expect(
+      out.packages["services/api/node_modules/firebase-admin"],
+    ).toBeUndefined();
+
+    /** The hoisted v11 must not leak in either. */
+    expect(out.packages["node_modules/firebase-admin"]!.version).not.toBe(
+      "11.11.1",
+    );
+  });
 });
