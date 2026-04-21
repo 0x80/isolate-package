@@ -1,0 +1,9 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "files": ["index.js"],
+  "dependencies": {
+    "semver": "^6.3.0"
+  }
+}

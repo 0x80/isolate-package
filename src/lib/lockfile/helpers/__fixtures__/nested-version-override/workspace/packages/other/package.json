@@ -1,0 +1,9 @@
+{
+  "name": "other",
+  "version": "1.0.0",
+  "main": "index.js",
+  "files": ["index.js"],
+  "dependencies": {
+    "semver": "^7.6.0"
+  }
+}
