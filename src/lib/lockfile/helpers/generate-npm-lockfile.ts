@@ -48,6 +48,10 @@ type NpmLockfile = {
   requires?: boolean;
   packages: Record<string, LockfilePackageEntry>;
   overrides?: Record<string, unknown>;
+  /** Legacy v2 nested-tree representation; dropped when emitting the isolate lockfile. */
+  dependencies?: unknown;
+  /** Allow unknown top-level fields to flow through. */
+  [key: string]: unknown;
 };
 
 /**
@@ -147,25 +151,31 @@ async function generateFromRootLockfile({
   const rootTree = await arborist.loadVirtual();
 
   const workspaceNodes = arborist.workspaceNodes(rootTree, [targetPackageName]);
-  const targetLink = workspaceNodes[0];
+  const targetImporterNode = workspaceNodes[0];
 
-  if (!targetLink) {
+  if (!targetImporterNode) {
     throw new Error(
       `Target workspace "${targetPackageName}" not found in root package-lock.json`,
     );
   }
 
+  if (typeof targetImporterNode.location !== "string") {
+    throw new Error(
+      `Target workspace "${targetPackageName}" resolved to a node without a location`,
+    );
+  }
+
   /**
-   * `workspaceDependencySet` seeds with the workspace Link nodes and walks
-   * `edgesOut`, adding Link targets along the way. It does not add the
-   * target workspace's own importer Node, so we add it explicitly below.
+   * `workspaceDependencySet` walks `edgesOut` from each seed node. It does
+   * not add the seed node itself to the result, so ensure the target
+   * importer is included.
    */
   const reachableNodes = arborist.workspaceDependencySet(
     rootTree,
     [targetPackageName],
     false,
   );
-  reachableNodes.add(targetLink.target);
+  reachableNodes.add(targetImporterNode);
 
   const srcData = rootTree.meta?.data as NpmLockfile | undefined;
   if (!srcData || !srcData.packages) {
@@ -192,8 +202,14 @@ async function generateFromRootLockfile({
   const out = buildIsolatedLockfileJson({
     srcData,
     reachable,
-    targetImporterLoc: targetLink.target.location,
-    targetLinkLoc: targetLink.location,
+    targetImporterLoc: targetImporterNode.location,
+    /**
+     * npm's lockfile exposes each workspace as a Link at
+     * `node_modules/<name>`. This link is pointless in the isolate (the
+     * target becomes the root), so filter it out if it shows up in the
+     * reachable set.
+     */
+    targetLinkLoc: `node_modules/${targetPackageName}`,
     targetPackageManifest,
   });
 
@@ -240,6 +256,12 @@ export function buildIsolatedLockfileJson({
   const outPackages: Record<string, LockfilePackageEntry> = {};
   const srcPackages = srcData.packages;
 
+  if (!srcPackages[targetImporterLoc]) {
+    throw new Error(
+      `Source lockfile has no entry for target importer "${targetImporterLoc}"`,
+    );
+  }
+
   const targetPrefix = `${targetImporterLoc}/`;
 
   for (const node of reachable) {
@@ -269,7 +291,11 @@ export function buildIsolatedLockfileJson({
     }
 
     const srcEntry = srcPackages[origLoc];
-    if (!srcEntry) continue;
+    if (!srcEntry) {
+      throw new Error(
+        `Reachable node "${origLoc}" has no entry in source lockfile packages`,
+      );
+    }
 
     outPackages[newLoc] = { ...srcEntry };
   }
@@ -285,16 +311,22 @@ export function buildIsolatedLockfileJson({
   delete rootEntry.workspaces;
   outPackages[""] = rootEntry;
 
+  /**
+   * Spread unknown top-level fields from the source lockfile so future
+   * npm-introduced metadata survives isolation. Then override identity
+   * fields and the recomputed `packages`, and drop the legacy
+   * `dependencies` tree which would be stale now that `packages` has
+   * been subsetted.
+   */
   const out: NpmLockfile = {
+    ...srcData,
     name: targetPackageManifest.name,
     version: targetPackageManifest.version,
     lockfileVersion: srcData.lockfileVersion ?? 3,
     requires: srcData.requires ?? true,
     packages: outPackages,
   };
-  if (srcData.overrides) {
-    out.overrides = srcData.overrides;
-  }
+  delete out.dependencies;
 
   return out;
 }

@@ -121,4 +121,123 @@ describe("generateNpmLockfile integration", () => {
       }
     }
   });
+
+  /**
+   * Covers the internal-dep overlay path: when an internal dep's manifest
+   * has been adapted (workspace references rewritten to `file:`), that
+   * overlay must propagate into the isolated lockfile's entry for that
+   * dep — otherwise `npm ci` would try to resolve `utils: "*"` from the
+   * registry instead of linking the local `../utils` directory.
+   */
+  it("rewrites workspace refs to file: refs in internal dep lockfile entries", async () => {
+    const { tmpBase, workspaceRoot } = await setupFixture("internal-deps");
+    cleanupPaths.push(tmpBase);
+
+    const isolateDir = path.join(workspaceRoot, "packages/api/isolate");
+    await fs.ensureDir(isolateDir);
+
+    /**
+     * Simulate what adaptInternalPackageManifests + unpackDependencies
+     * produce: the isolate dir contains the target manifest at the root
+     * and each internal dep's adapted manifest at its rootRelativeDir.
+     */
+    await fs.writeJson(path.join(isolateDir, "package.json"), {
+      name: "api",
+      version: "1.0.0",
+      dependencies: {
+        shared: "file:./packages/shared",
+        semver: "^7.6.0",
+      },
+    });
+
+    await fs.ensureDir(path.join(isolateDir, "packages/shared"));
+    await fs.writeJson(path.join(isolateDir, "packages/shared/package.json"), {
+      name: "shared",
+      version: "1.0.0",
+      dependencies: {
+        utils: "file:../utils",
+        ms: "^2.1.3",
+      },
+    });
+
+    await fs.ensureDir(path.join(isolateDir, "packages/utils"));
+    await fs.writeJson(path.join(isolateDir, "packages/utils/package.json"), {
+      name: "utils",
+      version: "1.0.0",
+      dependencies: {
+        debug: "^4.3.0",
+      },
+    });
+
+    await generateNpmLockfile({
+      workspaceRootDir: workspaceRoot,
+      isolateDir,
+      targetPackageName: "api",
+      targetPackageManifest: {
+        name: "api",
+        version: "1.0.0",
+        dependencies: {
+          shared: "file:./packages/shared",
+          semver: "^7.6.0",
+        },
+      },
+      packagesRegistry: {
+        shared: {
+          absoluteDir: path.join(workspaceRoot, "packages/shared"),
+          rootRelativeDir: "packages/shared",
+          manifest: { name: "shared", version: "1.0.0" },
+        },
+        utils: {
+          absoluteDir: path.join(workspaceRoot, "packages/utils"),
+          rootRelativeDir: "packages/utils",
+          manifest: { name: "utils", version: "1.0.0" },
+        },
+      },
+      internalDepPackageNames: ["shared", "utils"],
+    });
+
+    const output = (await fs.readJson(
+      path.join(isolateDir, "package-lock.json"),
+    )) as {
+      packages: Record<
+        string,
+        {
+          version?: string;
+          dependencies?: Record<string, string>;
+          link?: boolean;
+          resolved?: string;
+        }
+      >;
+    };
+
+    /** Internal dep entries are present at their original relative paths. */
+    expect(output.packages["packages/shared"]).toBeDefined();
+    expect(output.packages["packages/utils"]).toBeDefined();
+
+    /** The adapted manifest's file: refs are applied to shared's entry. */
+    expect(output.packages["packages/shared"]!.dependencies).toEqual({
+      utils: "file:../utils",
+      ms: "^2.1.3",
+    });
+
+    /** utils keeps its external-only deps unchanged (no cross-internal refs). */
+    expect(output.packages["packages/utils"]!.dependencies).toEqual({
+      debug: "^4.3.0",
+    });
+
+    /** Link entries for internal deps point at the expected relative paths. */
+    expect(output.packages["node_modules/shared"]).toEqual({
+      resolved: "packages/shared",
+      link: true,
+    });
+    expect(output.packages["node_modules/utils"]).toEqual({
+      resolved: "packages/utils",
+      link: true,
+    });
+
+    /** External transitive deps needed by the closure are preserved verbatim. */
+    expect(output.packages["node_modules/semver"]?.version).toBe("7.7.4");
+    expect(output.packages["node_modules/ms"]?.version).toBe("2.1.3");
+    expect(output.packages["node_modules/debug"]?.version).toMatch(/^4\./);
+  });
 });
