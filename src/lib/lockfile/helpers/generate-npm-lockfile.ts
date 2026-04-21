@@ -178,10 +178,23 @@ async function generateFromRootLockfile({
   reachableNodes.add(targetImporterNode);
 
   const srcData = rootTree.meta?.data as NpmLockfile | undefined;
-  if (!srcData || !srcData.packages) {
-    throw new Error(
-      "Failed to load source lockfile data from Arborist virtual tree",
+  if (
+    !srcData ||
+    !srcData.packages ||
+    Object.keys(srcData.packages).length === 0
+  ) {
+    /**
+     * Arborist normalises v1 lockfiles to v3 in `loadVirtual`, but fall
+     * back defensively if the virtual tree still has no `packages` map
+     * (e.g. an unusual lockfile shape). The fallback generator reads
+     * node_modules and won't preserve original versions, but it will
+     * produce a valid lockfile rather than failing.
+     */
+    useLogger().debug(
+      "Source lockfile has no `packages` map; falling back to buildIdealTree",
     );
+    await generateViaBuildIdealTree({ workspaceRootDir, isolateDir });
+    return;
   }
 
   const reachable: ReachableNode[] = [...reachableNodes].map((node) => ({
@@ -264,6 +277,11 @@ export function buildIsolatedLockfileJson({
 
   const targetPrefix = `${targetImporterLoc}/`;
 
+  /** Track the source location each output entry came from, so we can
+   * produce a clear error if two source paths remap to the same target.
+   */
+  const origLocByNewLoc = new Map<string, string>();
+
   for (const node of reachable) {
     const origLoc = node.location;
 
@@ -297,7 +315,18 @@ export function buildIsolatedLockfileJson({
       );
     }
 
+    const existing = outPackages[newLoc];
+    if (existing && !entriesAreEquivalent(existing, srcEntry)) {
+      const previousOrigLoc = origLocByNewLoc.get(newLoc) ?? "<unknown>";
+      throw new Error(
+        `Path collision at "${newLoc}": source locations "${previousOrigLoc}" and "${origLoc}" both map there with conflicting entries. ` +
+          `This happens when the target pins a nested version override that collides with a hoisted version still needed by another reachable dependency. ` +
+          `Please report a reproduction at https://github.com/0x80/isolate-package/issues.`,
+      );
+    }
+
     outPackages[newLoc] = { ...srcEntry };
+    origLocByNewLoc.set(newLoc, origLoc);
   }
 
   /** Overlay the isolate root with the adapted target manifest. */
@@ -329,6 +358,24 @@ export function buildIsolatedLockfileJson({
   delete out.dependencies;
 
   return out;
+}
+
+/**
+ * Two source entries that map to the same output location are only
+ * "equivalent" if they install identical content. We compare the fields
+ * that actually determine what npm fetches and stores — version, resolved
+ * URL, integrity, and the link flag for workspace links.
+ */
+function entriesAreEquivalent(
+  a: LockfilePackageEntry,
+  b: LockfilePackageEntry,
+): boolean {
+  return (
+    a.version === b.version &&
+    a.resolved === b.resolved &&
+    a.integrity === b.integrity &&
+    !!a.link === !!b.link
+  );
 }
 
 function overlayManifestDeps(

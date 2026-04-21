@@ -318,6 +318,114 @@ describe("buildIsolatedLockfileJson", () => {
   });
 
   /**
+   * When the target's nested entry remaps onto the same path as a hoisted
+   * entry still needed by another reachable dependency, and the two
+   * entries differ in content, we must refuse to produce the lockfile
+   * rather than silently drop one version.
+   */
+  it("throws on a remap collision with conflicting entries", () => {
+    const srcData: Parameters<typeof buildIsolatedLockfileJson>[0]["srcData"] =
+      {
+        name: "root",
+        version: "0.0.0",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "root", version: "0.0.0", workspaces: ["packages/*"] },
+          "packages/api": {
+            name: "api",
+            version: "1.0.0",
+            dependencies: { semver: "^6", shared: "*" },
+          },
+          "packages/shared": {
+            name: "shared",
+            version: "1.0.0",
+            dependencies: { semver: "^7" },
+          },
+          "node_modules/shared": { resolved: "packages/shared", link: true },
+          /** Hoisted v7 used by the internal dep. */
+          "node_modules/semver": {
+            version: "7.7.4",
+            resolved: "https://registry.npmjs.org/semver/-/semver-7.7.4.tgz",
+            integrity: "sha512-hoisted-v7",
+          },
+          /** Nested v6 used by the target — will collide with the hoisted one. */
+          "packages/api/node_modules/semver": {
+            version: "6.3.1",
+            resolved: "https://registry.npmjs.org/semver/-/semver-6.3.1.tgz",
+            integrity: "sha512-nested-v6",
+          },
+        },
+      };
+
+    const reachable: ReachableNode[] = [
+      { location: "packages/api", isLink: false },
+      {
+        location: "node_modules/shared",
+        isLink: true,
+        target: { location: "packages/shared" },
+      },
+      { location: "packages/shared", isLink: false },
+      { location: "node_modules/semver", isLink: false },
+      { location: "packages/api/node_modules/semver", isLink: false },
+    ];
+
+    expect(() =>
+      buildIsolatedLockfileJson({
+        srcData,
+        reachable,
+        targetImporterLoc: "packages/api",
+        targetLinkLoc: "node_modules/api",
+        targetPackageManifest: { name: "api", version: "1.0.0" },
+      }),
+    ).toThrow(/Path collision at "node_modules\/semver"/);
+  });
+
+  /**
+   * Identical entries at colliding paths should not throw — copying the
+   * same content twice is a no-op.
+   */
+  it("does not throw when colliding entries are identical", () => {
+    const srcData: Parameters<typeof buildIsolatedLockfileJson>[0]["srcData"] =
+      {
+        name: "root",
+        version: "0.0.0",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "root", version: "0.0.0" },
+          "packages/api": { name: "api", version: "1.0.0" },
+          "node_modules/semver": {
+            version: "7.7.4",
+            resolved: "https://registry.npmjs.org/semver/-/semver-7.7.4.tgz",
+            integrity: "sha512-same",
+          },
+          "packages/api/node_modules/semver": {
+            version: "7.7.4",
+            resolved: "https://registry.npmjs.org/semver/-/semver-7.7.4.tgz",
+            integrity: "sha512-same",
+          },
+        },
+      };
+
+    const reachable: ReachableNode[] = [
+      { location: "packages/api", isLink: false },
+      { location: "node_modules/semver", isLink: false },
+      { location: "packages/api/node_modules/semver", isLink: false },
+    ];
+
+    expect(() =>
+      buildIsolatedLockfileJson({
+        srcData,
+        reachable,
+        targetImporterLoc: "packages/api",
+        targetLinkLoc: "node_modules/api",
+        targetPackageManifest: { name: "api", version: "1.0.0" },
+      }),
+    ).not.toThrow();
+  });
+
+  /**
    * Reproduces the scenario from issue #111 (mono-ts): the target workspace
    * depends on a different version of a package than is hoisted at the root,
    * so the target has its own nested node_modules entry. The isolated
