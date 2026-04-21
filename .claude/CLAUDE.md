@@ -55,8 +55,14 @@ by name.
 
 - PNPM: Prunes and adapts lockfile using `@pnpm/lockfile-file` and
   `@pnpm/prune-lockfile` (supports v8 and v9)
-- NPM: Uses `@npmcli/arborist` to generate from node_modules
-- Yarn: Generates from node_modules
+- NPM: Uses `@npmcli/arborist`'s `loadVirtual` + `workspaceDependencySet`
+  to compute the target's transitive closure, then copies matching entries
+  verbatim from the root `package-lock.json` (preserves original resolved
+  versions and integrity). Falls back to Arborist's `buildIdealTree` when
+  no root `package-lock.json` exists (e.g. `forceNpm` from pnpm/bun/yarn).
+- Yarn: Copies the root `yarn.lock` and runs `yarn install` locally to
+  prune it (Yarn v1 only; v2+ falls through to the NPM generator)
+- Bun: Walks and prunes the root `bun.lock` manually
 
 **output/** - Handles file operations:
 

@@ -131,11 +131,21 @@ const packageManager = usePackageManager();
 - Handle Rush workspaces specially (generate workspace config)
 - Prune lockfiles before writing
 
-### NPM/Yarn
+### NPM
+
+- Replace workspace specifiers with `file:` paths
+- Preserve original resolved versions and integrity by reading the root
+  `package-lock.json` via Arborist `loadVirtual` and copying matching
+  entries into the isolated lockfile
+- Fall back to Arborist's `buildIdealTree` (generating from node_modules)
+  when no root `package-lock.json` exists (`forceNpm` from non-npm
+  monorepos, or modern Yarn v2+)
+
+### Yarn
 
 - Replace workspace specifiers with file paths
-- Generate lockfiles based on node_modules content
-- Handle different workspace configuration formats
+- Yarn v1: copy `yarn.lock` and run a local `yarn install` to prune
+- Yarn v2+: fall through to the NPM generator
 
 ## Pull Request Guidelines
 
