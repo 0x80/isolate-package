@@ -152,6 +152,64 @@ describe("collectReachablePackageNames", () => {
     expect([...result].sort()).toEqual(["@scope/leaf", "pkg-a", "pkg-b"]);
   });
 
+  it("walks optionalDependencies of target and internal packages", () => {
+    const appManifest: PackageManifest = {
+      name: "app",
+      version: "1.0.0",
+      dependencies: { "pkg-a": "workspace:*" },
+      optionalDependencies: { "optional-on-target": "^1.0.0" },
+    };
+    const pkgAManifest: PackageManifest = {
+      name: "pkg-a",
+      version: "1.0.0",
+      optionalDependencies: { "optional-on-internal": "^1.0.0" },
+    };
+
+    const registry: PackagesRegistry = {
+      "pkg-a": entry(pkgAManifest),
+    };
+
+    const result = collectReachablePackageNames({
+      targetPackageManifest: appManifest,
+      packagesRegistry: registry,
+      includeDevDependencies: false,
+    });
+
+    expect(result.has("optional-on-target")).toBe(true);
+    expect(result.has("optional-on-internal")).toBe(true);
+  });
+
+  it("walks peerDependencies of target and internal packages", () => {
+    /**
+     * With pnpm's default autoInstallPeers, peer deps typically end up
+     * installed in the isolate and may carry patches.
+     */
+    const appManifest: PackageManifest = {
+      name: "app",
+      version: "1.0.0",
+      dependencies: { "pkg-a": "workspace:*" },
+      peerDependencies: { "peer-on-target": "^1.0.0" },
+    };
+    const pkgAManifest: PackageManifest = {
+      name: "pkg-a",
+      version: "1.0.0",
+      peerDependencies: { "peer-on-internal": "^1.0.0" },
+    };
+
+    const registry: PackagesRegistry = {
+      "pkg-a": entry(pkgAManifest),
+    };
+
+    const result = collectReachablePackageNames({
+      targetPackageManifest: appManifest,
+      packagesRegistry: registry,
+      includeDevDependencies: false,
+    });
+
+    expect(result.has("peer-on-target")).toBe(true);
+    expect(result.has("peer-on-internal")).toBe(true);
+  });
+
   it("tolerates cycles between internal packages", () => {
     /** Each package already visited is skipped on re-entry */
     const aManifest: PackageManifest = {

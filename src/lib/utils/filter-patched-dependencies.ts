@@ -36,7 +36,7 @@ export function filterPatchedDependencies<T>({
   for (const [packageSpec, patchInfo] of Object.entries(patchedDependencies)) {
     const packageName = getPackageName(packageSpec);
 
-    /** Check if it's a production dependency */
+    /** Direct production dependency */
     if (targetPackageManifest.dependencies?.[packageName]) {
       filteredPatches[packageSpec] = patchInfo;
       includedCount++;
@@ -44,23 +44,22 @@ export function filterPatchedDependencies<T>({
       continue;
     }
 
-    /** Check if it's a dev dependency and we should include dev dependencies */
-    if (targetPackageManifest.devDependencies?.[packageName]) {
-      if (includeDevDependencies) {
-        filteredPatches[packageSpec] = patchInfo;
-        includedCount++;
-        log.debug(`Including dev dependency patch: ${packageSpec}`);
-      } else {
-        excludedCount++;
-        log.debug(`Excluding dev dependency patch: ${packageSpec}`);
-      }
+    /** Direct dev dependency (respects the dev-deps flag) */
+    if (
+      includeDevDependencies &&
+      targetPackageManifest.devDependencies?.[packageName]
+    ) {
+      filteredPatches[packageSpec] = patchInfo;
+      includedCount++;
+      log.debug(`Including dev dependency patch: ${packageSpec}`);
       continue;
     }
 
     /**
-     * Not a direct dep. If the package is reachable via an internal workspace
-     * package, the patch should still end up in the isolated output so pnpm
-     * applies it at install time.
+     * Reachable via an internal workspace package. This fires even when the
+     * package is also listed in the target's devDependencies with
+     * `includeDevDependencies=false`, because the package is still installed
+     * in the isolate as a prod transitive.
      */
     if (reachableDependencyNames?.has(packageName)) {
       filteredPatches[packageSpec] = patchInfo;
@@ -69,10 +68,14 @@ export function filterPatchedDependencies<T>({
       continue;
     }
 
-    /** Package not reachable from the target */
-    log.debug(
-      `Excluding patch: ${packageSpec} (package "${packageName}" not reachable from target)`,
-    );
+    /** Package won't be installed in the isolate */
+    if (targetPackageManifest.devDependencies?.[packageName]) {
+      log.debug(`Excluding dev dependency patch: ${packageSpec}`);
+    } else {
+      log.debug(
+        `Excluding patch: ${packageSpec} (package "${packageName}" not reachable from target)`,
+      );
+    }
     excludedCount++;
   }
 

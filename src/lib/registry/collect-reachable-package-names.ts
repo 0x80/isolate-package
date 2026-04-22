@@ -11,9 +11,11 @@ import type { PackageManifest, PackagesRegistry } from "../types";
  * `patchedDependencies` so that patches for deps introduced via internal
  * packages aren't dropped.
  *
- * devDependencies of internal packages are never followed — they aren't
- * installed in the isolate. devDependencies of the *target* are followed only
- * when `includeDevDependencies` is true.
+ * `dependencies`, `optionalDependencies`, and `peerDependencies` are all
+ * walked — any of them can lead to a package being installed in the isolate
+ * (pnpm installs peers by default via `autoInstallPeers`). devDependencies of
+ * internal packages are never followed, and devDependencies of the *target*
+ * are followed only when `includeDevDependencies` is true.
  *
  * Note: only recurses through internal packages — manifests of external deps
  * aren't available here. Deep external→external transitives therefore won't
@@ -38,6 +40,8 @@ export function collectReachablePackageNames({
   function walk(manifest: PackageManifest, isTarget: boolean) {
     const depNames = [
       ...Object.keys(manifest.dependencies ?? {}),
+      ...Object.keys(manifest.optionalDependencies ?? {}),
+      ...Object.keys(manifest.peerDependencies ?? {}),
       ...(isTarget && includeDevDependencies
         ? Object.keys(manifest.devDependencies ?? {})
         : []),

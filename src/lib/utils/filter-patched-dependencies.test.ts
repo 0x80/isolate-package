@@ -217,8 +217,32 @@ describe("filterPatchedDependencies", () => {
     expect(result).toBeUndefined();
   });
 
-  it("should prefer direct-dep match over reachable-set match", () => {
-    /** Direct deps include dev, but dev patches still respect the flag */
+  it("should include a patch when a target devDep is also reachable as a prod transitive", () => {
+    /**
+     * The target lists `tslib` as a devDep and runs with
+     * includeDevDependencies=false, but `tslib` is also a prod dep of an
+     * internal workspace package that IS installed in the isolate. The
+     * patch must be preserved because tslib will be present at install
+     * time through the internal package.
+     */
+    const manifest: PackageManifest = {
+      name: "app",
+      version: "1.0.0",
+      dependencies: { "firebase-package": "file:./packages/firebase-package" },
+      devDependencies: { tslib: "^2.0.0" },
+    };
+
+    const result = filterPatchedDependencies({
+      patchedDependencies: { "tslib@2.0.0": "patches/tslib.patch" },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+      reachableDependencyNames: new Set(["firebase-package", "tslib"]),
+    });
+
+    expect(result).toEqual({ "tslib@2.0.0": "patches/tslib.patch" });
+  });
+
+  it("should still exclude a pure target devDep patch when not reachable and dev deps are off", () => {
     const manifest: PackageManifest = {
       name: "app",
       version: "1.0.0",
@@ -229,12 +253,7 @@ describe("filterPatchedDependencies", () => {
       patchedDependencies: { "vitest@1.0.0": "patches/vitest.patch" },
       targetPackageManifest: manifest,
       includeDevDependencies: false,
-      /**
-       * Even if vitest is somehow in the reachable set, the direct-devDep
-       * branch runs first and excludes it when includeDevDependencies is
-       * false.
-       */
-      reachableDependencyNames: new Set(["vitest"]),
+      reachableDependencyNames: new Set(),
     });
 
     expect(result).toBeUndefined();
