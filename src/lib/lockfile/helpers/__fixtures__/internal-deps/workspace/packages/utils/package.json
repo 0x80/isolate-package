@@ -1,8 +1,10 @@
 {
   "name": "utils",
   "version": "1.0.0",
+  "files": [
+    "index.js"
+  ],
   "main": "index.js",
-  "files": ["index.js"],
   "dependencies": {
     "debug": "^4.3.0"
   }
