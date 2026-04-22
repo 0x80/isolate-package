@@ -4,7 +4,13 @@ import { readWantedLockfile as readWantedLockfile_v8 } from "pnpm_lockfile_file_
 import { readWantedLockfile as readWantedLockfile_v9 } from "pnpm_lockfile_file_v9";
 import { useLogger } from "~/lib/logger";
 import { usePackageManager } from "~/lib/package-manager";
-import type { PackageManifest, PatchFile, PnpmSettings } from "~/lib/types";
+import { collectReachablePackageNames } from "~/lib/registry";
+import type {
+  PackageManifest,
+  PackagesRegistry,
+  PatchFile,
+  PnpmSettings,
+} from "~/lib/types";
 import {
   filterPatchedDependencies,
   getRootRelativeLogPath,
@@ -16,11 +22,13 @@ import {
 export async function copyPatches({
   workspaceRootDir,
   targetPackageManifest,
+  packagesRegistry,
   isolateDir,
   includeDevDependencies,
 }: {
   workspaceRootDir: string;
   targetPackageManifest: PackageManifest;
+  packagesRegistry: PackagesRegistry;
   isolateDir: string;
   includeDevDependencies: boolean;
 }): Promise<Record<string, PatchFile>> {
@@ -82,10 +90,23 @@ export async function copyPatches({
     `Found ${Object.keys(patchedDependencies).length} patched dependencies in workspace`,
   );
 
+  /**
+   * Collect the set of dependency names reachable from the target (direct deps
+   * plus deps introduced by internal workspace packages). Patches for names in
+   * this set are preserved even when the target doesn't list them directly —
+   * see issue #167.
+   */
+  const reachableDependencyNames = collectReachablePackageNames({
+    targetPackageManifest,
+    packagesRegistry,
+    includeDevDependencies,
+  });
+
   const filteredPatches = filterPatchedDependencies({
     patchedDependencies,
     targetPackageManifest,
     includeDevDependencies,
+    reachableDependencyNames,
   });
 
   if (!filteredPatches) {

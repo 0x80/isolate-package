@@ -182,6 +182,64 @@ describe("filterPatchedDependencies", () => {
     expect(result).toBeUndefined();
   });
 
+  it("should include patches for packages reachable via internal workspace packages", () => {
+    /** Issue #167: patch targets a transitive dep via an internal package */
+    const manifest: PackageManifest = {
+      name: "consumer",
+      version: "1.0.0",
+      dependencies: { "firebase-package": "file:./packages/firebase-package" },
+    };
+
+    const result = filterPatchedDependencies({
+      patchedDependencies: { "tslib@2.0.0": "patches/tslib.patch" },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+      reachableDependencyNames: new Set(["firebase-package", "tslib"]),
+    });
+
+    expect(result).toEqual({ "tslib@2.0.0": "patches/tslib.patch" });
+  });
+
+  it("should exclude patches for packages not in direct deps nor the reachable set", () => {
+    const manifest: PackageManifest = {
+      name: "consumer",
+      version: "1.0.0",
+      dependencies: { "firebase-package": "file:./packages/firebase-package" },
+    };
+
+    const result = filterPatchedDependencies({
+      patchedDependencies: { "unrelated@1.0.0": "patches/unrelated.patch" },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+      reachableDependencyNames: new Set(["firebase-package", "tslib"]),
+    });
+
+    expect(result).toBeUndefined();
+  });
+
+  it("should prefer direct-dep match over reachable-set match", () => {
+    /** Direct deps include dev, but dev patches still respect the flag */
+    const manifest: PackageManifest = {
+      name: "app",
+      version: "1.0.0",
+      devDependencies: { vitest: "^1.0.0" },
+    };
+
+    const result = filterPatchedDependencies({
+      patchedDependencies: { "vitest@1.0.0": "patches/vitest.patch" },
+      targetPackageManifest: manifest,
+      includeDevDependencies: false,
+      /**
+       * Even if vitest is somehow in the reachable set, the direct-devDep
+       * branch runs first and excludes it when includeDevDependencies is
+       * false.
+       */
+      reachableDependencyNames: new Set(["vitest"]),
+    });
+
+    expect(result).toBeUndefined();
+  });
+
   it("should preserve patch value types", () => {
     const manifest: PackageManifest = {
       name: "test",

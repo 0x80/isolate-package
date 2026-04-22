@@ -3,17 +3,26 @@ import type { PackageManifest } from "~/lib/types";
 import { getPackageName } from "./get-package-name";
 
 /**
- * Filters patched dependencies to only include patches for packages that are
- * present in the target package's dependencies based on dependency type.
+ * Filters patched dependencies to only include patches for packages that will
+ * be present in the isolated output, either as a direct dependency of the
+ * target or as a transitive dependency reachable through internal workspace
+ * packages.
  */
 export function filterPatchedDependencies<T>({
   patchedDependencies,
   targetPackageManifest,
   includeDevDependencies,
+  reachableDependencyNames,
 }: {
   patchedDependencies: Record<string, T> | undefined;
   targetPackageManifest: PackageManifest;
   includeDevDependencies: boolean;
+  /**
+   * Additional set of dependency names reachable from the target (e.g. via
+   * internal workspace packages). Used to preserve patches for transitive
+   * deps that are not listed directly on the target manifest.
+   */
+  reachableDependencyNames?: Set<string>;
 }): Record<string, T> | undefined {
   const log = useLogger();
   if (!patchedDependencies || typeof patchedDependencies !== "object") {
@@ -48,9 +57,21 @@ export function filterPatchedDependencies<T>({
       continue;
     }
 
-    /** Package not found in dependencies or devDependencies */
+    /**
+     * Not a direct dep. If the package is reachable via an internal workspace
+     * package, the patch should still end up in the isolated output so pnpm
+     * applies it at install time.
+     */
+    if (reachableDependencyNames?.has(packageName)) {
+      filteredPatches[packageSpec] = patchInfo;
+      includedCount++;
+      log.debug(`Including transitive dependency patch: ${packageSpec}`);
+      continue;
+    }
+
+    /** Package not reachable from the target */
     log.debug(
-      `Excluding patch: ${packageSpec} (package "${packageName}" not in target dependencies)`,
+      `Excluding patch: ${packageSpec} (package "${packageName}" not reachable from target)`,
     );
     excludedCount++;
   }
