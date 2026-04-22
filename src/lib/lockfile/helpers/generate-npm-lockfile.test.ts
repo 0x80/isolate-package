@@ -302,6 +302,93 @@ describe("buildIsolatedLockfileJson", () => {
     expect(out.overrides).toBeUndefined();
   });
 
+  it("throws when the target importer is not in the reachable set", () => {
+    const srcData = createSrcLockfile();
+    /** Reachable set without the target importer — simulates an upstream bug. */
+    const reachable: ReachableNode[] = [
+      { location: "node_modules/express", isLink: false },
+    ];
+    expect(() =>
+      buildIsolatedLockfileJson({
+        srcData,
+        reachable,
+        targetImporterLoc: "packages/my-app",
+        targetLinkLoc: "node_modules/my-app",
+        targetPackageManifest: { name: "my-app", version: "1.0.0" },
+      }),
+    ).toThrow(/was not present in the reachable node set/);
+  });
+
+  it("does not emit a `requires` field when the source omitted it", () => {
+    const srcData = createSrcLockfile();
+    /** Source lockfile without `requires` (some npm versions omit it). */
+    delete (srcData as { requires?: boolean }).requires;
+
+    const out = buildIsolatedLockfileJson({
+      srcData,
+      reachable: createReachable(),
+      targetImporterLoc: "packages/my-app",
+      targetLinkLoc: "node_modules/my-app",
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+    });
+
+    expect("requires" in out).toBe(false);
+  });
+
+  it("preserves `requires` when the source has it", () => {
+    const srcData = createSrcLockfile();
+    expect(srcData.requires).toBe(true);
+
+    const out = buildIsolatedLockfileJson({
+      srcData,
+      reachable: createReachable(),
+      targetImporterLoc: "packages/my-app",
+      targetLinkLoc: "node_modules/my-app",
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+    });
+
+    expect(out.requires).toBe(true);
+  });
+
+  it("does not remap non-node_modules paths under the target", () => {
+    /**
+     * A target importer at `packages/my-app` with a sibling importer
+     * nested inside it (`packages/my-app/lib/core`) must keep its source
+     * path — remapping it would break both the output lockfile's install
+     * paths and the internal-dep overlay lookup.
+     */
+    const srcData: Parameters<typeof buildIsolatedLockfileJson>[0]["srcData"] =
+      {
+        name: "root",
+        version: "0.0.0",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "root", version: "0.0.0" },
+          "packages/my-app": { name: "my-app", version: "1.0.0" },
+          "packages/my-app/lib/core": { name: "core", version: "1.0.0" },
+        },
+      };
+
+    const reachable: ReachableNode[] = [
+      { location: "packages/my-app", isLink: false },
+      { location: "packages/my-app/lib/core", isLink: false },
+    ];
+
+    const out = buildIsolatedLockfileJson({
+      srcData,
+      reachable,
+      targetImporterLoc: "packages/my-app",
+      targetLinkLoc: "node_modules/my-app",
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+    });
+
+    /** Nested importer stays at its source path. */
+    expect(out.packages["packages/my-app/lib/core"]).toBeDefined();
+    /** It must NOT be remapped to "lib/core". */
+    expect(out.packages["lib/core"]).toBeUndefined();
+  });
+
   it("removes dep fields from root entry when adapted manifest omits them", () => {
     const srcData = createSrcLockfile();
     const out = buildIsolatedLockfileJson({

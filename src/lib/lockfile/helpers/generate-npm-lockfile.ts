@@ -275,7 +275,7 @@ export function buildIsolatedLockfileJson({
     );
   }
 
-  const targetPrefix = `${targetImporterLoc}/`;
+  const targetNestedNodeModulesPrefix = `${targetImporterLoc}/node_modules/`;
 
   /** Track the source location each output entry came from, so we can
    * produce a clear error if two source paths remap to the same target.
@@ -294,16 +294,16 @@ export function buildIsolatedLockfileJson({
      *   "packages/app/node_modules/<name>"     -> "node_modules/<name>"
      *   "packages/app/node_modules/a/node_modules/b" -> "node_modules/a/node_modules/b"
      *
-     * This matters when the target has its own nested version overrides
-     * in the source lockfile — those nested entries need to live at the
-     * isolate's root-level `node_modules` instead of remaining under the
-     * target's old workspace path (which does not exist in the isolate).
+     * Only `node_modules` subpaths under the target are remapped — other
+     * paths (e.g. a nested workspace importer like
+     * `packages/app/lib/core`) are preserved verbatim because their disk
+     * location in the isolate is unchanged.
      */
     let newLoc: string;
     if (origLoc === targetImporterLoc) {
       newLoc = "";
-    } else if (origLoc.startsWith(targetPrefix)) {
-      newLoc = origLoc.slice(targetPrefix.length);
+    } else if (origLoc.startsWith(targetNestedNodeModulesPrefix)) {
+      newLoc = origLoc.slice(targetImporterLoc.length + 1);
     } else {
       newLoc = origLoc;
     }
@@ -329,6 +329,17 @@ export function buildIsolatedLockfileJson({
     origLocByNewLoc.set(newLoc, origLoc);
   }
 
+  /**
+   * If the target importer didn't make it into the reachable set for any
+   * reason (upstream Arborist bug, programmer error), bail loudly rather
+   * than emit a synthesised root entry with no source metadata.
+   */
+  if (!outPackages[""]) {
+    throw new Error(
+      `Target importer "${targetImporterLoc}" was not present in the reachable node set; cannot construct isolate root entry`,
+    );
+  }
+
   /** Overlay the isolate root with the adapted target manifest. */
   const rootEntry: LockfilePackageEntry = { ...outPackages[""] };
   rootEntry.name = targetPackageManifest.name;
@@ -352,9 +363,16 @@ export function buildIsolatedLockfileJson({
     name: targetPackageManifest.name,
     version: targetPackageManifest.version,
     lockfileVersion: srcData.lockfileVersion ?? 3,
-    requires: srcData.requires ?? true,
     packages: outPackages,
   };
+  /**
+   * `requires` is propagated via the `...srcData` spread when the source
+   * has it. Don't invent one when the source omitted it — that would be
+   * an unnecessary diff from the original lockfile shape.
+   */
+  if (srcData.requires === undefined) {
+    delete out.requires;
+  }
   delete out.dependencies;
 
   return out;
