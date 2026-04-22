@@ -67,6 +67,7 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: { name: "test", version: "1.0.0" },
       isolateDir: "/workspace/isolate",
+      packagesRegistry: {},
       includeDevDependencies: false,
     });
 
@@ -127,6 +128,7 @@ describe("copyPatches", () => {
         workspaceRootDir: "/workspace",
         targetPackageManifest: { name: "test", version: "1.0.0" },
         isolateDir: "/workspace/isolate",
+        packagesRegistry: {},
         includeDevDependencies: false,
       });
 
@@ -146,6 +148,7 @@ describe("copyPatches", () => {
         workspaceRootDir: "/workspace",
         targetPackageManifest: { name: "test", version: "1.0.0" },
         isolateDir: "/workspace/isolate",
+        packagesRegistry: {},
         includeDevDependencies: false,
       });
 
@@ -175,6 +178,7 @@ describe("copyPatches", () => {
         workspaceRootDir: "/workspace",
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
+        packagesRegistry: {},
         includeDevDependencies: false,
       });
 
@@ -212,6 +216,7 @@ describe("copyPatches", () => {
         workspaceRootDir: "/workspace",
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
+        packagesRegistry: {},
         includeDevDependencies: true,
       });
 
@@ -222,6 +227,7 @@ describe("copyPatches", () => {
         patchedDependencies: { "vitest@1.0.0": "patches/vitest.patch" },
         targetPackageManifest: targetManifest,
         includeDevDependencies: true,
+        reachableDependencyNames: expect.any(Set),
       });
       expect(fs.copy).toHaveBeenCalledWith(
         "/workspace/patches/vitest.patch",
@@ -252,6 +258,7 @@ describe("copyPatches", () => {
         workspaceRootDir: "/workspace",
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
+        packagesRegistry: {},
         includeDevDependencies: false,
       });
 
@@ -282,6 +289,7 @@ describe("copyPatches", () => {
         workspaceRootDir: "/workspace",
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
+        packagesRegistry: {},
         includeDevDependencies: false,
       });
 
@@ -315,6 +323,7 @@ describe("copyPatches", () => {
         workspaceRootDir: "/workspace",
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
+        packagesRegistry: {},
         includeDevDependencies: false,
       });
 
@@ -357,6 +366,7 @@ describe("copyPatches", () => {
         workspaceRootDir: "/workspace",
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
+        packagesRegistry: {},
         includeDevDependencies: false,
       });
 
@@ -401,6 +411,7 @@ describe("copyPatches", () => {
         workspaceRootDir: "/workspace",
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
+        packagesRegistry: {},
         includeDevDependencies: false,
       });
 
@@ -447,6 +458,7 @@ describe("copyPatches", () => {
       workspaceRootDir: "/workspace",
       targetPackageManifest: targetManifest,
       isolateDir: "/workspace/isolate",
+      packagesRegistry: {},
       includeDevDependencies: false,
     });
 
@@ -457,5 +469,71 @@ describe("copyPatches", () => {
       "/workspace/patches/lodash.patch",
       "/workspace/isolate/patches/lodash.patch",
     );
+  });
+
+  it("should pass reachable transitive dep names from internal packages to the filter (regression: issue #167)", async () => {
+    /**
+     * Target `consumer` depends on internal `firebase-package`, which in turn
+     * depends on `tslib`. A patch for `tslib@2.0.0` declared at the workspace
+     * root must reach the filter with `tslib` in `reachableDependencyNames`
+     * so it can be preserved even though `consumer` doesn't list it directly.
+     */
+    const consumerManifest: PackageManifest = {
+      name: "consumer",
+      version: "1.0.0",
+      dependencies: { "firebase-package": "file:./packages/firebase-package" },
+    };
+
+    readTypedYamlSync.mockReturnValue({
+      patchedDependencies: {
+        "tslib@2.0.0": "patches/tslib@2.0.0.patch",
+      },
+    });
+    readTypedJson.mockResolvedValue({
+      name: "root",
+      version: "1.0.0",
+    } as PackageManifest);
+
+    filterPatchedDependencies.mockReturnValue({
+      "tslib@2.0.0": "patches/tslib@2.0.0.patch",
+    });
+
+    fs.existsSync.mockReturnValue(true);
+
+    usePackageManager.mockReturnValue({
+      name: "pnpm",
+      majorVersion: 9,
+      version: "9.0.0",
+      packageManagerString: "pnpm@9.0.0",
+    });
+
+    const result = await copyPatches({
+      workspaceRootDir: "/workspace",
+      targetPackageManifest: consumerManifest,
+      isolateDir: "/workspace/isolate",
+      packagesRegistry: {
+        "firebase-package": {
+          absoluteDir: "/workspace/packages/firebase-package",
+          rootRelativeDir: "packages/firebase-package",
+          manifest: {
+            name: "firebase-package",
+            version: "1.0.0",
+            dependencies: { tslib: "^2.0.0" },
+          },
+        },
+      },
+      includeDevDependencies: false,
+    });
+
+    expect(result).toEqual({
+      "tslib@2.0.0": { path: "patches/tslib@2.0.0.patch", hash: "" },
+    });
+
+    const filterCall = filterPatchedDependencies.mock.calls[0]?.[0];
+    expect(filterCall).toBeDefined();
+    const reachable = filterCall!.reachableDependencyNames;
+    expect(reachable).toBeInstanceOf(Set);
+    expect(reachable!.has("firebase-package")).toBe(true);
+    expect(reachable!.has("tslib")).toBe(true);
   });
 });
