@@ -31,7 +31,10 @@ export async function copyPatches({
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
   includeDevDependencies: boolean;
-}): Promise<Record<string, PatchFile>> {
+}): Promise<{
+  copiedPatches: Record<string, PatchFile>;
+  excludedPatches: Record<string, PatchFile>;
+}> {
   const log = useLogger();
 
   const { name: packageManagerName } = usePackageManager();
@@ -83,7 +86,10 @@ export async function copyPatches({
 
   if (!patchedDependencies || Object.keys(patchedDependencies).length === 0) {
     log.debug("No patched dependencies found in workspace root package.json");
-    return {};
+    return {
+      copiedPatches: {},
+      excludedPatches: {},
+    };
   }
 
   log.debug(
@@ -109,10 +115,6 @@ export async function copyPatches({
     reachableDependencyNames,
   });
 
-  if (!filteredPatches) {
-    return {};
-  }
-
   /**
    * Read the pnpm lockfile to get patch hashes. Bun doesn't store hashes in
    * its lockfile so we skip this for Bun.
@@ -122,9 +124,15 @@ export async function copyPatches({
       ? await readLockfilePatchedDependencies(workspaceRootDir)
       : undefined;
 
-  const copiedPatches: Record<string, PatchFile> = {};
+  const patches: {
+    copiedPatches: Record<string, PatchFile>;
+    excludedPatches: Record<string, PatchFile>;
+  } = {
+    copiedPatches: {},
+    excludedPatches: {},
+  };
 
-  for (const [packageSpec, patchPath] of Object.entries(filteredPatches)) {
+  for (const [packageSpec, patchPath] of Object.entries(patchedDependencies)) {
     const sourcePatchPath = path.resolve(workspaceRootDir, patchPath);
 
     if (!fs.existsSync(sourcePatchPath)) {
@@ -148,17 +156,26 @@ export async function copyPatches({
       log.warn(`No hash found for patch ${packageSpec} in lockfile`);
     }
 
-    copiedPatches[packageSpec] = {
-      path: patchPath,
-      hash,
-    };
+    if (filteredPatches?.[packageSpec]) {
+      patches.copiedPatches[packageSpec] = {
+        path: patchPath,
+        hash,
+      };
+    } else {
+      patches.excludedPatches[packageSpec] = {
+        path: patchPath,
+        hash,
+      };
+    }
   }
 
-  if (Object.keys(copiedPatches).length > 0) {
-    log.debug(`Copied ${Object.keys(copiedPatches).length} patch files`);
+  if (Object.keys(patches.copiedPatches).length > 0) {
+    log.debug(
+      `Copied ${Object.keys(patches.copiedPatches).length} patch files`,
+    );
   }
 
-  return copiedPatches;
+  return patches;
 }
 
 /**

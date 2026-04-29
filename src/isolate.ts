@@ -230,7 +230,7 @@ export function createIsolator(config?: IsolateConfig) {
       (packageManager.name === "pnpm" || packageManager.name === "bun") &&
       !config.forceNpm;
 
-    const copiedPatches = shouldCopyPatches
+    const { copiedPatches, excludedPatches } = shouldCopyPatches
       ? await copyPatches({
           workspaceRootDir,
           targetPackageManifest: outputManifest,
@@ -238,7 +238,7 @@ export function createIsolator(config?: IsolateConfig) {
           isolateDir,
           includeDevDependencies: config.includeDevDependencies,
         })
-      : {};
+      : { copiedPatches: {}, excludedPatches: {} };
 
     /** Generate an isolated lockfile based on the original one */
     const usedFallbackToNpm = await processLockfile({
@@ -324,32 +324,51 @@ export function createIsolator(config?: IsolateConfig) {
           packages,
         });
       } else {
-        /**
-         * Read the pnpm-workspace.yaml and rewrite its top-level
-         * patchedDependencies to only the patches that were actually copied
-         * into the isolate (with their relocated paths). Stale entries would
-         * point at non-existent files and break `pnpm install` in the isolate.
-         * If no patches were copied, drop the field entirely.
-         */
-        const pnpmSettings = readTypedYamlSync<PnpmSettings>(
-          path.join(workspaceRootDir, "pnpm-workspace.yaml"),
-        );
-
-        if (Object.keys(copiedPatches).length > 0) {
-          pnpmSettings.patchedDependencies = Object.fromEntries(
-            Object.entries(copiedPatches).map(([spec, patchFile]) => [
-              spec,
-              patchFile.path,
-            ]),
+        if (!Object.keys(excludedPatches).length) {
+          /**
+           * When no patches are excluded, we can simply copy the pnpm-workspace.yaml as is
+           */
+          log.debug(
+            `Copying pnpm-workspace.yaml to ${path.join(isolateDir, "pnpm-workspace.yaml")}`,
+          );
+          fs.copyFileSync(
+            path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+            path.join(isolateDir, "pnpm-workspace.yaml"),
           );
         } else {
-          delete pnpmSettings.patchedDependencies;
-        }
+          /**
+           * Read the pnpm-workspace.yaml and rewrite its top-level
+           * patchedDependencies to only the patches that were actually copied
+           * into the isolate (with their relocated paths). Stale entries would
+           * point at non-existent files and break `pnpm install` in the isolate.
+           * If no patches were copied, drop the field entirely.
+           */
+          const pnpmSettings = readTypedYamlSync<PnpmSettings>(
+            path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+          );
 
-        writeTypedYamlSync(
-          path.join(isolateDir, "pnpm-workspace.yaml"),
-          pnpmSettings,
-        );
+          if (Object.keys(copiedPatches).length > 0) {
+            pnpmSettings.patchedDependencies = Object.fromEntries(
+              Object.entries(copiedPatches).map(([spec, patchFile]) => [
+                spec,
+                patchFile.path,
+              ]),
+            );
+            log.debug(
+              `Copying and modifying pnpm-workspace.yaml to ${path.join(isolateDir, "pnpm-workspace.yaml")} with updated patchedDependencies field (${Object.keys(pnpmSettings.patchedDependencies).length})`,
+            );
+          } else {
+            delete pnpmSettings.patchedDependencies;
+            log.debug(
+              `Copying and modifying pnpm-workspace.yaml to ${path.join(isolateDir, "pnpm-workspace.yaml")} without patchedDependencies field`,
+            );
+          }
+
+          writeTypedYamlSync(
+            path.join(isolateDir, "pnpm-workspace.yaml"),
+            pnpmSettings,
+          );
+        }
       }
     }
 
