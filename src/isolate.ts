@@ -24,12 +24,13 @@ import { detectPackageManager, shouldUsePnpmPack } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
 import { copyPatches } from "./lib/patches/copy-patches";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
-import type { PackageManifest } from "./lib/types";
+import type { PackageManifest, PnpmSettings } from "./lib/types";
 import {
   getDirname,
   getRootRelativeLogPath,
   isRushWorkspace,
   readTypedJson,
+  readTypedYamlSync,
   writeTypedYamlSync,
 } from "./lib/utils";
 
@@ -323,9 +324,31 @@ export function createIsolator(config?: IsolateConfig) {
           packages,
         });
       } else {
-        fs.copyFileSync(
+        /**
+         * Read the pnpm-workspace.yaml and rewrite its top-level
+         * patchedDependencies to only the patches that were actually copied
+         * into the isolate (with their relocated paths). Stale entries would
+         * point at non-existent files and break `pnpm install` in the isolate.
+         * If no patches were copied, drop the field entirely.
+         */
+        const pnpmSettings = readTypedYamlSync<PnpmSettings>(
           path.join(workspaceRootDir, "pnpm-workspace.yaml"),
+        );
+
+        if (Object.keys(copiedPatches).length > 0) {
+          pnpmSettings.patchedDependencies = Object.fromEntries(
+            Object.entries(copiedPatches).map(([spec, patchFile]) => [
+              spec,
+              patchFile.path,
+            ]),
+          );
+        } else {
+          delete pnpmSettings.patchedDependencies;
+        }
+
+        writeTypedYamlSync(
           path.join(isolateDir, "pnpm-workspace.yaml"),
+          pnpmSettings,
         );
       }
     }
