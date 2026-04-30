@@ -11,7 +11,17 @@ import { readTypedYamlSync, writeTypedYamlSync } from "~/lib/utils";
  * isolate fails when patches that don't apply to the target package are
  * declared in the workspace root config (see issue #178).
  *
- * Falls back to a verbatim file copy when the source yaml cannot be parsed.
+ * The yaml is only rewritten when filtering is required. The file is copied
+ * verbatim — preserving comments, key order, and trailing whitespace — when
+ * any of the following hold:
+ *
+ * - The source yaml cannot be parsed.
+ * - The parsed settings have no `patchedDependencies` field.
+ * - Every entry in `patchedDependencies` is also present in `copiedPatches`
+ *   (no exclusions, so rewriting would only churn formatting).
+ *
+ * Otherwise, `patchedDependencies` is rewritten to the entries in
+ * `copiedPatches` (or removed entirely when none remain).
  */
 export function writeIsolatePnpmWorkspace({
   workspaceRootDir,
