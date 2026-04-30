@@ -43,6 +43,19 @@ export function writeIsolatePnpmWorkspace({
     return;
   }
 
+  /**
+   * If every patch declared in the source yaml was kept, copy verbatim so
+   * comments, ordering, and trailing whitespace are preserved.
+   */
+  const sourceSpecs = Object.keys(settings.patchedDependencies);
+  const copiedSpecs = new Set(Object.keys(copiedPatches));
+  const hasExclusions = sourceSpecs.some((spec) => !copiedSpecs.has(spec));
+
+  if (!hasExclusions) {
+    fs.copyFileSync(sourcePath, targetPath);
+    return;
+  }
+
   const filteredEntries = Object.entries(copiedPatches).map(
     ([spec, patchFile]) => [spec, patchFile.path] as const,
   );

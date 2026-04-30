@@ -139,6 +139,36 @@ describe("writeIsolatePnpmWorkspace", () => {
     );
   });
 
+  it("copies verbatim when every patch is kept (preserving comments and order)", () => {
+    readTypedYamlSync.mockReturnValue({
+      packages: ["packages/*"],
+      patchedDependencies: {
+        "lodash@4.17.21": "patches/lodash@4.17.21.patch",
+        "react@18.2.0": "patches/react@18.2.0.patch",
+      },
+    });
+
+    const copiedPatches: Record<string, PatchFile> = {
+      "lodash@4.17.21": {
+        path: "patches/lodash@4.17.21.patch",
+        hash: "abc",
+      },
+      "react@18.2.0": { path: "patches/react@18.2.0.patch", hash: "def" },
+    };
+
+    writeIsolatePnpmWorkspace({
+      workspaceRootDir,
+      isolateDir,
+      copiedPatches,
+    });
+
+    expect(writeTypedYamlSync).not.toHaveBeenCalled();
+    expect(fs.copyFileSync).toHaveBeenCalledWith(
+      "/workspace/pnpm-workspace.yaml",
+      "/workspace/isolate/pnpm-workspace.yaml",
+    );
+  });
+
   it("falls back to a verbatim copy when the yaml cannot be parsed", () => {
     readTypedYamlSync.mockImplementation(() => {
       throw new Error("bad yaml");
