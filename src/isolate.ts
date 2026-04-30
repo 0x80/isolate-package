@@ -23,6 +23,7 @@ import {
 import { detectPackageManager, shouldUsePnpmPack } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
 import { copyPatches } from "./lib/patches/copy-patches";
+import { writeIsolatePnpmWorkspace } from "./lib/patches/write-isolate-pnpm-workspace";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
 import {
@@ -323,10 +324,11 @@ export function createIsolator(config?: IsolateConfig) {
           packages,
         });
       } else {
-        fs.copyFileSync(
-          path.join(workspaceRootDir, "pnpm-workspace.yaml"),
-          path.join(isolateDir, "pnpm-workspace.yaml"),
-        );
+        writeIsolatePnpmWorkspace({
+          workspaceRootDir,
+          isolateDir,
+          copiedPatches,
+        });
       }
     }
 
