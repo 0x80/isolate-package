@@ -15,7 +15,7 @@ import { readTypedYamlSync, writeTypedYamlSync } from "~/lib/utils";
  * verbatim — preserving comments, key order, and trailing whitespace — when
  * any of the following hold:
  *
- * - The source yaml cannot be parsed.
+ * - The source yaml cannot be read or parsed.
  * - The parsed settings have no `patchedDependencies` field.
  * - Every entry in `patchedDependencies` is also present in `copiedPatches`
  *   (no exclusions, so rewriting would only churn formatting).
@@ -42,7 +42,7 @@ export function writeIsolatePnpmWorkspace({
     settings = readTypedYamlSync<PnpmSettings>(sourcePath);
   } catch (error) {
     log.warn(
-      `Could not parse pnpm-workspace.yaml, falling back to verbatim copy: ${error instanceof Error ? error.message : String(error)}`,
+      `Could not read pnpm-workspace.yaml, falling back to verbatim copy: ${error instanceof Error ? error.message : String(error)}`,
     );
     fs.copyFileSync(sourcePath, targetPath);
     return;
