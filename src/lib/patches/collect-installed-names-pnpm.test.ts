@@ -279,4 +279,38 @@ describe("collectInstalledNamesFromPnpmLockfile", () => {
 
     expect(result).toEqual(new Set());
   });
+
+  it("normalizes the target importer id before the isTarget check (Windows)", async () => {
+    /**
+     * Simulate Windows: getLockfileImporterId returns a backslash-separated
+     * id, but the lockfile's importer keys use POSIX separators. Without
+     * normalizing the id used in the isTarget comparison, the target's
+     * devDependencies would be skipped even with includeDevDependencies=true.
+     */
+    const { getLockfileImporterId } = vi.mocked(
+      await import("pnpm_lockfile_file_v9"),
+    );
+    getLockfileImporterId.mockReturnValueOnce("packages\\consumer");
+
+    readWantedLockfile_v9.mockResolvedValue({
+      lockfileVersion: "9.0",
+      importers: {
+        "packages/consumer": {
+          specifiers: { typescript: "^5.0.0" },
+          devDependencies: { typescript: "5.5.0" },
+        },
+      },
+      packages: {
+        "typescript@5.5.0": { resolution: { integrity: "sha512-w" } },
+      },
+    } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
+
+    const result = await collectInstalledNamesFromPnpmLockfile({
+      ...baseArgs,
+      majorVersion: 9,
+      includeDevDependencies: true,
+    });
+
+    expect(result.has("typescript")).toBe(true);
+  });
 });

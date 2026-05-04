@@ -56,24 +56,26 @@ export async function collectInstalledNamesFromPnpmLockfile({
       return new Set();
     }
 
-    const targetImporterId = useVersion9
+    const rawTargetImporterId = useVersion9
       ? getLockfileImporterId_v9(workspaceRootDir, targetPackageDir)
       : getLockfileImporterId_v8(workspaceRootDir, targetPackageDir);
 
-    const internalImporterIds = internalDepPackageNames.map((name) => {
-      const pkg = packagesRegistry[name];
-      if (!pkg) return null;
-      return pkg.rootRelativeDir;
-    });
-
     /**
      * Normalize separators to POSIX so Windows callers match the lockfile's
-     * importer keys (mirrors generate-pnpm-lockfile.ts).
+     * importer keys (mirrors generate-pnpm-lockfile.ts). Applied once here so
+     * the `isTarget` equality check below compares apples-to-apples — without
+     * this, on Windows the raw id with backslashes wouldn't match the
+     * normalized id used as the importers map key.
      */
-    const importerIds = [targetImporterId, ...internalImporterIds]
-      .filter((id): id is string => Boolean(id))
-      .map((x) => x.split(path.sep).join(path.posix.sep))
-      .map((x) => (isRush ? `../../${x}` : x));
+    const targetImporterId = toLockfileImporterKey(rawTargetImporterId, isRush);
+
+    const importerIds = [
+      targetImporterId,
+      ...internalDepPackageNames
+        .map((name) => packagesRegistry[name]?.rootRelativeDir)
+        .filter((dir): dir is string => Boolean(dir))
+        .map((dir) => toLockfileImporterKey(dir, isRush)),
+    ];
 
     const packages = (lockfile as { packages?: Record<string, PnpmPackage> })
       .packages;
@@ -84,7 +86,6 @@ export async function collectInstalledNamesFromPnpmLockfile({
         lockfile.importers,
         importerIds,
         targetImporterId,
-        isRush,
         includeDevDependencies,
       );
     }
@@ -97,9 +98,7 @@ export async function collectInstalledNamesFromPnpmLockfile({
       const importer = lockfile.importers[importerId];
       if (!importer) continue;
 
-      const isTarget =
-        importerId ===
-        (isRush ? `../../${targetImporterId}` : targetImporterId);
+      const isTarget = importerId === targetImporterId;
 
       enqueueImporterDeps({
         importer,
@@ -145,6 +144,22 @@ export async function collectInstalledNamesFromPnpmLockfile({
     );
     return new Set();
   }
+}
+
+/**
+ * Convert a raw importer id (as returned by `getLockfileImporterId` or a
+ * package's rootRelativeDir) to the form actually used as a key in
+ * `lockfile.importers`: POSIX separators, with the Rush `../../` prefix when
+ * the workspace lives under `common/config/rush`. Lockfile keys are always
+ * POSIX regardless of the host OS, so backslashes are normalized
+ * unconditionally rather than relying on `path.sep`.
+ */
+function toLockfileImporterKey(importerId: string, isRush: boolean): string {
+  const posix = importerId
+    .split(path.sep)
+    .join(path.posix.sep)
+    .replace(/\\/g, "/");
+  return isRush ? `../../${posix}` : posix;
 }
 
 type ResolvedDeps = Record<string, string>;
@@ -324,15 +339,13 @@ function collectImporterDirectNames(
   importers: Record<string, PnpmImporter>,
   importerIds: string[],
   targetImporterId: string,
-  isRush: boolean,
   includeDevDependencies: boolean,
 ): Set<string> {
   const names = new Set<string>();
   for (const importerId of importerIds) {
     const importer = importers[importerId];
     if (!importer) continue;
-    const isTarget =
-      importerId === (isRush ? `../../${targetImporterId}` : targetImporterId);
+    const isTarget = importerId === targetImporterId;
     for (const name of Object.keys(importer.dependencies ?? {}))
       names.add(name);
     for (const name of Object.keys(importer.optionalDependencies ?? {})) {
