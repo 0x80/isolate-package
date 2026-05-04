@@ -15,9 +15,17 @@ vi.mock("fs-extra", () => ({
 vi.mock("~/lib/utils", () => ({
   filterPatchedDependencies: vi.fn(),
   getIsolateRelativeLogPath: vi.fn((p: string) => p),
+  getPackageName: vi.fn((spec: string) => {
+    if (spec.startsWith("@")) {
+      const parts = spec.split("@");
+      return `@${parts[1] ?? ""}`;
+    }
+    return spec.split("@")[0] ?? "";
+  }),
   getRootRelativeLogPath: vi.fn((p: string) => p),
   isRushWorkspace: vi.fn(() => false),
   readTypedJson: vi.fn(),
+  readTypedJsonSync: vi.fn(),
   readTypedYamlSync: vi.fn(),
 }));
 
@@ -29,16 +37,25 @@ vi.mock("~/lib/package-manager", () => ({
 /** Mock the pnpm lockfile readers */
 vi.mock("pnpm_lockfile_file_v8", () => ({
   readWantedLockfile: vi.fn(() => Promise.resolve(null)),
+  getLockfileImporterId: vi.fn(
+    (root: string, dir: string) => dir.replace(`${root}/`, "") || ".",
+  ),
 }));
 
 vi.mock("pnpm_lockfile_file_v9", () => ({
   readWantedLockfile: vi.fn(() => Promise.resolve(null)),
+  getLockfileImporterId: vi.fn(
+    (root: string, dir: string) => dir.replace(`${root}/`, "") || ".",
+  ),
 }));
 
 const fs = vi.mocked((await import("fs-extra")).default);
 const { filterPatchedDependencies, readTypedJson, readTypedYamlSync } =
   vi.mocked(await import("~/lib/utils"));
 const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
+const { readWantedLockfile: readWantedLockfile_v9 } = vi.mocked(
+  await import("pnpm_lockfile_file_v9"),
+);
 
 describe("copyPatches", () => {
   beforeEach(() => {
@@ -65,6 +82,8 @@ describe("copyPatches", () => {
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/packages/test",
+      internalDepPackageNames: [],
       targetPackageManifest: { name: "test", version: "1.0.0" },
       isolateDir: "/workspace/isolate",
       packagesRegistry: {},
@@ -126,6 +145,8 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/packages/test",
+        internalDepPackageNames: [],
         targetPackageManifest: { name: "test", version: "1.0.0" },
         isolateDir: "/workspace/isolate",
         packagesRegistry: {},
@@ -146,6 +167,8 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/packages/test",
+        internalDepPackageNames: [],
         targetPackageManifest: { name: "test", version: "1.0.0" },
         isolateDir: "/workspace/isolate",
         packagesRegistry: {},
@@ -176,6 +199,8 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/packages/test",
+        internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
         packagesRegistry: {},
@@ -214,6 +239,8 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/packages/test",
+        internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
         packagesRegistry: {},
@@ -256,6 +283,8 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/packages/test",
+        internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
         packagesRegistry: {},
@@ -287,6 +316,8 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/packages/test",
+        internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
         packagesRegistry: {},
@@ -321,6 +352,8 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/packages/test",
+        internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
         packagesRegistry: {},
@@ -364,6 +397,8 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/packages/test",
+        internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
         packagesRegistry: {},
@@ -409,6 +444,8 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/packages/test",
+        internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
         isolateDir: "/workspace/isolate",
         packagesRegistry: {},
@@ -456,6 +493,8 @@ describe("copyPatches", () => {
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/packages/test",
+      internalDepPackageNames: [],
       targetPackageManifest: targetManifest,
       isolateDir: "/workspace/isolate",
       packagesRegistry: {},
@@ -509,6 +548,8 @@ describe("copyPatches", () => {
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/packages/test",
+      internalDepPackageNames: [],
       targetPackageManifest: consumerManifest,
       isolateDir: "/workspace/isolate",
       packagesRegistry: {
@@ -535,5 +576,89 @@ describe("copyPatches", () => {
     expect(reachable).toBeInstanceOf(Set);
     expect(reachable!.has("firebase-package")).toBe(true);
     expect(reachable!.has("tslib")).toBe(true);
+  });
+
+  it("should pick up deep external-to-external transitives from the pnpm lockfile (regression: issue #167 follow-up)", async () => {
+    /**
+     * Target depends on `@react-pdf/renderer` (external). The patched
+     * `@react-pdf/render` is only a transitive of `@react-pdf/renderer`. The
+     * manifest walker can't see it because it can't open external manifests,
+     * so the lockfile walker has to surface it.
+     */
+    const targetManifest: PackageManifest = {
+      name: "consumer",
+      version: "1.0.0",
+      dependencies: { "@react-pdf/renderer": "^4.0.0" },
+    };
+
+    readTypedYamlSync.mockReturnValue({
+      patchedDependencies: {
+        "@react-pdf/render@4.3.0": "patches/@react-pdf__render@4.3.0.patch",
+      },
+    });
+    readTypedJson.mockResolvedValue({
+      name: "root",
+      version: "1.0.0",
+    } as PackageManifest);
+
+    filterPatchedDependencies.mockReturnValue({
+      "@react-pdf/render@4.3.0": "patches/@react-pdf__render@4.3.0.patch",
+    });
+
+    fs.existsSync.mockReturnValue(true);
+
+    usePackageManager.mockReturnValue({
+      name: "pnpm",
+      majorVersion: 9,
+      version: "9.0.0",
+      packageManagerString: "pnpm@9.0.0",
+    });
+
+    /**
+     * Fake v9 lockfile: target importer depends on @react-pdf/renderer, which
+     * has @react-pdf/render as its only resolved dep.
+     */
+    readWantedLockfile_v9.mockResolvedValue({
+      lockfileVersion: "9.0",
+      importers: {
+        "packages/consumer": {
+          specifiers: { "@react-pdf/renderer": "^4.0.0" },
+          dependencies: { "@react-pdf/renderer": "4.0.0" },
+        },
+      },
+      packages: {
+        "@react-pdf/renderer@4.0.0": {
+          resolution: { integrity: "sha512-x" },
+          dependencies: { "@react-pdf/render": "4.3.0" },
+        },
+        "@react-pdf/render@4.3.0": {
+          resolution: { integrity: "sha512-y" },
+        },
+      },
+    } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
+
+    const result = await copyPatches({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/packages/consumer",
+      internalDepPackageNames: [],
+      targetPackageManifest: targetManifest,
+      isolateDir: "/workspace/isolate",
+      packagesRegistry: {},
+      includeDevDependencies: false,
+    });
+
+    expect(result).toEqual({
+      "@react-pdf/render@4.3.0": {
+        path: "patches/@react-pdf__render@4.3.0.patch",
+        hash: "",
+      },
+    });
+
+    const filterCall = filterPatchedDependencies.mock.calls[0]?.[0];
+    expect(filterCall).toBeDefined();
+    const reachable = filterCall!.reachableDependencyNames;
+    expect(reachable).toBeInstanceOf(Set);
+    expect(reachable!.has("@react-pdf/renderer")).toBe(true);
+    expect(reachable!.has("@react-pdf/render")).toBe(true);
   });
 });

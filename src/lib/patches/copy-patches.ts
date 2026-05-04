@@ -18,23 +18,29 @@ import {
   readTypedJson,
   readTypedYamlSync,
 } from "~/lib/utils";
+import { collectInstalledNamesFromBunLockfile } from "./collect-installed-names-bun";
+import { collectInstalledNamesFromPnpmLockfile } from "./collect-installed-names-pnpm";
 
 export async function copyPatches({
   workspaceRootDir,
+  targetPackageDir,
   targetPackageManifest,
   packagesRegistry,
+  internalDepPackageNames,
   isolateDir,
   includeDevDependencies,
 }: {
   workspaceRootDir: string;
+  targetPackageDir: string;
   targetPackageManifest: PackageManifest;
   packagesRegistry: PackagesRegistry;
+  internalDepPackageNames: string[];
   isolateDir: string;
   includeDevDependencies: boolean;
 }): Promise<Record<string, PatchFile>> {
   const log = useLogger();
 
-  const { name: packageManagerName } = usePackageManager();
+  const { name: packageManagerName, majorVersion } = usePackageManager();
 
   let patchedDependencies: Record<string, string> | undefined;
 
@@ -101,6 +107,37 @@ export async function copyPatches({
     packagesRegistry,
     includeDevDependencies,
   });
+
+  /**
+   * Manifest-based reachability misses external→external transitives because
+   * external manifests aren't loaded here. Walk the package-manager's
+   * lockfile to also pick up those names, so a patch for a deeply-nested
+   * external dep (e.g. `@react-pdf/render` reached via `@react-pdf/renderer`)
+   * survives isolation.
+   */
+  const lockfileInstalledNames =
+    packageManagerName === "pnpm"
+      ? await collectInstalledNamesFromPnpmLockfile({
+          workspaceRootDir,
+          targetPackageDir,
+          internalDepPackageNames,
+          packagesRegistry,
+          majorVersion,
+          includeDevDependencies,
+        })
+      : packageManagerName === "bun"
+        ? collectInstalledNamesFromBunLockfile({
+            workspaceRootDir,
+            targetPackageDir,
+            internalDepPackageNames,
+            packagesRegistry,
+            includeDevDependencies,
+          })
+        : new Set<string>();
+
+  for (const name of lockfileInstalledNames) {
+    reachableDependencyNames.add(name);
+  }
 
   const filteredPatches = filterPatchedDependencies({
     patchedDependencies,

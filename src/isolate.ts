@@ -233,8 +233,10 @@ export function createIsolator(config?: IsolateConfig) {
     const copiedPatches = shouldCopyPatches
       ? await copyPatches({
           workspaceRootDir,
+          targetPackageDir,
           targetPackageManifest: outputManifest,
           packagesRegistry,
+          internalDepPackageNames: internalPackageNames,
           isolateDir,
           includeDevDependencies: config.includeDevDependencies,
         })
