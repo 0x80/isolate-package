@@ -172,17 +172,29 @@ describe("collectInstalledNamesFromPnpmLockfile", () => {
     expect(result.has("typescript")).toBe(true);
   });
 
-  it("uses the v8 reader for pnpm major < 9", async () => {
+  it("walks transitives via v8 v5-style depPath keys for pnpm major < 9", async () => {
+    /**
+     * After `readWantedLockfile_v8` normalizes a pnpm 8 lockfile (lockfile
+     * version 6.x), `lockfile.packages` is keyed in v5 form: leading slash
+     * with `/` separator between name and version, e.g. `/foo/1.0.0` and
+     * `/@scope/foo/1.0.0`.
+     */
     readWantedLockfile_v8.mockResolvedValue({
       lockfileVersion: 6.1,
       importers: {
         "packages/consumer": {
-          specifiers: { foo: "^1.0.0" },
-          dependencies: { foo: "1.0.0" },
+          specifiers: { "@react-pdf/renderer": "^4.0.0" },
+          dependencies: { "@react-pdf/renderer": "4.0.0" },
         },
       },
       packages: {
-        "/foo@1.0.0": { resolution: { integrity: "sha512-c" } },
+        "/@react-pdf/renderer/4.0.0": {
+          resolution: { integrity: "sha512-x" },
+          dependencies: { "@react-pdf/render": "4.3.0" },
+        },
+        "/@react-pdf/render/4.3.0": {
+          resolution: { integrity: "sha512-y" },
+        },
       },
     } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v8>>);
 
@@ -191,13 +203,41 @@ describe("collectInstalledNamesFromPnpmLockfile", () => {
       majorVersion: 8,
     });
 
-    /**
-     * The v8 reader is used; we check it was invoked (the v9 mock is left at
-     * default which would return null and produce an empty set).
-     */
     expect(readWantedLockfile_v8).toHaveBeenCalled();
     expect(readWantedLockfile_v9).not.toHaveBeenCalled();
-    expect(result.has("foo")).toBe(true);
+    expect(result.has("@react-pdf/renderer")).toBe(true);
+    expect(result.has("@react-pdf/render")).toBe(true);
+  });
+
+  it("includes peerDependencies of package snapshots in the name set", async () => {
+    /**
+     * Peer requirement values aren't resolved depPaths, so we just collect
+     * the names. This mirrors `collectReachablePackageNames` and the bun
+     * walker, both of which include peerDependencies.
+     */
+    readWantedLockfile_v9.mockResolvedValue({
+      lockfileVersion: "9.0",
+      importers: {
+        "packages/consumer": {
+          specifiers: { "some-pkg": "^1.0.0" },
+          dependencies: { "some-pkg": "1.0.0" },
+        },
+      },
+      packages: {
+        "some-pkg@1.0.0": {
+          resolution: { integrity: "sha512-p" },
+          peerDependencies: { "peer-only-dep": ">=1" },
+        },
+      },
+    } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
+
+    const result = await collectInstalledNamesFromPnpmLockfile({
+      ...baseArgs,
+      majorVersion: 9,
+    });
+
+    expect(result.has("some-pkg")).toBe(true);
+    expect(result.has("peer-only-dep")).toBe(true);
   });
 
   it("strips peer-resolution suffixes when extracting package names", async () => {

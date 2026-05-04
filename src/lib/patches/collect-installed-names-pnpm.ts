@@ -19,7 +19,9 @@ import { getPackageName, isRushWorkspace } from "~/lib/utils";
  *
  * Used by `copyPatches` to preserve patches for transitive deps that aren't
  * directly listed on any internal manifest. Returns an empty set on any
- * failure so the caller falls back to manifest-based reachability.
+ * failure so the caller falls back to manifest-based reachability. When the
+ * lockfile is present but lacks a `packages` section, returns just the
+ * direct importer dep names.
  */
 export async function collectInstalledNamesFromPnpmLockfile({
   workspaceRootDir,
@@ -103,6 +105,7 @@ export async function collectInstalledNamesFromPnpmLockfile({
         importer,
         names,
         queue,
+        useVersion9,
         includeDevDependencies: isTarget && includeDevDependencies,
       });
     }
@@ -117,8 +120,22 @@ export async function collectInstalledNamesFromPnpmLockfile({
       const pkg = packages[depPath];
       if (!pkg) continue;
 
-      enqueueResolvedDeps(pkg.dependencies, names, queue, seen);
-      enqueueResolvedDeps(pkg.optionalDependencies, names, queue, seen);
+      enqueueResolvedDeps(pkg.dependencies, names, queue, useVersion9, seen);
+      enqueueResolvedDeps(
+        pkg.optionalDependencies,
+        names,
+        queue,
+        useVersion9,
+        seen,
+      );
+
+      /**
+       * Peer requirement values are name → semver-range, not resolved depPaths.
+       * Just record the names so a patch on a peer-only external transitive
+       * survives filtering (mirrors the bun walker and the sister manifest
+       * walker, which both include peerDependencies).
+       */
+      collectNames(pkg.peerDependencies, names);
     }
 
     return names;
@@ -136,35 +153,46 @@ type PnpmImporter = {
   dependencies?: ResolvedDeps;
   optionalDependencies?: ResolvedDeps;
   devDependencies?: ResolvedDeps;
+  peerDependencies?: ResolvedDeps;
 };
 
 type PnpmPackage = {
   dependencies?: ResolvedDeps;
   optionalDependencies?: ResolvedDeps;
+  peerDependencies?: ResolvedDeps;
 };
 
 function enqueueImporterDeps({
   importer,
   names,
   queue,
+  useVersion9,
   includeDevDependencies,
 }: {
   importer: PnpmImporter;
   names: Set<string>;
   queue: string[];
+  useVersion9: boolean;
   includeDevDependencies: boolean;
 }): void {
-  enqueueResolvedDeps(importer.dependencies, names, queue);
-  enqueueResolvedDeps(importer.optionalDependencies, names, queue);
+  enqueueResolvedDeps(importer.dependencies, names, queue, useVersion9);
+  enqueueResolvedDeps(importer.optionalDependencies, names, queue, useVersion9);
   if (includeDevDependencies) {
-    enqueueResolvedDeps(importer.devDependencies, names, queue);
+    enqueueResolvedDeps(importer.devDependencies, names, queue, useVersion9);
   }
+  /**
+   * Importer peerDependencies usually aren't a separate map in the lockfile
+   * (autoInstallPeers folds them into `dependencies`), but record names if
+   * they happen to be present.
+   */
+  collectNames(importer.peerDependencies, names);
 }
 
 function enqueueResolvedDeps(
   deps: ResolvedDeps | undefined,
   names: Set<string>,
   queue: string[],
+  useVersion9: boolean,
   seen?: Set<string>,
 ): void {
   if (!deps) return;
@@ -178,21 +206,42 @@ function enqueueResolvedDeps(
      */
     names.add(alias);
 
-    const depPath = refToRelative(ref, alias);
+    const depPath = refToRelative(ref, alias, useVersion9);
     if (depPath && !seen?.has(depPath)) {
       queue.push(depPath);
     }
   }
 }
 
+function collectNames(
+  deps: ResolvedDeps | undefined,
+  names: Set<string>,
+): void {
+  if (!deps) return;
+  for (const name of Object.keys(deps)) {
+    names.add(name);
+  }
+}
+
 /**
- * Mirrors `@pnpm/dependency-path`'s `refToRelative`, which we don't expose as
- * a direct dep. Returns the depPath used as a key in `lockfile.packages`, or
- * null if the ref points to a workspace link / non-resolved entry.
+ * Mirrors `@pnpm/dependency-path`'s `refToRelative`. The depPath shape differs
+ * between pnpm 8 (lockfile v6, normalized to v5 keys like `/foo/1.0.0`) and
+ * pnpm 9 (lockfile v9 keys like `foo@1.0.0`). Returns the depPath used as a
+ * key in `lockfile.packages`, or null if the ref points to a workspace link.
  */
-function refToRelative(reference: string, pkgName: string): string | null {
+function refToRelative(
+  reference: string,
+  pkgName: string,
+  useVersion9: boolean,
+): string | null {
   if (!reference) return null;
   if (reference.startsWith("link:")) return null;
+  return useVersion9
+    ? refToRelativeV9(reference, pkgName)
+    : refToRelativeV8(reference, pkgName);
+}
+
+function refToRelativeV9(reference: string, pkgName: string): string | null {
   if (reference.startsWith("@")) return reference;
   const atIndex = reference.indexOf("@");
   if (atIndex === -1) return `${pkgName}@${reference}`;
@@ -208,12 +257,43 @@ function refToRelative(reference: string, pkgName: string): string | null {
 }
 
 /**
+ * v8 form: pnpm 8 (lockfile v6) is normalized on read to v5-style depPaths
+ * with leading slash and `/` separator between name and version. Plain
+ * version refs build that key; refs already containing a `/` (peer-suffixed
+ * or pre-formed) are returned verbatim. Mirrors `@pnpm/dependency-path@2.x`.
+ */
+function refToRelativeV8(reference: string, pkgName: string): string | null {
+  if (reference.startsWith("file:")) return reference;
+  const slashIndex = reference.indexOf("/");
+  const bracketIndex = reference.indexOf("(");
+  const noSlashBeforeBracket =
+    bracketIndex !== -1 && reference.lastIndexOf("/", bracketIndex) === -1;
+  if (slashIndex === -1 || noSlashBeforeBracket) {
+    return `/${pkgName}/${reference}`;
+  }
+  return reference;
+}
+
+/**
  * Extract the bare package name from a pnpm depPath. Strips the optional
- * peer-resolution suffix (e.g. `(react@18.0.0)`) before parsing the name.
+ * peer-resolution suffix (e.g. `(react@18.0.0)`) before parsing. Handles
+ * both v9 (`@scope/foo@1.0.0`) and v8 (`/@scope/foo/1.0.0`) shapes.
  */
 function extractPackageName(depPath: string): string {
   const peerStart = indexOfPeersSuffix(depPath);
   const trimmed = peerStart === -1 ? depPath : depPath.substring(0, peerStart);
+
+  if (trimmed.startsWith("/")) {
+    /** v8 v5-style: `/<name>/<version>` */
+    const stripped = trimmed.slice(1);
+    if (stripped.startsWith("@")) {
+      const secondSlash = stripped.indexOf("/", stripped.indexOf("/") + 1);
+      return secondSlash === -1 ? stripped : stripped.slice(0, secondSlash);
+    }
+    const firstSlash = stripped.indexOf("/");
+    return firstSlash === -1 ? stripped : stripped.slice(0, firstSlash);
+  }
+
   return getPackageName(trimmed);
 }
 
@@ -256,6 +336,9 @@ function collectImporterDirectNames(
     for (const name of Object.keys(importer.dependencies ?? {}))
       names.add(name);
     for (const name of Object.keys(importer.optionalDependencies ?? {})) {
+      names.add(name);
+    }
+    for (const name of Object.keys(importer.peerDependencies ?? {})) {
       names.add(name);
     }
     if (isTarget && includeDevDependencies) {
