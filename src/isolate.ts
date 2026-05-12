@@ -31,6 +31,7 @@ import {
   getRootRelativeLogPath,
   isRushWorkspace,
   readTypedJson,
+  resetIsolateDir,
   writeTypedYamlSync,
 } from "./lib/utils";
 
@@ -77,12 +78,7 @@ export function createIsolator(config?: IsolateConfig) {
       getRootRelativeLogPath(isolateDir, workspaceRootDir),
     );
 
-    if (fs.existsSync(isolateDir)) {
-      await fs.remove(isolateDir);
-      log.debug("Cleaned the existing isolate output directory");
-    }
-
-    await fs.ensureDir(isolateDir);
+    await resetIsolateDir(isolateDir);
 
     const tmpDir = path.join(isolateDir, "__tmp");
     await fs.ensureDir(tmpDir);
