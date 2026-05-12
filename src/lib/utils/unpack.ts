@@ -1,13 +1,19 @@
-import fs from "fs-extra";
-import tar from "tar-fs";
-import { createGunzip } from "zlib";
+import { createReadStream } from "node:fs";
+import { pipeline } from "node:stream/promises";
+import { createGunzip } from "node:zlib";
+import { extract as extractTar } from "tar-fs";
 
+/**
+ * Extract a gzipped tar archive into the given directory.
+ *
+ * Uses `stream/promises.pipeline` so that errors at any stage (file read,
+ * gunzip, tar extract) propagate as a rejected promise rather than crashing
+ * the process as unhandled stream errors.
+ */
 export async function unpack(filePath: string, unpackDir: string) {
-  await new Promise<void>((resolve, reject) => {
-    fs.createReadStream(filePath)
-      .pipe(createGunzip())
-      .pipe(tar.extract(unpackDir))
-      .on("finish", () => resolve())
-      .on("error", (err) => reject(err));
-  });
+  await pipeline(
+    createReadStream(filePath),
+    createGunzip(),
+    extractTar(unpackDir),
+  );
 }
