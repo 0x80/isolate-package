@@ -73,7 +73,7 @@ export async function pack(srcDir: string, dstDir: string) {
    * fully visible/flushed to disk. A naive `existsSync` check is not enough:
    * the directory entry can appear before the file's data has been written,
    * which causes downstream consumers (gunzip + tar) to fail with
-   * "unexpected end of file". Wait until the file exists and it's size has
+   * "unexpected end of file". Wait until the file exists and its size has
    * stopped changing across two consecutive polls before returning.
    */
   await waitForCompleteFile(filePath, {
