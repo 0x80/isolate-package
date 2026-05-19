@@ -23,7 +23,7 @@ export function inferFromManifest(workspaceRoot: string) {
 
   const [name, version = "*"] = packageManagerString.split("@") as [
     PackageManagerName,
-    string,
+    string | undefined,
   ];
 
   assert(
