@@ -70,25 +70,25 @@
     "source-map-support": "^0.5.21",
     "strip-json-comments": "^5.0.3",
     "tar-fs": "^3.1.2",
-    "yaml": "^2.8.3"
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@codecompose/typescript-config": "^3.2.0",
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.7.0",
     "@types/npmcli__config": "^6.0.3",
     "@types/source-map-support": "^0.5.10",
     "@types/tar-fs": "^2.0.4",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.3",
-    "oxfmt": "^0.48.0",
-    "oxlint": "^1.63.0",
+    "lint-staged": "^17.0.4",
+    "oxfmt": "^0.49.0",
+    "oxlint": "^1.64.0",
     "oxlint-tsgolint": "^0.22.1",
     "tsdown": "0.22.0",
     "typescript": "6.0.3",
-    "vite": "^8.0.0",
+    "vite": "^8.0.12",
     "vitepress": "^1.6.3",
-    "vitest": "^4.1.3"
+    "vitest": "^4.1.6"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
