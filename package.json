@@ -23,6 +23,7 @@
     "url": "git+https://github.com/0x80/isolate-package.git"
   },
   "bin": {
+    "isolate": "./dist/isolate-bin.mjs",
     "isolate-package": "./dist/isolate-bin.mjs"
   },
   "files": [
