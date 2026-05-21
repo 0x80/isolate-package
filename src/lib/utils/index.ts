@@ -9,5 +9,6 @@ export * from "./is-rush-workspace";
 export * from "./json";
 export * from "./log-paths";
 export * from "./pack";
+export * from "./reset-isolate-dir";
 export * from "./unpack";
 export * from "./yaml";
