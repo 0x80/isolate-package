@@ -131,12 +131,18 @@ export async function resolveCatalogDependencies(
     if (specifier === "catalog:" || specifier.startsWith("catalog:")) {
       let catalogVersion: string | undefined;
 
-      if (specifier === "catalog:") {
-        // Simple catalog reference - use package name as key
-        catalogVersion = flatCatalog?.[packageName];
+      const groupName =
+        specifier === "catalog:" ? "default" : specifier.slice(8);
+
+      if (groupName === "default") {
+        /**
+         * Per pnpm semantics, `catalog:` and `catalog:default` are
+         * equivalent: the default catalog can live under the top-level
+         * `catalog` field or under `catalogs.default`, so check both.
+         */
+        catalogVersion =
+          flatCatalog?.[packageName] ?? nestedCatalogs?.default?.[packageName];
       } else {
-        // Catalog group reference (e.g., "catalog:group1")
-        const groupName = specifier.slice(8);
         catalogVersion = nestedCatalogs?.[groupName]?.[packageName];
       }
 

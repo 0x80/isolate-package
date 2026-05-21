@@ -116,6 +116,24 @@ describe("resolveCatalogDependencies", () => {
 
       expect(result).toEqual({ react: "^18.3.1" });
     });
+
+    it("resolves catalog:default from the top-level catalog field", async () => {
+      tmpDir = await createTempWorkspace({
+        workspaceYaml: {
+          packages: ["packages/*"],
+          catalog: {
+            react: "^18.3.1",
+          },
+        },
+      });
+
+      const result = await resolveCatalogDependencies(
+        { react: "catalog:default" },
+        tmpDir,
+      );
+
+      expect(result).toEqual({ react: "^18.3.1" });
+    });
   });
 
   describe("pnpm-workspace.yaml: named catalogs (catalog:<name>)", () => {
