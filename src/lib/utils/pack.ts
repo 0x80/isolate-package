@@ -1,10 +1,17 @@
 import assert from "node:assert";
 import { exec } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
 import { useLogger } from "../logger";
 import { shouldUsePnpmPack } from "../package-manager";
 import { getErrorMessage } from "./get-error-message";
+import { waitForCompleteFile } from "./wait-for-complete-file";
+
+/**
+ * How long to wait for the packed tarball to appear and stop growing on disk
+ * after `pnpm pack` / `npm pack` has exited.
+ */
+const PACK_FILE_READY_TIMEOUT_MS = 5000;
+const PACK_FILE_READY_POLL_MS = 50;
 
 export async function pack(srcDir: string, dstDir: string) {
   const log = useLogger();
@@ -59,20 +66,22 @@ export async function pack(srcDir: string, dstDir: string) {
 
   const filePath = path.join(dstDir, fileName);
 
-  if (!fs.existsSync(filePath)) {
-    log.error(
-      `The response from pack could not be resolved to an existing file: ${filePath}`,
-    );
-  } else {
-    log.debug(`Packed (temp)/${fileName}`);
-  }
-
   process.chdir(previousCwd);
 
   /**
-   * Return the path anyway even if it doesn't validate. A later stage will wait
-   * for the file to occur still. Not sure if this makes sense. Maybe we should
-   * stop at the validation error...
+   * `pnpm pack` (and occasionally `npm pack`) can return before the tarball is
+   * fully visible/flushed to disk. A naive `existsSync` check is not enough:
+   * the directory entry can appear before the file's data has been written,
+   * which causes downstream consumers (gunzip + tar) to fail with
+   * "unexpected end of file". Wait until the file exists and its size has
+   * stopped changing across two consecutive polls before returning.
    */
+  await waitForCompleteFile(filePath, {
+    timeoutMs: PACK_FILE_READY_TIMEOUT_MS,
+    pollMs: PACK_FILE_READY_POLL_MS,
+  });
+
+  log.debug(`Packed (temp)/${fileName}`);
+
   return filePath;
 }
