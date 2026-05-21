@@ -43,8 +43,8 @@ export async function generateYarnLockfile({
     execSync(`yarn install --cwd ${isolateDir}`);
 
     log.debug("Generated lockfile at", newLockfilePath);
-  } catch (err) {
-    log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
-    throw err;
+  } catch (error) {
+    log.error(`Failed to generate lockfile: ${getErrorMessage(error)}`);
+    throw error;
   }
 }

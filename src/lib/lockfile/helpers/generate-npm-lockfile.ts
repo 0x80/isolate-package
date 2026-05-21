@@ -114,9 +114,9 @@ export async function generateNpmLockfile({
       "Created lockfile at",
       path.join(isolateDir, "package-lock.json"),
     );
-  } catch (err) {
-    log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
-    throw err;
+  } catch (error) {
+    log.error(`Failed to generate lockfile: ${getErrorMessage(error)}`);
+    throw error;
   }
 }
 

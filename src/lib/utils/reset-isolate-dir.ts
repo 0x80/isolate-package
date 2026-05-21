@@ -78,13 +78,13 @@ export async function resetIsolateDir(
        * `isolateDir` is gone. Any debris left behind will be swept on the
        * next run.
        */
-      void fs.remove(trashDir).catch((err: unknown) => {
+      void fs.remove(trashDir).catch((error: unknown) => {
         log.debug(
           "Background cleanup of trashed isolate directory did not complete:",
-          err instanceof Error ? err.message : String(err),
+          error instanceof Error ? error.message : String(error),
         );
       });
-    } catch (err) {
+    } catch (error) {
       /**
        * `rename` can fail with `EXDEV` if `trashParentDir` ends up on a
        * different filesystem from `isolateDir`, or with `EPERM` on platforms
@@ -94,7 +94,7 @@ export async function resetIsolateDir(
        */
       log.debug(
         "Could not rename existing isolate output directory, falling back to recursive delete:",
-        err instanceof Error ? err.message : String(err),
+        error instanceof Error ? error.message : String(error),
       );
 
       await fs.remove(isolateDir);
@@ -138,10 +138,10 @@ async function sweepStaleTrash(parentDir: string, trashGlobPrefix: string) {
   await Promise.all(
     entries
       .filter((entry) => entry.startsWith(trashGlobPrefix))
-      .map((entry) =>
-        fs.remove(path.join(parentDir, entry)).catch(() => {
+      .map(async (entry) => {
+        await fs.remove(path.join(parentDir, entry)).catch(() => {
           /** Best-effort. */
-        }),
-      ),
+        });
+      }),
   );
 }

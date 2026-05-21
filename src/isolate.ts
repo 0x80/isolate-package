@@ -54,7 +54,7 @@ export function createIsolator(config?: IsolateConfig) {
     const { targetPackageDir, workspaceRootDir } =
       resolveWorkspacePaths(config);
 
-    const buildOutputDir = await getBuildOutputDir({
+    const buildOutputDir = getBuildOutputDir({
       targetPackageDir,
       buildDirName: config.buildDirName,
       tsconfigPath: config.tsconfigPath,
@@ -283,9 +283,7 @@ export function createIsolator(config?: IsolateConfig) {
         if (packageManager.name === "bun") {
           manifest.patchedDependencies = patchEntries;
         } else {
-          if (!manifest.pnpm) {
-            manifest.pnpm = {};
-          }
+          manifest.pnpm ??= {};
           manifest.pnpm.patchedDependencies = patchEntries;
         }
 

@@ -97,11 +97,11 @@ async function run() {
   await isolate(mergedConfig);
 }
 
-run().catch((err) => {
-  if (err instanceof Error) {
-    console.error(err.stack);
+run().catch((error) => {
+  if (error instanceof Error) {
+    console.error(error.stack);
     process.exit(1);
   } else {
-    console.error(err);
+    console.error(error);
   }
 });

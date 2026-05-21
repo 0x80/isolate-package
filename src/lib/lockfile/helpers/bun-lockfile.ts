@@ -109,9 +109,8 @@ export function collectRequiredPackages(
   const required = new Set<string>();
   const queue = [...directDependencyNames];
 
-  while (queue.length > 0) {
-    const name = queue.pop()!;
-
+  let name: string | undefined;
+  while ((name = queue.pop()) !== undefined) {
     if (required.has(name)) continue;
 
     const entry = packages[name];

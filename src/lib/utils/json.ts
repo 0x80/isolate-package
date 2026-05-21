@@ -10,10 +10,10 @@ export function readTypedJsonSync<T>(filePath: string) {
       stripJsonComments(rawContent, { trailingCommas: true }),
     ) as T;
     return data;
-  } catch (err) {
+  } catch (error) {
     throw new Error(
-      `Failed to read JSON from ${filePath}: ${getErrorMessage(err)}`,
-      { cause: err },
+      `Failed to read JSON from ${filePath}: ${getErrorMessage(error)}`,
+      { cause: error },
     );
   }
 }
@@ -25,10 +25,10 @@ export async function readTypedJson<T>(filePath: string) {
       stripJsonComments(rawContent, { trailingCommas: true }),
     ) as T;
     return data;
-  } catch (err) {
+  } catch (error) {
     throw new Error(
-      `Failed to read JSON from ${filePath}: ${getErrorMessage(err)}`,
-      { cause: err },
+      `Failed to read JSON from ${filePath}: ${getErrorMessage(error)}`,
+      { cause: error },
     );
   }
 }

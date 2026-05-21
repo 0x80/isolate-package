@@ -28,38 +28,41 @@ export async function createPackagesRegistry(
     workspaceRootDir,
   );
 
-  const registry: PackagesRegistry = (
-    await Promise.all(
-      allPackages.map(async (rootRelativeDir) => {
-        const absoluteDir = path.join(workspaceRootDir, rootRelativeDir);
-        const manifestPath = path.join(absoluteDir, "package.json");
+  const entries = await Promise.all(
+    allPackages.map(async (rootRelativeDir) => {
+      const absoluteDir = path.join(workspaceRootDir, rootRelativeDir);
+      const manifestPath = path.join(absoluteDir, "package.json");
 
-        if (!fs.existsSync(manifestPath)) {
-          log.warn(
-            `Ignoring directory ${rootRelativeDir} because it does not contain a package.json file`,
-          );
-          return;
-        } else {
-          log.debug(`Registering package ${rootRelativeDir}`);
+      if (!fs.existsSync(manifestPath)) {
+        log.warn(
+          `Ignoring directory ${rootRelativeDir} because it does not contain a package.json file`,
+        );
+        return;
+      }
 
-          const manifest = await readTypedJson<PackageManifest>(
-            path.join(absoluteDir, "package.json"),
-          );
+      log.debug(`Registering package ${rootRelativeDir}`);
 
-          return {
-            manifest,
-            rootRelativeDir,
-            absoluteDir,
-          };
-        }
-      }),
-    )
-  ).reduce<PackagesRegistry>((acc, info) => {
-    if (info) {
-      acc[info.manifest.name] = info;
-    }
-    return acc;
-  }, {});
+      const manifest = await readTypedJson<PackageManifest>(
+        path.join(absoluteDir, "package.json"),
+      );
+
+      return {
+        manifest,
+        rootRelativeDir,
+        absoluteDir,
+      };
+    }),
+  );
+
+  const registry: PackagesRegistry = entries.reduce<PackagesRegistry>(
+    (acc, info) => {
+      if (info) {
+        acc[info.manifest.name] = info;
+      }
+      return acc;
+    },
+    {},
+  );
 
   return registry;
 }

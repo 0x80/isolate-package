@@ -26,14 +26,16 @@ export async function waitForCompleteFile(
       }
 
       lastSize = size;
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        throw err;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw error;
       }
       /** File not visible yet; keep polling. */
     }
 
-    await new Promise((resolve) => setTimeout(resolve, pollMs));
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, pollMs);
+    });
   }
 
   throw new Error(

@@ -15,10 +15,10 @@ export function inferFromFiles(workspaceRoot: string): PackageManager {
         const version = getVersion(name);
 
         return { name, version, majorVersion: getMajorVersion(version) };
-      } catch (err) {
+      } catch (error) {
         throw new Error(
-          `Failed to find package manager version for ${name}: ${getErrorMessage(err)}`,
-          { cause: err },
+          `Failed to find package manager version for ${name}: ${getErrorMessage(error)}`,
+          { cause: error },
         );
       }
     }

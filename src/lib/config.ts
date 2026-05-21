@@ -93,7 +93,7 @@ function loadModuleConfig(filePath: string): IsolateConfig {
       throw new Error("Failed to extract config JSON from subprocess output");
     }
 
-    const parsed = JSON.parse(jsonMatch);
+    const parsed = JSON.parse(jsonMatch) as unknown;
 
     if (
       typeof parsed !== "object" ||
@@ -105,7 +105,7 @@ function loadModuleConfig(filePath: string): IsolateConfig {
       );
     }
 
-    return parsed;
+    return parsed as IsolateConfig;
   } catch (error) {
     const stderr =
       error instanceof Error && "stderr" in error

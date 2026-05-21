@@ -78,9 +78,9 @@ export function collectInstalledNamesFromBunLockfile({
     }
 
     return collectRequiredPackages(directDependencyNames, lockfile.packages);
-  } catch (err) {
+  } catch (error) {
     log.debug(
-      `Failed to walk bun.lock for installed names: ${err instanceof Error ? err.message : String(err)}`,
+      `Failed to walk bun.lock for installed names: ${error instanceof Error ? error.message : String(error)}`,
     );
     return new Set();
   }

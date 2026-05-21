@@ -8,10 +8,10 @@ import yaml from "yaml";
 type CatalogMap = Record<string, string>;
 type CatalogsMap = Record<string, CatalogMap>;
 
-interface CatalogSource {
+type CatalogSource = {
   catalog?: CatalogMap;
   catalogs?: CatalogsMap;
-}
+};
 
 const catalogSourceCache = new Map<string, Promise<CatalogSource>>();
 
@@ -34,8 +34,9 @@ const catalogSourceCache = new Map<string, Promise<CatalogSource>>();
 async function loadCatalogSource(
   workspaceRootDir: string,
 ): Promise<CatalogSource> {
-  if (catalogSourceCache.has(workspaceRootDir)) {
-    return catalogSourceCache.get(workspaceRootDir)!;
+  const cached = catalogSourceCache.get(workspaceRootDir);
+  if (cached) {
+    return cached;
   }
 
   const loadPromise = (async () => {
@@ -58,9 +59,9 @@ async function loadCatalogSource(
             catalogs: yamlConfig.catalogs,
           };
         }
-      } catch (err) {
+      } catch (error) {
         log.warn(
-          `Failed to parse ${workspaceYamlPath}: ${err instanceof Error ? err.message : String(err)}. Falling back to package.json for catalog definitions.`,
+          `Failed to parse ${workspaceYamlPath}: ${error instanceof Error ? error.message : String(error)}. Falling back to package.json for catalog definitions.`,
         );
       }
     }
@@ -88,9 +89,9 @@ async function loadCatalogSource(
    * Drop the cache entry if loading fails so a subsequent call can retry
    * instead of immediately rethrowing the same rejection.
    */
-  const cachedLoadPromise = loadPromise.catch((err) => {
+  const cachedLoadPromise = loadPromise.catch((error) => {
     catalogSourceCache.delete(workspaceRootDir);
-    throw err;
+    throw error;
   });
 
   catalogSourceCache.set(workspaceRootDir, cachedLoadPromise);

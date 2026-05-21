@@ -35,7 +35,8 @@ export async function pack(srcDir: string, dstDir: string) {
           (err, stdout) => {
             if (err) {
               log.error(getErrorMessage(err));
-              return reject(err);
+              reject(err);
+              return;
             }
 
             resolve(stdout);
@@ -48,7 +49,8 @@ export async function pack(srcDir: string, dstDir: string) {
           execOptions,
           (err, stdout) => {
             if (err) {
-              return reject(err);
+              reject(err);
+              return;
             }
 
             resolve(stdout);

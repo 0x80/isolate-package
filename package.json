@@ -23,7 +23,6 @@
     "url": "git+https://github.com/0x80/isolate-package.git"
   },
   "bin": {
-    "isolate": "./dist/isolate-bin.mjs",
     "isolate-package": "./dist/isolate-bin.mjs"
   },
   "files": [
@@ -42,7 +41,7 @@
     "dev": "tsdown --watch",
     "test": "vitest run",
     "format": "oxfmt",
-    "lint": "oxlint -c .oxlintrc.json --type-aware",
+    "lint": "oxlint -c .oxlintrc.json --import-plugin --type-aware",
     "check-format": "oxfmt --check",
     "check-types": "tsc --noEmit",
     "prepare": "(husky || true) && pnpm check-types && pnpm build",
@@ -94,7 +93,7 @@
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
       "oxfmt",
-      "oxlint -c .oxlintrc.json --type-aware"
+      "oxlint -c .oxlintrc.json --import-plugin --type-aware"
     ]
   },
   "engines": {
