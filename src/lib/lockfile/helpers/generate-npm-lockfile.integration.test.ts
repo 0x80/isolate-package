@@ -1,14 +1,10 @@
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { generateNpmLockfile } from "./generate-npm-lockfile";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const FIXTURES_DIR = path.join(__dirname, "__fixtures__");
+const FIXTURES_DIR = path.join(import.meta.dirname, "__fixtures__");
 
 /**
  * Copy a fixture's `workspace/` tree into a fresh tmp directory so that the

@@ -39,7 +39,7 @@ export function writeIsolatePnpmWorkspace({
   let settings: PnpmSettings | undefined;
 
   try {
-    settings = readTypedYamlSync<PnpmSettings>(sourcePath);
+    settings = readTypedYamlSync(sourcePath) as PnpmSettings | undefined;
   } catch (error) {
     log.warn(
       `Could not read pnpm-workspace.yaml, falling back to verbatim copy: ${error instanceof Error ? error.message : String(error)}`,

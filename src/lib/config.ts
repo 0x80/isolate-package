@@ -151,7 +151,7 @@ export function loadConfigFromFile(): IsolateConfig {
   }
 
   if (jsonExists) {
-    return readTypedJsonSync<IsolateConfig>(jsonConfigPath);
+    return readTypedJsonSync(jsonConfigPath) as IsolateConfig;
   }
 
   return {};

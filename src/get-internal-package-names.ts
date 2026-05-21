@@ -23,9 +23,9 @@ export async function getInternalPackageNames(
 
   detectPackageManager(workspaceRootDir);
 
-  const targetPackageManifest = await readTypedJson<PackageManifest>(
+  const targetPackageManifest = (await readTypedJson(
     path.join(targetPackageDir, "package.json"),
-  );
+  )) as PackageManifest;
 
   const packagesRegistry = await createPackagesRegistry(
     workspaceRootDir,

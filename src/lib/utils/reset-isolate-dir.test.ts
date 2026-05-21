@@ -18,7 +18,9 @@ async function waitFor(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (await predicate()) return;
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    await new Promise((resolve) => {
+      setTimeout(resolve, intervalMs);
+    });
   }
   throw new Error(`Timed out after ${timeoutMs}ms waiting for predicate`);
 }

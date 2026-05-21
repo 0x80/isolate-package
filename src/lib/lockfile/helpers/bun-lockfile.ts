@@ -127,16 +127,27 @@ export function collectRequiredPackages(
       "optionalDependencies",
       "peerDependencies",
     ]) {
-      const deps = info[depField];
-      if (deps && typeof deps === "object") {
-        for (const depName of Object.keys(deps as Record<string, unknown>)) {
-          if (!required.has(depName)) {
-            queue.push(depName);
-          }
-        }
-      }
+      enqueueDeps(info[depField], required, queue);
     }
   }
 
   return required;
+}
+
+/**
+ * Push any names from a dependency map onto the BFS queue, skipping anything
+ * already marked required so we don't revisit it. `deps` is typed as `unknown`
+ * because it comes from a freshly-parsed lockfile entry with no schema.
+ */
+function enqueueDeps(
+  deps: unknown,
+  required: Set<string>,
+  queue: string[],
+): void {
+  if (!deps || typeof deps !== "object") return;
+  for (const depName of Object.keys(deps as Record<string, unknown>)) {
+    if (!required.has(depName)) {
+      queue.push(depName);
+    }
+  }
 }

@@ -37,14 +37,14 @@ export async function createPackagesRegistry(
         log.warn(
           `Ignoring directory ${rootRelativeDir} because it does not contain a package.json file`,
         );
-        return;
+        return null;
       }
 
       log.debug(`Registering package ${rootRelativeDir}`);
 
-      const manifest = await readTypedJson<PackageManifest>(
+      const manifest = (await readTypedJson(
         path.join(absoluteDir, "package.json"),
-      );
+      )) as PackageManifest;
 
       return {
         manifest,
@@ -76,9 +76,9 @@ function listWorkspacePackages(
   workspaceRootDir: string,
 ) {
   if (isRushWorkspace(workspaceRootDir)) {
-    const rushConfig = readTypedJsonSync<RushConfig>(
+    const rushConfig = readTypedJsonSync(
       path.join(workspaceRootDir, "rush.json"),
-    );
+    ) as RushConfig;
 
     return rushConfig.projects.map(({ projectFolder }) => projectFolder);
   } else {

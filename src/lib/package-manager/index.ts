@@ -9,7 +9,7 @@ let packageManager: PackageManager | undefined;
 
 export function usePackageManager() {
   if (!packageManager) {
-    throw Error(
+    throw new Error(
       "No package manager detected. Make sure to call detectPackageManager() before usePackageManager()",
     );
   }

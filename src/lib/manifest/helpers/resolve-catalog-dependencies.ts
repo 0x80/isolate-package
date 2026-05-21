@@ -68,16 +68,16 @@ async function loadCatalogSource(
 
     /** Fall back to package.json (Bun format). */
     const rootManifestPath = path.join(workspaceRootDir, "package.json");
-    const rootManifest = await readTypedJson<
-      PackageManifest & {
+    const rootManifest = (await readTypedJson(
+      rootManifestPath,
+    )) as PackageManifest & {
+      catalog?: CatalogMap;
+      catalogs?: CatalogsMap;
+      workspaces?: {
         catalog?: CatalogMap;
         catalogs?: CatalogsMap;
-        workspaces?: {
-          catalog?: CatalogMap;
-          catalogs?: CatalogsMap;
-        };
-      }
-    >(rootManifestPath);
+      };
+    };
 
     return {
       catalog: rootManifest.catalog ?? rootManifest.workspaces?.catalog,

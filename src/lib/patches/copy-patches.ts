@@ -50,9 +50,9 @@ export async function copyPatches({
    */
   if (packageManagerName === "pnpm") {
     try {
-      const pnpmSettings = readTypedYamlSync<PnpmSettings>(
+      const pnpmSettings = readTypedYamlSync(
         path.join(workspaceRootDir, "pnpm-workspace.yaml"),
-      );
+      ) as PnpmSettings | undefined;
       patchedDependencies = pnpmSettings?.patchedDependencies;
     } catch (error) {
       log.warn(
@@ -73,9 +73,9 @@ export async function copyPatches({
     }
 
     try {
-      const workspaceRootManifest = await readTypedJson<PackageManifest>(
+      const workspaceRootManifest = (await readTypedJson(
         path.join(workspaceRootDir, "package.json"),
-      );
+      )) as PackageManifest;
       /** PNPM stores patches under pnpm.patchedDependencies, Bun at the top level */
       patchedDependencies =
         workspaceRootManifest?.pnpm?.patchedDependencies ??

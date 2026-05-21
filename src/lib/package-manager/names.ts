@@ -14,15 +14,13 @@ export type PackageManager = {
   packageManagerString?: string;
 };
 
+const lockfileFileNamesByPackageManager: Record<PackageManagerName, string> = {
+  bun: "bun.lock",
+  pnpm: "pnpm-lock.yaml",
+  yarn: "yarn.lock",
+  npm: "package-lock.json",
+};
+
 export function getLockfileFileName(name: PackageManagerName) {
-  switch (name) {
-    case "bun":
-      return "bun.lock";
-    case "pnpm":
-      return "pnpm-lock.yaml";
-    case "yarn":
-      return "yarn.lock";
-    case "npm":
-      return "package-lock.json";
-  }
+  return lockfileFileNamesByPackageManager[name];
 }

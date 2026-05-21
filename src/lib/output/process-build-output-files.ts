@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import path from "node:path";
-import { pack, unpack } from "../utils";
+import { unpack } from "../utils";
+import { pack } from "../utils/pack";
 
 export async function processBuildOutputFiles({
   targetPackageDir,
