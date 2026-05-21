@@ -69,7 +69,10 @@ export function findPackagesGlobs(workspaceRootDir: string): string[] {
        */
       const workspacesObject = workspaces as { packages?: string[] };
 
-      assert(workspacesObject.packages, "workspaces.packages must be an array");
+      assert(
+        Array.isArray(workspacesObject.packages),
+        "workspaces.packages must be an array",
+      );
 
       return workspacesObject.packages;
     }
