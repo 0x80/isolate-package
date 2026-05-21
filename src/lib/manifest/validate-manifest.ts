@@ -45,8 +45,8 @@ export function validateManifestMandatoryFields(
     missingFields.push("files");
   }
 
-  if (missingFields.length > 0) {
-    const field = missingFields[0]!;
+  const [field] = missingFields;
+  if (field) {
     const errorMessage =
       missingFields.length === 1
         ? `Package at ${packagePath} is missing the "${field}" field in its package.json. See ${fieldDocUrls[field] ?? "https://isolate-package.codecompose.dev/getting-started#prerequisites"}`

@@ -1,4 +1,4 @@
-import { fileURLToPath } from "url";
+import { fileURLToPath } from "node:url";
 
 /**
  * Calling context should pass in import.meta.url and the function will return

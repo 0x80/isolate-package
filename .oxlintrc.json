@@ -1,18 +1,120 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript"],
+  "plugins": ["import", "typescript", "unicorn", "promise", "node"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
-    "perf": "warn"
+    "perf": "warn",
+    "pedantic": "warn",
+    "style": "off",
+    "restriction": "off"
   },
   "rules": {
+    "import/no-cycle": "warn",
+    "import/no-duplicates": "warn",
+    "import/no-self-import": "error",
+    "import/no-unassigned-import": "off",
+    "import/no-named-as-default-member": "off",
+    "import/no-named-as-default": "off",
+
+    "typescript/no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ],
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-explicit-any": "error",
     "typescript/no-floating-promises": "error",
     "typescript/no-misused-promises": "error",
     "typescript/await-thenable": "error",
-    "typescript/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
     "typescript/no-unsafe-type-assertion": "off",
+    "typescript/no-deprecated": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    "typescript/no-confusing-void-expression": "error",
+    "typescript/strict-void-return": "error",
+    "typescript/consistent-type-definitions": ["error", "type"],
+    "typescript/consistent-type-imports": "error",
+    "typescript/consistent-type-exports": "error",
+    "typescript/array-type": ["error", { "default": "array" }],
+    "typescript/promise-function-async": "error",
+    "typescript/return-await": "error",
+    "typescript/restrict-template-expressions": "off",
+    "typescript/prefer-readonly-parameter-types": "off",
+    "typescript/strict-boolean-expressions": "off",
+    "typescript/require-array-sort-compare": "off",
+
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/catch-error-name": "error",
+    "unicorn/numeric-separators-style": "error",
+    "unicorn/no-await-expression-member": "error",
+    "unicorn/no-useless-undefined": "error",
+    "unicorn/prefer-string-replace-all": "off",
+    "unicorn/consistent-assert": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/prefer-set-has": "off",
+    "unicorn/no-negated-condition": "off",
+    "unicorn/prefer-top-level-await": "off",
+    "unicorn/prefer-math-trunc": "off",
+
+    "eslint/require-await": "off",
+    "typescript/require-await": "off",
+    "eslint/no-underscore-dangle": "off",
+    "eslint/no-inline-comments": "off",
+    "eslint/no-negated-condition": "off",
+    "eslint/no-else-return": "off",
+    "eslint/max-lines-per-function": "off",
+    "eslint/max-lines": "off",
+    "eslint/require-unicode-regexp": "off",
+    "import/max-dependencies": "off",
+
+    "no-console": "warn",
     "no-await-in-loop": "off"
   },
-  "ignorePatterns": ["*.d.ts", "*.d.mts"]
+  "ignorePatterns": ["*.d.ts", "*.d.mts"],
+  "overrides": [
+    {
+      "files": [
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/test/**/*.ts",
+        "src/testing/**/*.ts"
+      ],
+      "rules": {
+        "typescript/no-explicit-any": "off",
+        "typescript/no-non-null-assertion": "off",
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off",
+        "typescript/promise-function-async": "off",
+        "typescript/no-confusing-void-expression": "off",
+        "typescript/strict-void-return": "off",
+        "typescript/consistent-type-imports": "off",
+        "unicorn/no-await-expression-member": "off",
+        "unicorn/no-useless-undefined": "off",
+        "unicorn/consistent-function-scoping": "off"
+      }
+    },
+    {
+      "files": ["src/lib/lockfile/helpers/**/*.ts"],
+      "rules": {
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off"
+      }
+    },
+    {
+      "files": ["src/isolate-bin.ts"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
 }

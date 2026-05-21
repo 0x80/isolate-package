@@ -3,7 +3,7 @@ import path from "node:path";
 import outdent from "outdent";
 import { useLogger } from "../logger";
 
-export async function getBuildOutputDir({
+export function getBuildOutputDir({
   targetPackageDir,
   buildDirName,
   tsconfigPath,

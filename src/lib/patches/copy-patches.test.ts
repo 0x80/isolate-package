@@ -66,14 +66,6 @@ describe("copyPatches", () => {
     vi.restoreAllMocks();
   });
 
-  const mockJsonSettings = (settings: PnpmSettings | undefined) => {
-    readTypedJson.mockResolvedValue({
-      name: "root",
-      version: "1.0.0",
-      pnpm: settings,
-    });
-  };
-
   it("should return empty object when workspace root package.json cannot be read", async () => {
     readTypedYamlSync.mockImplementation(() => {
       throw new Error("File not found");

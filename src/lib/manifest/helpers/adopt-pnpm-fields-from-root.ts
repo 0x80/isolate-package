@@ -1,5 +1,5 @@
 import type { ProjectManifest, PnpmSettings } from "@pnpm/types";
-import path from "path";
+import path from "node:path";
 import { usePackageManager } from "~/lib/package-manager";
 import type { PackageManifest } from "~/lib/types";
 import { isRushWorkspace, readTypedJson } from "~/lib/utils";
@@ -60,7 +60,7 @@ function adoptPnpmFieldsOnly(
   rootPackageManifest: ProjectManifest,
 ): PackageManifest {
   const { overrides, onlyBuiltDependencies, ignoredBuiltDependencies } =
-    rootPackageManifest.pnpm || {};
+    rootPackageManifest.pnpm ?? {};
 
   /** If no pnpm fields are present, return the original manifest */
   if (!overrides && !onlyBuiltDependencies && !ignoredBuiltDependencies) {

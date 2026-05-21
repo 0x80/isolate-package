@@ -5,13 +5,13 @@ import { getErrorMessage } from "./get-error-message";
 export function readTypedYamlSync<T>(filePath: string) {
   try {
     const rawContent = fs.readFileSync(filePath, "utf-8");
-    const data = yaml.parse(rawContent);
+    const data = yaml.parse(rawContent) as unknown;
     /** @todo Add some zod validation maybe */
     return data as T;
-  } catch (err) {
+  } catch (error) {
     throw new Error(
-      `Failed to read YAML from ${filePath}: ${getErrorMessage(err)}`,
-      { cause: err },
+      `Failed to read YAML from ${filePath}: ${getErrorMessage(error)}`,
+      { cause: error },
     );
   }
 }

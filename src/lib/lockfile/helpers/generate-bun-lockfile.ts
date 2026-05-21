@@ -215,8 +215,8 @@ export async function generateBunLockfile({
     );
 
     log.debug("Created lockfile at", outputPath);
-  } catch (err) {
-    log.error(`Failed to generate lockfile: ${getErrorMessage(err)}`);
-    throw err;
+  } catch (error) {
+    log.error(`Failed to generate lockfile: ${getErrorMessage(error)}`);
+    throw error;
   }
 }

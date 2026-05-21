@@ -109,8 +109,8 @@ export async function collectInstalledNamesFromPnpmLockfile({
       });
     }
 
-    while (queue.length > 0) {
-      const depPath = queue.pop()!;
+    let depPath: string | undefined;
+    while ((depPath = queue.pop()) !== undefined) {
       if (seen.has(depPath)) continue;
       seen.add(depPath);
 
@@ -138,9 +138,9 @@ export async function collectInstalledNamesFromPnpmLockfile({
     }
 
     return names;
-  } catch (err) {
+  } catch (error) {
     log.debug(
-      `Failed to walk pnpm lockfile for installed names: ${err instanceof Error ? err.message : String(err)}`,
+      `Failed to walk pnpm lockfile for installed names: ${error instanceof Error ? error.message : String(error)}`,
     );
     return new Set();
   }
