@@ -1,10 +1,10 @@
 import assert from "node:assert";
 import { exec } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
 import { useLogger } from "../logger";
 import { shouldUsePnpmPack } from "../package-manager";
 import { getErrorMessage } from "./get-error-message";
+import { waitForCompleteFile } from "./wait-for-complete-file";
 
 /**
  * How long to wait for the packed tarball to appear and stop growing on disk
@@ -84,41 +84,4 @@ export async function pack(srcDir: string, dstDir: string) {
   log.debug(`Packed (temp)/${fileName}`);
 
   return filePath;
-}
-
-async function waitForCompleteFile(
-  filePath: string,
-  { timeoutMs, pollMs }: { timeoutMs: number; pollMs: number },
-) {
-  const deadline = Date.now() + timeoutMs;
-  let lastSize = -1;
-
-  while (Date.now() < deadline) {
-    try {
-      const { size } = await fs.promises.stat(filePath);
-
-      /**
-       * Consider the file ready once it has non-zero size and that size has
-       * not changed since the previous poll. This is a cheap proxy for "the
-       * writer has finished flushing" without needing to inspect file
-       * contents or rely on platform-specific signals.
-       */
-      if (size > 0 && size === lastSize) {
-        return;
-      }
-
-      lastSize = size;
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        throw err;
-      }
-      /** File not visible yet; keep polling. */
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, pollMs));
-  }
-
-  throw new Error(
-    `Timed out after ${timeoutMs}ms waiting for packed file to be written: ${filePath}`,
-  );
 }
