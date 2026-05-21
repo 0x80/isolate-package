@@ -7,9 +7,9 @@ import {
   getLockfileImporterId as getLockfileImporterId_v9,
   readWantedLockfile as readWantedLockfile_v9,
 } from "pnpm_lockfile_file_v9";
-import { useLogger } from "~/lib/logger";
-import type { PackagesRegistry } from "~/lib/types";
-import { getPackageName, isRushWorkspace } from "~/lib/utils";
+import { useLogger } from "#/lib/logger";
+import type { PackagesRegistry } from "#/lib/types";
+import { getPackageName, isRushWorkspace } from "#/lib/utils";
 
 /**
  * Walk the workspace pnpm lockfile starting from the target package and its

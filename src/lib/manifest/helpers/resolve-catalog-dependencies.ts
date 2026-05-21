@@ -1,8 +1,8 @@
 import fs from "fs-extra";
 import path from "node:path";
-import { useLogger } from "~/lib/logger";
-import type { PackageManifest } from "~/lib/types";
-import { readTypedJson } from "~/lib/utils";
+import { useLogger } from "#/lib/logger";
+import type { PackageManifest } from "#/lib/types";
+import { readTypedJson } from "#/lib/utils";
 import yaml from "yaml";
 
 type CatalogMap = Record<string, string>;

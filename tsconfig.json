@@ -1,11 +1,8 @@
 {
   "extends": "@codecompose/typescript-config/library",
   "compilerOptions": {
-    /** tsgo wants baseUrl to be removed */
-    "baseUrl": null,
-    /** tsgo doesn't inherit paths from base config  */
     "paths": {
-      "~/*": ["./src/*"]
+      "#/*": ["./src/*"]
     }
   }
 }

@@ -1,9 +1,9 @@
 import Arborist from "@npmcli/arborist";
 import fs from "fs-extra";
 import path from "node:path";
-import { useLogger } from "~/lib/logger";
-import type { PackageManifest, PackagesRegistry } from "~/lib/types";
-import { getErrorMessage } from "~/lib/utils";
+import { useLogger } from "#/lib/logger";
+import type { PackageManifest, PackagesRegistry } from "#/lib/types";
+import { getErrorMessage } from "#/lib/utils";
 import { loadNpmConfig } from "./load-npm-config";
 
 /**

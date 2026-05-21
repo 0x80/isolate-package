@@ -4,10 +4,10 @@ import {
   type BunLockfile,
   collectDependencyNames,
   collectRequiredPackages,
-} from "~/lib/lockfile/helpers/bun-lockfile";
-import { useLogger } from "~/lib/logger";
-import type { PackagesRegistry } from "~/lib/types";
-import { readTypedJsonSync } from "~/lib/utils";
+} from "#/lib/lockfile/helpers/bun-lockfile";
+import { useLogger } from "#/lib/logger";
+import type { PackagesRegistry } from "#/lib/types";
+import { readTypedJsonSync } from "#/lib/utils";
 
 /**
  * Walk the workspace bun.lock starting from the target package and its

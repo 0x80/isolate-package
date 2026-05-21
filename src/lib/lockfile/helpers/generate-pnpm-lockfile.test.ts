@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { generatePnpmLockfile } from "./generate-pnpm-lockfile";
 
 /** Mock utils */
-vi.mock("~/lib/utils", () => ({
+vi.mock("#/lib/utils", () => ({
   getErrorMessage: vi.fn((err: Error) => err.message),
   isRushWorkspace: vi.fn(() => false),
 }));
@@ -57,7 +57,7 @@ const { pruneLockfile: pruneLockfile_v9 } = vi.mocked(
   await import("pnpm_prune_lockfile_v9"),
 );
 
-const { isRushWorkspace } = vi.mocked(await import("~/lib/utils"));
+const { isRushWorkspace } = vi.mocked(await import("#/lib/utils"));
 
 /** Reusable lockfile fixture */
 function createMockLockfile() {

@@ -1,8 +1,8 @@
 import { got } from "get-or-throw";
 import path from "node:path";
 import { omit } from "remeda";
-import { usePackageManager } from "~/lib/package-manager";
-import type { PackagesRegistry } from "~/lib/types";
+import { usePackageManager } from "#/lib/package-manager";
+import type { PackagesRegistry } from "#/lib/types";
 import { writeManifest } from "../io";
 import { adaptManifestInternalDeps } from "./adapt-manifest-internal-deps";
 import { resolveCatalogDependencies } from "./resolve-catalog-dependencies";

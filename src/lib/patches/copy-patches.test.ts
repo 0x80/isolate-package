@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import type { PackageManifest, PnpmSettings } from "~/lib/types";
+import type { PackageManifest, PnpmSettings } from "#/lib/types";
 import { copyPatches } from "./copy-patches";
 
 /** Mock fs-extra */
@@ -12,7 +12,7 @@ vi.mock("fs-extra", () => ({
 }));
 
 /** Mock the utils */
-vi.mock("~/lib/utils", () => ({
+vi.mock("#/lib/utils", () => ({
   filterPatchedDependencies: vi.fn(),
   getIsolateRelativeLogPath: vi.fn((p: string) => p),
   getPackageName: vi.fn((spec: string) => {
@@ -30,7 +30,7 @@ vi.mock("~/lib/utils", () => ({
 }));
 
 /** Mock the package manager */
-vi.mock("~/lib/package-manager", () => ({
+vi.mock("#/lib/package-manager", () => ({
   usePackageManager: vi.fn(() => ({ name: "pnpm", majorVersion: 9 })),
 }));
 
@@ -51,8 +51,8 @@ vi.mock("pnpm_lockfile_file_v9", () => ({
 
 const fs = vi.mocked((await import("fs-extra")).default);
 const { filterPatchedDependencies, readTypedJson, readTypedYamlSync } =
-  vi.mocked(await import("~/lib/utils"));
-const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
+  vi.mocked(await import("#/lib/utils"));
+const { usePackageManager } = vi.mocked(await import("#/lib/package-manager"));
 const { readWantedLockfile: readWantedLockfile_v9 } = vi.mocked(
   await import("pnpm_lockfile_file_v9"),
 );

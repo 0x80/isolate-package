@@ -15,7 +15,7 @@ vi.mock("pnpm_lockfile_file_v9", () => ({
   ),
 }));
 
-vi.mock("~/lib/utils", () => ({
+vi.mock("#/lib/utils", () => ({
   getPackageName: vi.fn((spec: string) => {
     if (spec.startsWith("@")) {
       const parts = spec.split("@");

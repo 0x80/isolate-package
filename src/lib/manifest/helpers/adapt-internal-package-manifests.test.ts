@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { PackageManifest, PackagesRegistry } from "~/lib/types";
+import type { PackageManifest, PackagesRegistry } from "#/lib/types";
 
 /** Mock dependencies */
-vi.mock("~/lib/package-manager", () => ({
+vi.mock("#/lib/package-manager", () => ({
   usePackageManager: vi.fn(),
 }));
 
@@ -18,7 +18,7 @@ vi.mock("./resolve-catalog-dependencies", () => ({
   resolveCatalogDependencies: vi.fn((deps) => Promise.resolve(deps)),
 }));
 
-const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
+const { usePackageManager } = vi.mocked(await import("#/lib/package-manager"));
 
 const { writeManifest } = vi.mocked(await import("../io"));
 

@@ -2,22 +2,22 @@ import fs from "fs-extra";
 import path from "node:path";
 import { readWantedLockfile as readWantedLockfile_v8 } from "pnpm_lockfile_file_v8";
 import { readWantedLockfile as readWantedLockfile_v9 } from "pnpm_lockfile_file_v9";
-import { useLogger } from "~/lib/logger";
-import { usePackageManager } from "~/lib/package-manager";
-import { collectReachablePackageNames } from "~/lib/registry";
+import { useLogger } from "#/lib/logger";
+import { usePackageManager } from "#/lib/package-manager";
+import { collectReachablePackageNames } from "#/lib/registry";
 import type {
   PackageManifest,
   PackagesRegistry,
   PatchFile,
   PnpmSettings,
-} from "~/lib/types";
+} from "#/lib/types";
 import {
   filterPatchedDependencies,
   getRootRelativeLogPath,
   isRushWorkspace,
   readTypedJson,
   readTypedYamlSync,
-} from "~/lib/utils";
+} from "#/lib/utils";
 import { collectInstalledNamesFromBunLockfile } from "./collect-installed-names-bun";
 import { collectInstalledNamesFromPnpmLockfile } from "./collect-installed-names-pnpm";
 

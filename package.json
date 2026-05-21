@@ -32,6 +32,9 @@
   ],
   "type": "module",
   "types": "./dist/index.d.mts",
+  "imports": {
+    "#/*": "./src/*"
+  },
   "exports": {
     ".": "./dist/index.mjs",
     "./isolate-bin": "./dist/isolate-bin.mjs",

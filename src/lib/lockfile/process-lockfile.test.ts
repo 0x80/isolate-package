@@ -3,7 +3,7 @@ import { processLockfile } from "./process-lockfile";
 import type { IsolateConfigResolved } from "../config";
 
 /** Mock the package manager detection */
-vi.mock("~/lib/package-manager", () => ({
+vi.mock("#/lib/package-manager", () => ({
   usePackageManager: vi.fn(),
 }));
 
@@ -15,7 +15,7 @@ vi.mock("./helpers", () => ({
   generateYarnLockfile: vi.fn(),
 }));
 
-const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
+const { usePackageManager } = vi.mocked(await import("#/lib/package-manager"));
 const {
   generateBunLockfile,
   generateNpmLockfile,

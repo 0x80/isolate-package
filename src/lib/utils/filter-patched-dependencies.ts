@@ -1,5 +1,5 @@
-import { useLogger } from "~/lib/logger";
-import type { PackageManifest } from "~/lib/types";
+import { useLogger } from "#/lib/logger";
+import type { PackageManifest } from "#/lib/types";
 import { getPackageName } from "./get-package-name";
 
 /**

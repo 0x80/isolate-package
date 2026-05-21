@@ -13,8 +13,8 @@ vi.mock("fs-extra", () => ({
 }));
 
 /** Mock the utils */
-vi.mock("~/lib/utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("~/lib/utils")>();
+vi.mock("#/lib/utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("#/lib/utils")>();
   return {
     getErrorMessage: vi.fn((err: Error) => err.message),
     getPackageName: actual.getPackageName,
@@ -23,7 +23,7 @@ vi.mock("~/lib/utils", async (importOriginal) => {
 });
 
 const fs = vi.mocked((await import("fs-extra")).default);
-const { readTypedJsonSync } = vi.mocked(await import("~/lib/utils"));
+const { readTypedJsonSync } = vi.mocked(await import("#/lib/utils"));
 
 /** Reusable packages registry fixture */
 function createPackagesRegistry() {

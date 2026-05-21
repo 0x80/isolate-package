@@ -1,13 +1,13 @@
 import fs from "fs-extra";
 import { got } from "get-or-throw";
 import path from "node:path";
-import { useLogger } from "~/lib/logger";
-import type { PackagesRegistry } from "~/lib/types";
+import { useLogger } from "#/lib/logger";
+import type { PackagesRegistry } from "#/lib/types";
 import {
   getErrorMessage,
   getPackageName,
   readTypedJsonSync,
-} from "~/lib/utils";
+} from "#/lib/utils";
 import {
   type BunLockfile,
   type BunWorkspaceEntry,
