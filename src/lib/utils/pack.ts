@@ -25,19 +25,19 @@ export async function pack(srcDir: string, dstDir: string) {
    * PNPM pack seems to be a lot faster than NPM pack, so when PNPM is detected
    * we use that instead.
    */
-  const stdout = shouldUsePnpmPack()
+  const packStdout = shouldUsePnpmPack()
     ? await new Promise<string>((resolve, reject) => {
         exec(
           `pnpm pack --pack-destination "${dstDir}"`,
           execOptions,
-          (err, out) => {
+          (err, stdout) => {
             if (err) {
               log.error(getErrorMessage(err));
               reject(err);
               return;
             }
 
-            resolve(out);
+            resolve(stdout);
           },
         );
       })
@@ -45,20 +45,23 @@ export async function pack(srcDir: string, dstDir: string) {
         exec(
           `npm pack --pack-destination "${dstDir}"`,
           execOptions,
-          (err, out) => {
+          (err, stdout) => {
             if (err) {
               reject(err);
               return;
             }
 
-            resolve(out);
+            resolve(stdout);
           },
         );
       });
 
-  const lastLine = stdout.trim().split("\n").at(-1);
+  const lastLine = packStdout.trim().split("\n").at(-1);
 
-  assert(lastLine, `Failed to parse last line from stdout: ${stdout.trim()}`);
+  assert(
+    lastLine,
+    `Failed to parse last line from stdout: ${packStdout.trim()}`,
+  );
 
   const fileName = path.basename(lastLine);
 

@@ -134,6 +134,11 @@ export function collectRequiredPackages(
   return required;
 }
 
+/**
+ * Push any names from a dependency map onto the BFS queue, skipping anything
+ * already marked required so we don't revisit it. `deps` is typed as `unknown`
+ * because it comes from a freshly-parsed lockfile entry with no schema.
+ */
 function enqueueDeps(
   deps: unknown,
   required: Set<string>,
