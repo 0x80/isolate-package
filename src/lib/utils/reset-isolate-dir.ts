@@ -12,6 +12,21 @@ import { useLogger } from "../logger";
 const TRASH_PREFIX = ".";
 const TRASH_INFIX = ".trash-";
 
+export type ResetIsolateDirOptions = {
+  /**
+   * Directory in which to place the temporary "trash" sibling that
+   * `isolateDir` is renamed to before being deleted in the background.
+   * Defaults to `path.dirname(isolateDir)`.
+   *
+   * Callers that pack the parent of `isolateDir` (e.g. `isolate.ts`, which
+   * later runs `npm pack` on `targetPackageDir`) should point this at a
+   * location outside of what gets packed, so the trash can't leak into the
+   * packed output and so the background delete can't race with the pack
+   * step.
+   */
+  trashParentDir?: string;
+};
+
 /**
  * Reset the isolate output directory to a fresh empty directory, avoiding the
  * `ENOTEMPTY` race that occurs when another process (e.g. the Firebase
@@ -23,10 +38,10 @@ const TRASH_INFIX = ".trash-";
  * 1. Sweep any leftover trash directories from previous runs that may have
  *    been killed mid-cleanup. Best-effort: ignore errors.
  * 2. If the isolate directory exists, atomically `rename` it to a hidden
- *    sibling (`.${basename}.trash-<pid>-<rnd>`) on the same filesystem. The
- *    rename is atomic, so the moment it returns the original path is free for
- *    a fresh empty directory and nothing a concurrent writer does inside the
- *    old tree can affect the new one.
+ *    sibling on the same filesystem. The rename is atomic, so the moment it
+ *    returns the original path is free for a fresh empty directory and
+ *    nothing a concurrent writer does inside the old tree can affect the
+ *    new one.
  * 3. Kick off the recursive delete of the trash directory in the background.
  *    We don't await it: it is the slowest part of an isolate run, and any
  *    failure (e.g. another process still holding files open) is harmless
@@ -34,22 +49,26 @@ const TRASH_INFIX = ".trash-";
  *    reaped by the next run's sweep in step 1.
  * 4. Ensure the (now-vacant) isolate directory exists.
  */
-export async function resetIsolateDir(isolateDir: string): Promise<void> {
+export async function resetIsolateDir(
+  isolateDir: string,
+  options: ResetIsolateDirOptions = {},
+): Promise<void> {
   const log = useLogger();
-  const parentDir = path.dirname(isolateDir);
-  const baseName = path.basename(isolateDir);
-  const trashGlobPrefix = `${TRASH_PREFIX}${baseName}${TRASH_INFIX}`;
+  const trashParentDir = options.trashParentDir ?? path.dirname(isolateDir);
+  const trashStem = buildTrashStem(trashParentDir, isolateDir);
+  const trashGlobPrefix = `${TRASH_PREFIX}${trashStem}${TRASH_INFIX}`;
 
   /** Best-effort sweep of leftover trash from previously killed runs. */
-  await sweepStaleTrash(parentDir, trashGlobPrefix);
+  await sweepStaleTrash(trashParentDir, trashGlobPrefix);
 
   if (fs.existsSync(isolateDir)) {
     const trashDir = path.join(
-      parentDir,
+      trashParentDir,
       `${trashGlobPrefix}${process.pid}-${randomBytes(4).toString("hex")}`,
     );
 
     try {
+      await fs.ensureDir(trashParentDir);
       await fs.rename(isolateDir, trashDir);
       log.debug("Moved existing isolate output directory to trash for cleanup");
 
@@ -67,12 +86,11 @@ export async function resetIsolateDir(isolateDir: string): Promise<void> {
       });
     } catch (err) {
       /**
-       * `rename` can fail with `EXDEV` if for some reason the parent dir and
-       * the isolate dir end up on different filesystems (it shouldn't, since
-       * they share a parent), or with `EPERM` on platforms that disallow
-       * renaming busy directories. Fall back to the original behaviour: a
-       * straight recursive delete. This preserves correctness at the cost of
-       * the race the rename was meant to avoid.
+       * `rename` can fail with `EXDEV` if `trashParentDir` ends up on a
+       * different filesystem from `isolateDir`, or with `EPERM` on platforms
+       * that disallow renaming busy directories. Fall back to the original
+       * behaviour: a straight recursive delete. This preserves correctness
+       * at the cost of the race the rename was meant to avoid.
        */
       log.debug(
         "Could not rename existing isolate output directory, falling back to recursive delete:",
@@ -84,6 +102,23 @@ export async function resetIsolateDir(isolateDir: string): Promise<void> {
   }
 
   await fs.ensureDir(isolateDir);
+}
+
+/**
+ * Build a stable name stem for the trash directory. When `trashParentDir` is
+ * the direct parent of `isolateDir` (the default), this is just the isolate
+ * dir's basename. When it isn't (e.g. callers placing trash outside the
+ * packed dir), include the relative path so multiple isolate dirs sharing
+ * the same trash parent don't collide in the sweep filter.
+ */
+function buildTrashStem(trashParentDir: string, isolateDir: string): string {
+  const relative = path.relative(trashParentDir, isolateDir);
+
+  if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) {
+    return path.basename(isolateDir);
+  }
+
+  return relative.split(path.sep).filter(Boolean).join("-");
 }
 
 async function sweepStaleTrash(parentDir: string, trashGlobPrefix: string) {

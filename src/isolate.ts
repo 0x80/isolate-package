@@ -78,7 +78,16 @@ export function createIsolator(config?: IsolateConfig) {
       getRootRelativeLogPath(isolateDir, workspaceRootDir),
     );
 
-    await resetIsolateDir(isolateDir);
+    /**
+     * Place the trash sibling outside `targetPackageDir`, since that directory
+     * is later packed by `processBuildOutputFiles`. Keeping the trash next to
+     * the target package (still on the same filesystem) preserves the atomic
+     * rename without risking that the trash gets picked up by `npm pack` or
+     * races with that step.
+     */
+    await resetIsolateDir(isolateDir, {
+      trashParentDir: path.dirname(targetPackageDir),
+    });
 
     const tmpDir = path.join(isolateDir, "__tmp");
     await fs.ensureDir(tmpDir);
