@@ -30,14 +30,14 @@ export async function pack(srcDir: string, dstDir: string) {
         exec(
           `pnpm pack --pack-destination "${dstDir}"`,
           execOptions,
-          (err, stdout) => {
+          (err, out) => {
             if (err) {
               log.error(getErrorMessage(err));
               reject(err);
               return;
             }
 
-            resolve(stdout);
+            resolve(out);
           },
         );
       })
@@ -45,13 +45,13 @@ export async function pack(srcDir: string, dstDir: string) {
         exec(
           `npm pack --pack-destination "${dstDir}"`,
           execOptions,
-          (err, stdout) => {
+          (err, out) => {
             if (err) {
               reject(err);
               return;
             }
 
-            resolve(stdout);
+            resolve(out);
           },
         );
       });

@@ -3,13 +3,12 @@ import stripJsonComments from "strip-json-comments";
 import { getErrorMessage } from "./get-error-message";
 
 /** @todo Pass in zod schema and validate */
-export function readTypedJsonSync<T>(filePath: string) {
+export function readTypedJsonSync(filePath: string): unknown {
   try {
     const rawContent = fs.readFileSync(filePath, "utf-8");
-    const data = JSON.parse(
+    return JSON.parse(
       stripJsonComments(rawContent, { trailingCommas: true }),
-    ) as T;
-    return data;
+    ) as unknown;
   } catch (error) {
     throw new Error(
       `Failed to read JSON from ${filePath}: ${getErrorMessage(error)}`,
@@ -18,13 +17,12 @@ export function readTypedJsonSync<T>(filePath: string) {
   }
 }
 
-export async function readTypedJson<T>(filePath: string) {
+export async function readTypedJson(filePath: string): Promise<unknown> {
   try {
     const rawContent = await fs.readFile(filePath, "utf-8");
-    const data = JSON.parse(
+    return JSON.parse(
       stripJsonComments(rawContent, { trailingCommas: true }),
-    ) as T;
-    return data;
+    ) as unknown;
   } catch (error) {
     throw new Error(
       `Failed to read JSON from ${filePath}: ${getErrorMessage(error)}`,

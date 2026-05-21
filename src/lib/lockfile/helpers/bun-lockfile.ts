@@ -127,16 +127,22 @@ export function collectRequiredPackages(
       "optionalDependencies",
       "peerDependencies",
     ]) {
-      const deps = info[depField];
-      if (deps && typeof deps === "object") {
-        for (const depName of Object.keys(deps as Record<string, unknown>)) {
-          if (!required.has(depName)) {
-            queue.push(depName);
-          }
-        }
-      }
+      enqueueDeps(info[depField], required, queue);
     }
   }
 
   return required;
+}
+
+function enqueueDeps(
+  deps: unknown,
+  required: Set<string>,
+  queue: string[],
+): void {
+  if (!deps || typeof deps !== "object") return;
+  for (const depName of Object.keys(deps as Record<string, unknown>)) {
+    if (!required.has(depName)) {
+      queue.push(depName);
+    }
+  }
 }

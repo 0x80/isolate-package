@@ -13,16 +13,16 @@ import {
  * monorepo. This configuration is dependent on the package manager used, and I
  * don't know if we're covering all cases yet...
  */
-export function findPackagesGlobs(workspaceRootDir: string) {
+export function findPackagesGlobs(workspaceRootDir: string): string[] {
   const log = useLogger();
 
   const packageManager = usePackageManager();
 
   switch (packageManager.name) {
     case "pnpm": {
-      const workspaceConfig = readTypedYamlSync<{ packages: string[] }>(
+      const workspaceConfig = readTypedYamlSync(
         path.join(workspaceRootDir, "pnpm-workspace.yaml"),
-      );
+      ) as { packages: string[] } | undefined;
 
       if (!workspaceConfig) {
         throw new Error(
@@ -48,9 +48,9 @@ export function findPackagesGlobs(workspaceRootDir: string) {
         "package.json",
       );
 
-      const { workspaces } = readTypedJsonSync<{ workspaces: string[] }>(
-        workspaceRootManifestPath,
-      );
+      const { workspaces } = readTypedJsonSync(workspaceRootManifestPath) as {
+        workspaces: string[];
+      };
 
       if (!workspaces) {
         throw new Error(
@@ -60,21 +60,22 @@ export function findPackagesGlobs(workspaceRootDir: string) {
 
       if (Array.isArray(workspaces)) {
         return workspaces;
-      } else {
-        /**
-         * For Yarn, workspaces could be defined as an object with { packages:
-         * [], nohoist: [] }. See
-         * https://classic.yarnpkg.com/blog/2018/02/15/nohoist/
-         */
-        const workspacesObject = workspaces as { packages?: string[] };
-
-        assert(
-          workspacesObject.packages,
-          "workspaces.packages must be an array",
-        );
-
-        return workspacesObject.packages;
       }
+
+      /**
+       * For Yarn, workspaces could be defined as an object with { packages: [],
+       * nohoist: [] }. See
+       * https://classic.yarnpkg.com/blog/2018/02/15/nohoist/
+       */
+      const workspacesObject = workspaces as { packages?: string[] };
+
+      assert(workspacesObject.packages, "workspaces.packages must be an array");
+
+      return workspacesObject.packages;
     }
+    default:
+      throw new Error(
+        `Unsupported package manager: ${packageManager.name as string}`,
+      );
   }
 }

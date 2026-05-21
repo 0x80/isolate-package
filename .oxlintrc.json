@@ -3,22 +3,22 @@
   "plugins": ["import", "typescript", "unicorn", "promise", "node"],
   "categories": {
     "correctness": "error",
-    "suspicious": "warn",
-    "perf": "warn",
-    "pedantic": "warn",
+    "suspicious": "error",
+    "perf": "error",
+    "pedantic": "error",
     "style": "off",
     "restriction": "off"
   },
   "rules": {
-    "import/no-cycle": "warn",
-    "import/no-duplicates": "warn",
+    "import/no-cycle": "error",
+    "import/no-duplicates": "error",
     "import/no-self-import": "error",
     "import/no-unassigned-import": "off",
     "import/no-named-as-default-member": "off",
     "import/no-named-as-default": "off",
 
     "typescript/no-unused-vars": [
-      "warn",
+      "error",
       { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
     ],
     "typescript/no-non-null-assertion": "error",
@@ -71,7 +71,7 @@
     "eslint/require-unicode-regexp": "off",
     "import/max-dependencies": "off",
 
-    "no-console": "warn",
+    "no-console": "error",
     "no-await-in-loop": "off"
   },
   "ignorePatterns": ["*.d.ts", "*.d.mts"],

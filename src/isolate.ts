@@ -37,17 +37,17 @@ import {
 
 const __dirname = getDirname(import.meta.url);
 
-export function createIsolator(config?: IsolateConfig) {
-  const resolvedConfig = resolveConfig(config);
+export function createIsolator(initialConfig?: IsolateConfig) {
+  const resolvedConfig = resolveConfig(initialConfig);
 
-  return async function isolate(): Promise<string> {
+  return async function runIsolate(): Promise<string> {
     const config = resolvedConfig;
     setLogLevel(config.logLevel);
     const log = useLogger();
 
-    const { version: libraryVersion } = await readTypedJson<PackageManifest>(
+    const { version: libraryVersion } = (await readTypedJson(
       path.join(path.join(__dirname, "..", "package.json")),
-    );
+    )) as PackageManifest;
 
     log.debug("Using isolate-package version", libraryVersion);
 
@@ -92,9 +92,9 @@ export function createIsolator(config?: IsolateConfig) {
     const tmpDir = path.join(isolateDir, "__tmp");
     await fs.ensureDir(tmpDir);
 
-    const targetPackageManifest = await readTypedJson<PackageManifest>(
+    const targetPackageManifest = (await readTypedJson(
       path.join(targetPackageDir, "package.json"),
-    );
+    )) as PackageManifest;
 
     /** Validate mandatory fields for the target package */
     validateManifestMandatoryFields(

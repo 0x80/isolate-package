@@ -11,14 +11,13 @@ import { getLockfileFileName, supportedPackageManagerNames } from "../names";
 export function inferFromManifest(workspaceRoot: string) {
   const log = useLogger();
 
-  const { packageManager: packageManagerString } =
-    readTypedJsonSync<PackageManifest>(
-      path.join(workspaceRoot, "package.json"),
-    );
+  const { packageManager: packageManagerString } = readTypedJsonSync(
+    path.join(workspaceRoot, "package.json"),
+  ) as PackageManifest;
 
   if (!packageManagerString) {
     log.debug("No packageManager field found in root manifest");
-    return;
+    return null;
   }
 
   const [name, version = "*"] = packageManagerString.split("@") as [

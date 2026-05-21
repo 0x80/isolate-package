@@ -2,7 +2,7 @@ import { got } from "get-or-throw";
 import assert from "node:assert";
 import { useLogger } from "../logger";
 import type { PackagesRegistry } from "../types";
-import { pack } from "../utils";
+import { pack } from "../utils/pack";
 
 /**
  * Pack dependencies so that we extract only the files that are supposed to be

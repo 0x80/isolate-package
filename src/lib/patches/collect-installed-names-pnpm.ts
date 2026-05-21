@@ -71,10 +71,11 @@ export async function collectInstalledNamesFromPnpmLockfile({
 
     const importerIds = [
       targetImporterId,
-      ...internalDepPackageNames
-        .map((name) => packagesRegistry[name]?.rootRelativeDir)
-        .filter((dir): dir is string => Boolean(dir))
-        .map((dir) => toLockfileImporterKey(dir, isRush)),
+      ...(
+        internalDepPackageNames
+          .map((name) => packagesRegistry[name]?.rootRelativeDir)
+          .filter(Boolean) as string[]
+      ).map((dir) => toLockfileImporterKey(dir, isRush)),
     ];
 
     const packages = (lockfile as { packages?: Record<string, PnpmPackage> })
@@ -296,7 +297,7 @@ function refToRelativeV8(reference: string, pkgName: string): string | null {
  */
 function extractPackageName(depPath: string): string {
   const peerStart = indexOfPeersSuffix(depPath);
-  const trimmed = peerStart === -1 ? depPath : depPath.substring(0, peerStart);
+  const trimmed = peerStart === -1 ? depPath : depPath.slice(0, peerStart);
 
   if (trimmed.startsWith("/")) {
     /** v8 v5-style: `/<name>/<version>` */

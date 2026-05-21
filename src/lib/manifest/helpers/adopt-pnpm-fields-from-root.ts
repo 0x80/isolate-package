@@ -17,9 +17,9 @@ export async function adoptPnpmFieldsFromRoot(
     return targetPackageManifest;
   }
 
-  const rootPackageManifest = await readTypedJson<ProjectManifest>(
+  const rootPackageManifest = (await readTypedJson(
     path.join(workspaceRootDir, "package.json"),
-  );
+  )) as ProjectManifest;
 
   const packageManager = usePackageManager();
 

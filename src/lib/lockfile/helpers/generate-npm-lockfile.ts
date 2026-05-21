@@ -160,7 +160,7 @@ async function generateFromRootLockfile({
   }
 
   if (typeof targetImporterNode.location !== "string") {
-    throw new Error(
+    throw new TypeError(
       `Target workspace "${targetPackageName}" resolved to a node without a location`,
     );
   }
@@ -445,8 +445,10 @@ export function buildIsolatedLockfileJson({
   }
 
   /** Overlay the isolate root with the adapted target manifest. */
-  const rootEntry: LockfilePackageEntry = { ...outPackages[""] };
-  rootEntry.name = targetPackageManifest.name;
+  const rootEntry: LockfilePackageEntry = {
+    ...outPackages[""],
+    name: targetPackageManifest.name,
+  };
   if (targetPackageManifest.version) {
     rootEntry.version = targetPackageManifest.version;
   }

@@ -3,8 +3,12 @@ import path from "node:path";
 import type { PackageManifest } from "../types";
 import { readTypedJson } from "../utils";
 
-export async function readManifest(packageDir: string) {
-  return readTypedJson<PackageManifest>(path.join(packageDir, "package.json"));
+export async function readManifest(
+  packageDir: string,
+): Promise<PackageManifest> {
+  return (await readTypedJson(
+    path.join(packageDir, "package.json"),
+  )) as PackageManifest;
 }
 
 export async function writeManifest(

@@ -68,7 +68,7 @@ export async function generateBunLockfile({
       throw new Error(`Failed to find bun.lock at ${lockfilePath}`);
     }
 
-    const lockfile = readTypedJsonSync<BunLockfile>(lockfilePath);
+    const lockfile = readTypedJsonSync(lockfilePath) as BunLockfile;
 
     /** Compute workspace keys for the target and internal deps */
     const targetWorkspaceKey = path

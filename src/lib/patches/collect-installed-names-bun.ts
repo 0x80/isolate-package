@@ -41,7 +41,7 @@ export function collectInstalledNamesFromBunLockfile({
       return new Set();
     }
 
-    const lockfile = readTypedJsonSync<BunLockfile>(lockfilePath);
+    const lockfile = readTypedJsonSync(lockfilePath) as BunLockfile;
 
     const targetWorkspaceKey = path
       .relative(workspaceRootDir, targetPackageDir)
@@ -54,7 +54,7 @@ export function collectInstalledNamesFromBunLockfile({
         if (!pkg) return null;
         return pkg.rootRelativeDir.split(path.sep).join(path.posix.sep);
       })
-      .filter((key): key is string => Boolean(key));
+      .filter(Boolean) as string[];
 
     const directDependencyNames = new Set<string>();
 

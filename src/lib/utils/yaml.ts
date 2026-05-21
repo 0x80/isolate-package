@@ -2,12 +2,11 @@ import fs from "fs-extra";
 import yaml from "yaml";
 import { getErrorMessage } from "./get-error-message";
 
-export function readTypedYamlSync<T>(filePath: string) {
+/** @todo Add some zod validation maybe */
+export function readTypedYamlSync(filePath: string): unknown {
   try {
     const rawContent = fs.readFileSync(filePath, "utf-8");
-    const data = yaml.parse(rawContent) as unknown;
-    /** @todo Add some zod validation maybe */
-    return data as T;
+    return yaml.parse(rawContent) as unknown;
   } catch (error) {
     throw new Error(
       `Failed to read YAML from ${filePath}: ${getErrorMessage(error)}`,
@@ -16,7 +15,7 @@ export function readTypedYamlSync<T>(filePath: string) {
   }
 }
 
-export function writeTypedYamlSync<T>(filePath: string, content: T) {
-  /** @todo Add some zod validation maybe */
+/** @todo Add some zod validation maybe */
+export function writeTypedYamlSync(filePath: string, content: unknown) {
   fs.writeFileSync(filePath, yaml.stringify(content), "utf-8");
 }
