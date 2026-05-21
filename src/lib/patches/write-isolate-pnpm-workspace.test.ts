@@ -154,7 +154,7 @@ describe("writeIsolatePnpmWorkspace", () => {
         puppeteer: true,
         esbuild: true,
       },
-      minimumReleaseAge: 10080,
+      minimumReleaseAge: 10_080,
     });
 
     writeIsolatePnpmWorkspace({
