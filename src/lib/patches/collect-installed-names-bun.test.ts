@@ -7,12 +7,12 @@ vi.mock("fs-extra", () => ({
   },
 }));
 
-vi.mock("~/lib/utils", () => ({
+vi.mock("#/lib/utils", () => ({
   readTypedJsonSync: vi.fn(),
 }));
 
 const fs = vi.mocked((await import("fs-extra")).default);
-const { readTypedJsonSync } = vi.mocked(await import("~/lib/utils"));
+const { readTypedJsonSync } = vi.mocked(await import("#/lib/utils"));
 
 const baseArgs = {
   workspaceRootDir: "/workspace",

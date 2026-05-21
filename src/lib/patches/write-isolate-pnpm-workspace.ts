@@ -1,8 +1,8 @@
 import fs from "fs-extra";
 import path from "node:path";
-import { useLogger } from "~/lib/logger";
-import type { PatchFile, PnpmSettings } from "~/lib/types";
-import { readTypedYamlSync, writeTypedYamlSync } from "~/lib/utils";
+import { useLogger } from "#/lib/logger";
+import type { PatchFile, PnpmSettings } from "#/lib/types";
+import { readTypedYamlSync, writeTypedYamlSync } from "#/lib/utils";
 
 /**
  * Copy `pnpm-workspace.yaml` from the workspace root to the isolate directory,

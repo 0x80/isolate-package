@@ -1,4 +1,4 @@
-import type { PackageManifest, PackagesRegistry } from "~/lib/types";
+import type { PackageManifest, PackagesRegistry } from "#/lib/types";
 import { patchInternalEntries } from "./patch-internal-entries";
 
 /**

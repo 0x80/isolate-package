@@ -1,8 +1,8 @@
 import type { ProjectManifest, PnpmSettings } from "@pnpm/types";
 import path from "node:path";
-import { usePackageManager } from "~/lib/package-manager";
-import type { PackageManifest } from "~/lib/types";
-import { isRushWorkspace, readTypedJson } from "~/lib/utils";
+import { usePackageManager } from "#/lib/package-manager";
+import type { PackageManifest } from "#/lib/types";
+import { isRushWorkspace, readTypedJson } from "#/lib/utils";
 
 /**
  * Adopts workspace-level fields from the root package manifest. For pnpm this

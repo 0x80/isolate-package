@@ -1,8 +1,8 @@
 import fs from "fs-extra";
 import { execSync } from "node:child_process";
 import path from "node:path";
-import { useLogger } from "~/lib/logger";
-import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
+import { useLogger } from "#/lib/logger";
+import { getErrorMessage, isRushWorkspace } from "#/lib/utils";
 
 /**
  * Generate an isolated / pruned lockfile, based on the existing lockfile from

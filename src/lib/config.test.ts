@@ -12,7 +12,7 @@ const mockLogger = {
   error: vi.fn(),
 };
 
-vi.mock("~/lib/logger", () => ({
+vi.mock("#/lib/logger", () => ({
   useLogger: () => mockLogger,
 }));
 

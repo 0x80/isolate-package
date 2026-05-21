@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PackageManifest, PackagesRegistry } from "~/lib/types";
+import type { PackageManifest, PackagesRegistry } from "#/lib/types";
 import { collectReachablePackageNames } from "./collect-reachable-package-names";
 
 function entry(manifest: PackageManifest) {

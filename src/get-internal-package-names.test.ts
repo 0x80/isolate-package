@@ -14,7 +14,7 @@ const mockDetectPackageManager = vi.fn(
   (_workspaceRootDir: string) => packageManagerResult,
 );
 
-vi.mock("~/lib/package-manager", () => ({
+vi.mock("#/lib/package-manager", () => ({
   usePackageManager: () => packageManagerResult,
   detectPackageManager: (workspaceRootDir: string) =>
     mockDetectPackageManager(workspaceRootDir),

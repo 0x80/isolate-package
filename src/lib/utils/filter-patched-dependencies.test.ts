@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PackageManifest } from "~/lib/types";
+import type { PackageManifest } from "#/lib/types";
 import { filterPatchedDependencies } from "./filter-patched-dependencies";
 
 describe("filterPatchedDependencies", () => {

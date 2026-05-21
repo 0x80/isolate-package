@@ -13,9 +13,9 @@ import {
 import { pruneLockfile as pruneLockfile_v8 } from "pnpm_prune_lockfile_v8";
 import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
 import { pick } from "remeda";
-import { useLogger } from "~/lib/logger";
-import type { PackageManifest, PackagesRegistry, PatchFile } from "~/lib/types";
-import { getErrorMessage, isRushWorkspace } from "~/lib/utils";
+import { useLogger } from "#/lib/logger";
+import type { PackageManifest, PackagesRegistry, PatchFile } from "#/lib/types";
+import { getErrorMessage, isRushWorkspace } from "#/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
 export async function generatePnpmLockfile({

@@ -9,7 +9,7 @@ const mockLogger = {
   warn: vi.fn(),
 };
 
-vi.mock("~/lib/logger", () => ({
+vi.mock("#/lib/logger", () => ({
   useLogger: vi.fn(() => mockLogger),
 }));
 

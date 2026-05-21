@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PatchFile } from "~/lib/types";
+import type { PatchFile } from "#/lib/types";
 import { writeIsolatePnpmWorkspace } from "./write-isolate-pnpm-workspace";
 
 vi.mock("fs-extra", () => ({
@@ -8,14 +8,14 @@ vi.mock("fs-extra", () => ({
   },
 }));
 
-vi.mock("~/lib/utils", () => ({
+vi.mock("#/lib/utils", () => ({
   readTypedYamlSync: vi.fn(),
   writeTypedYamlSync: vi.fn(),
 }));
 
 const fs = vi.mocked((await import("fs-extra")).default);
 const { readTypedYamlSync, writeTypedYamlSync } = vi.mocked(
-  await import("~/lib/utils"),
+  await import("#/lib/utils"),
 );
 
 const workspaceRootDir = "/workspace";

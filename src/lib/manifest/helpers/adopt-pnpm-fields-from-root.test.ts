@@ -7,20 +7,20 @@ import type {
 import { adoptPnpmFieldsFromRoot } from "./adopt-pnpm-fields-from-root";
 
 /** Mock the dependencies */
-vi.mock("~/lib/utils", () => ({
+vi.mock("#/lib/utils", () => ({
   isRushWorkspace: vi.fn(),
   readTypedJson: vi.fn(),
 }));
 
-vi.mock("~/lib/package-manager", () => ({
+vi.mock("#/lib/package-manager", () => ({
   usePackageManager: vi.fn(() => ({ name: "pnpm", majorVersion: 9 })),
 }));
 
 const { isRushWorkspace, readTypedJson } = vi.mocked(
-  await import("~/lib/utils"),
+  await import("#/lib/utils"),
 );
 
-const { usePackageManager } = vi.mocked(await import("~/lib/package-manager"));
+const { usePackageManager } = vi.mocked(await import("#/lib/package-manager"));
 
 describe("adoptPnpmFieldsFromRoot", () => {
   beforeEach(() => {

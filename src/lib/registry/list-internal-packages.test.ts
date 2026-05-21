@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PackageManifest, PackagesRegistry } from "~/lib/types";
+import type { PackageManifest, PackagesRegistry } from "#/lib/types";
 import { listInternalPackages } from "./list-internal-packages";
 
 const mockWarn = vi.fn();
 
-vi.mock("~/lib/logger", () => ({
+vi.mock("#/lib/logger", () => ({
   useLogger: () => ({
     debug: vi.fn(),
     info: vi.fn(),
