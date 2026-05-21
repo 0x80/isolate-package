@@ -41,7 +41,7 @@ async function loadCatalogSource(
   const loadPromise = (async () => {
     const log = useLogger();
 
-    // Try pnpm-workspace.yaml first
+    /** Try pnpm-workspace.yaml first. */
     const workspaceYamlPath = path.join(
       workspaceRootDir,
       "pnpm-workspace.yaml",
@@ -65,7 +65,7 @@ async function loadCatalogSource(
       }
     }
 
-    // Fall back to package.json (Bun format)
+    /** Fall back to package.json (Bun format). */
     const rootManifestPath = path.join(workspaceRootDir, "package.json");
     const rootManifest = await readTypedJson<
       PackageManifest & {

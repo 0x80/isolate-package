@@ -45,7 +45,7 @@ async function createTempWorkspace({
     );
   }
 
-  // Always write a minimal package.json so the fallback doesn't throw
+  /** Always write a minimal package.json so the fallback doesn't throw. */
   const manifest = packageJson ?? { name: "root", version: "0.0.0" };
   await fs.writeJson(path.join(dir, "package.json"), manifest);
 
@@ -313,10 +313,10 @@ describe("resolveCatalogDependencies", () => {
         tmpDir,
       );
 
-      // Verify it fell back to package.json correctly
+      /** Verify it fell back to package.json correctly. */
       expect(result).toEqual({ react: "^18.0.0" });
 
-      // Verify a warning was logged
+      /** Verify a warning was logged. */
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining(
           `Failed to parse ${path.join(tmpDir, "pnpm-workspace.yaml")}:`,
@@ -329,7 +329,7 @@ describe("resolveCatalogDependencies", () => {
     it("falls back to package.json when pnpm-workspace.yaml has no catalog", async () => {
       tmpDir = await createTempWorkspace({
         workspaceYaml: {
-          // No catalog or catalogs field - just packages
+          /** No catalog or catalogs field - just packages. */
           packages: ["packages/*"],
         },
         packageJson: {
