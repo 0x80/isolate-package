@@ -121,6 +121,11 @@ function buildTrashStem(trashParentDir: string, isolateDir: string): string {
   return relative.split(path.sep).filter(Boolean).join("-");
 }
 
+/**
+ * Best-effort sweep of leftover trash directories matching this isolate dir's
+ * stem. Failures are swallowed: stale trash is debris, not state, and a
+ * subsequent run will get another chance to reap it.
+ */
 async function sweepStaleTrash(parentDir: string, trashGlobPrefix: string) {
   let entries: string[];
   try {

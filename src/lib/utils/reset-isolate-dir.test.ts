@@ -69,9 +69,9 @@ describe("resetIsolateDir", () => {
     await fs.writeFile(path.join(isolateDir, "stale.txt"), "stale");
 
     /**
-     * Block the background delete by holding the trash dir open. We grab the
-     * snapshot immediately after the call so we can assert where the trash
-     * landed before the background `fs.remove` runs.
+     * Wrap `fs.rename` so we can read back the destination path the function
+     * picked — the trash dir name is randomised, so capturing the spy's
+     * arguments is the only way to assert where the rename targeted.
      */
     const renameSpy = vi.spyOn(fs, "rename");
 
