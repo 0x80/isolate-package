@@ -84,8 +84,17 @@ async function loadCatalogSource(
     };
   })();
 
-  catalogSourceCache.set(workspaceRootDir, loadPromise);
-  return loadPromise;
+  /**
+   * Drop the cache entry if loading fails so a subsequent call can retry
+   * instead of immediately rethrowing the same rejection.
+   */
+  const cachedLoadPromise = loadPromise.catch((err) => {
+    catalogSourceCache.delete(workspaceRootDir);
+    throw err;
+  });
+
+  catalogSourceCache.set(workspaceRootDir, cachedLoadPromise);
+  return cachedLoadPromise;
 }
 
 /**

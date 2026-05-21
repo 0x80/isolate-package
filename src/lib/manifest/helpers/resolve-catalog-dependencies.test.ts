@@ -2,7 +2,7 @@ import os from "node:os";
 import path from "node:path";
 import fs from "fs-extra";
 import yaml from "yaml";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockLogger = {
   debug: vi.fn(),
@@ -54,6 +54,10 @@ async function createTempWorkspace({
 
 describe("resolveCatalogDependencies", () => {
   let tmpDir: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   afterEach(async () => {
     if (tmpDir) {
@@ -263,6 +267,33 @@ describe("resolveCatalogDependencies", () => {
         typescript: "^5.4.0",
         eslint: "^8.0.0",
       });
+    });
+  });
+
+  describe("precedence", () => {
+    it("prefers pnpm-workspace.yaml over package.json when both define the same catalog dependency", async () => {
+      tmpDir = await createTempWorkspace({
+        workspaceYaml: {
+          packages: ["packages/*"],
+          catalog: {
+            react: "^18.3.1",
+          },
+        },
+        packageJson: {
+          name: "root",
+          version: "0.0.0",
+          catalog: {
+            react: "^18.2.0",
+          },
+        },
+      });
+
+      const result = await resolveCatalogDependencies(
+        { react: "catalog:" },
+        tmpDir,
+      );
+
+      expect(result).toEqual({ react: "^18.3.1" });
     });
   });
 
