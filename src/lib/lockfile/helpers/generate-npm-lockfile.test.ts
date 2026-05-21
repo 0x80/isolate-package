@@ -671,6 +671,99 @@ describe("buildIsolatedLockfileJson", () => {
   });
 
   /**
+   * Cascade scenario: a reachable node is simultaneously (a) the loser of one
+   * collision (its slot is taken by a target-nested winner) and (b) a
+   * potential consumer of another displaced entry. Because the displaced
+   * consumer is not actually present in the isolate, the re-nesting loop must
+   * skip it — otherwise it would try to nest under a slot already held by an
+   * unrelated target-nested entry and throw a spurious secondary-collision
+   * error.
+   */
+  it("skips re-nesting under a consumer whose own entry has been displaced", () => {
+    const srcData: Parameters<typeof buildIsolatedLockfileJson>[0]["srcData"] =
+      {
+        name: "root",
+        version: "0.0.0",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "root", version: "0.0.0" },
+          "packages/api": {
+            name: "api",
+            version: "1.0.0",
+            dependencies: { "dep-a": "*", "dep-x": "^5" },
+          },
+          /** Target's nested A@v2 displaces the hoisted A@v1. */
+          "packages/api/node_modules/dep-a": {
+            version: "2.0.0",
+            resolved: "https://registry.npmjs.org/dep-a/-/dep-a-2.0.0.tgz",
+            integrity: "sha512-a-v2",
+            dependencies: { "dep-x": "^3" },
+          },
+          /** A@v2 brings its own nested X@v3. */
+          "packages/api/node_modules/dep-a/node_modules/dep-x": {
+            version: "3.0.0",
+            resolved: "https://registry.npmjs.org/dep-x/-/dep-x-3.0.0.tgz",
+            integrity: "sha512-x-v3",
+          },
+          /** Target's nested X@v5 displaces the hoisted X@v1. */
+          "packages/api/node_modules/dep-x": {
+            version: "5.0.0",
+            resolved: "https://registry.npmjs.org/dep-x/-/dep-x-5.0.0.tgz",
+            integrity: "sha512-x-v5",
+          },
+          /** Hoisted A@v1, still reachable through another transitive path. */
+          "node_modules/dep-a": {
+            version: "1.0.0",
+            resolved: "https://registry.npmjs.org/dep-a/-/dep-a-1.0.0.tgz",
+            integrity: "sha512-a-v1",
+            dependencies: { "dep-x": "^1" },
+          },
+          /** Hoisted X@v1, which A@v1 originally resolved to. */
+          "node_modules/dep-x": {
+            version: "1.0.0",
+            resolved: "https://registry.npmjs.org/dep-x/-/dep-x-1.0.0.tgz",
+            integrity: "sha512-x-v1",
+          },
+        },
+      };
+
+    const reachable: ReachableNode[] = [
+      { location: "packages/api", isLink: false },
+      { location: "packages/api/node_modules/dep-a", isLink: false },
+      {
+        location: "packages/api/node_modules/dep-a/node_modules/dep-x",
+        isLink: false,
+      },
+      { location: "packages/api/node_modules/dep-x", isLink: false },
+      { location: "node_modules/dep-a", isLink: false },
+      { location: "node_modules/dep-x", isLink: false },
+    ];
+
+    const out = buildIsolatedLockfileJson({
+      srcData,
+      reachable,
+      targetImporterLoc: "packages/api",
+      targetLinkLoc: "node_modules/api",
+      targetPackageManifest: {
+        name: "api",
+        version: "1.0.0",
+        dependencies: { "dep-a": "*", "dep-x": "^5" },
+      },
+    });
+
+    /** The displaced hoisted A@v1 leaves no consumer present in the isolate
+     * (its only reachable consumer was itself), so no re-nesting happens for
+     * dep-x under node_modules/dep-a — the existing X@v3 placed via remap
+     * stays untouched. */
+    expect(out.packages["node_modules/dep-a"]!.version).toBe("2.0.0");
+    expect(out.packages["node_modules/dep-x"]!.version).toBe("5.0.0");
+    expect(out.packages["node_modules/dep-a/node_modules/dep-x"]!.version).toBe(
+      "3.0.0",
+    );
+  });
+
+  /**
    * Identical entries at colliding paths should not throw — copying the
    * same content twice is a no-op.
    */

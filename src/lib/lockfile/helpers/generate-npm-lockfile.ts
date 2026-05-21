@@ -297,7 +297,6 @@ export function buildIsolatedLockfileJson({
    * is still reachable from other deps. The displaced entry needs to be
    * re-nested under each consumer that originally resolved to it. */
   type Collision = {
-    newLoc: string;
     loserOrigLoc: string;
     loserEntry: LockfilePackageEntry;
   };
@@ -339,7 +338,6 @@ export function buildIsolatedLockfileJson({
         /** The target-nested entry wins. The previously-stored hoisted entry
          * is displaced and must be re-nested under its consumers. */
         collisions.push({
-          newLoc,
           loserOrigLoc: previousOrigLoc,
           loserEntry: existing,
         });
@@ -352,7 +350,6 @@ export function buildIsolatedLockfileJson({
         /** The previously-stored target-nested entry wins; the incoming
          * hoisted entry is the loser. */
         collisions.push({
-          newLoc,
           loserOrigLoc: origLoc,
           loserEntry: { ...srcEntry },
         });
@@ -362,7 +359,8 @@ export function buildIsolatedLockfileJson({
       /** Neither side is the target's nested version, or both are — we have
        * no rule to pick a winner. Bail loudly. */
       throw new Error(
-        `Path collision at "${newLoc}": source locations "${previousOrigLoc}" and "${origLoc}" both map there with conflicting entries, and neither is a target-nested override. ` +
+        `Path collision at "${newLoc}": source locations "${previousOrigLoc}" and "${origLoc}" both map there with conflicting entries and no rule applies to pick a winner ` +
+          `(neither is a target-nested override, or both are). ` +
           `Please report a reproduction at https://github.com/0x80/isolate-package/issues.`,
       );
     }
@@ -384,7 +382,8 @@ export function buildIsolatedLockfileJson({
 
       const consumerEntry = srcPackages[consumerSrcLoc];
       if (!consumerEntry) continue;
-      /** Links carry no dependency metadata of their own. */
+      /** Workspace links carry dependency metadata on the importer entry,
+       * not the link entry itself. Skip the link side. */
       if (consumerEntry.link) continue;
 
       if (!entryDependsOn(consumerEntry, loserName)) continue;
@@ -398,9 +397,23 @@ export function buildIsolatedLockfileJson({
 
       const consumerNewLoc = remapToOutputLoc(consumerSrcLoc);
       /** Consumer maps to the isolate root (the target itself). The root
-       * slot is already taken by the winning version; we cannot satisfy
-       * the consumer's original resolution from here. Leave it to npm. */
+       * slot is already taken by the winning version. The target's own
+       * dependencies use that version — we cannot serve a different one
+       * here without nesting under the target, which would be its own
+       * collision. Accept the resolution shift. */
       if (consumerNewLoc === "") continue;
+
+      /** If the consumer was itself displaced by another collision (its
+       * src-side entry doesn't match the entry we actually placed at its
+       * new location), the consumer isn't really present in the isolate.
+       * Its original dep needs are irrelevant here. */
+      const consumerOutEntry = outPackages[consumerNewLoc];
+      if (
+        !consumerOutEntry ||
+        !entriesAreEquivalent(consumerOutEntry, consumerEntry)
+      ) {
+        continue;
+      }
 
       const nestedLoc = `${consumerNewLoc}/node_modules/${loserName}`;
 
