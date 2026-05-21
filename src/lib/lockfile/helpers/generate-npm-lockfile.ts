@@ -277,10 +277,30 @@ export function buildIsolatedLockfileJson({
 
   const targetNestedNodeModulesPrefix = `${targetImporterLoc}/node_modules/`;
 
-  /** Track the source location each output entry came from, so we can
-   * produce a clear error if two source paths remap to the same target.
-   */
+  const remapToOutputLoc = (origLoc: string): string => {
+    if (origLoc === targetImporterLoc) return "";
+    if (origLoc.startsWith(targetNestedNodeModulesPrefix)) {
+      return origLoc.slice(targetImporterLoc.length + 1);
+    }
+    return origLoc;
+  };
+
+  const isTargetNested = (origLoc: string): boolean =>
+    origLoc === targetImporterLoc ||
+    origLoc.startsWith(targetNestedNodeModulesPrefix);
+
+  /** Track the source location each output entry came from, used to identify
+   * the displaced entry when a collision occurs. */
   const origLocByNewLoc = new Map<string, string>();
+
+  /** Collisions where the target's nested entry displaces a hoisted entry that
+   * is still reachable from other deps. The displaced entry needs to be
+   * re-nested under each consumer that originally resolved to it. */
+  type Collision = {
+    loserOrigLoc: string;
+    loserEntry: LockfilePackageEntry;
+  };
+  const collisions: Collision[] = [];
 
   for (const node of reachable) {
     const origLoc = node.location;
@@ -299,14 +319,7 @@ export function buildIsolatedLockfileJson({
      * `packages/app/lib/core`) are preserved verbatim because their disk
      * location in the isolate is unchanged.
      */
-    let newLoc: string;
-    if (origLoc === targetImporterLoc) {
-      newLoc = "";
-    } else if (origLoc.startsWith(targetNestedNodeModulesPrefix)) {
-      newLoc = origLoc.slice(targetImporterLoc.length + 1);
-    } else {
-      newLoc = origLoc;
-    }
+    const newLoc = remapToOutputLoc(origLoc);
 
     const srcEntry = srcPackages[origLoc];
     if (!srcEntry) {
@@ -318,15 +331,106 @@ export function buildIsolatedLockfileJson({
     const existing = outPackages[newLoc];
     if (existing && !entriesAreEquivalent(existing, srcEntry)) {
       const previousOrigLoc = origLocByNewLoc.get(newLoc) ?? "<unknown>";
+      const incomingIsTargetNested = isTargetNested(origLoc);
+      const previousIsTargetNested = isTargetNested(previousOrigLoc);
+
+      if (incomingIsTargetNested && !previousIsTargetNested) {
+        /** The target-nested entry wins. The previously-stored hoisted entry
+         * is displaced and must be re-nested under its consumers. */
+        collisions.push({
+          loserOrigLoc: previousOrigLoc,
+          loserEntry: existing,
+        });
+        outPackages[newLoc] = { ...srcEntry };
+        origLocByNewLoc.set(newLoc, origLoc);
+        continue;
+      }
+
+      if (!incomingIsTargetNested && previousIsTargetNested) {
+        /** The previously-stored target-nested entry wins; the incoming
+         * hoisted entry is the loser. */
+        collisions.push({
+          loserOrigLoc: origLoc,
+          loserEntry: { ...srcEntry },
+        });
+        continue;
+      }
+
+      /** Neither side is the target's nested version, or both are — we have
+       * no rule to pick a winner. Bail loudly. */
       throw new Error(
-        `Path collision at "${newLoc}": source locations "${previousOrigLoc}" and "${origLoc}" both map there with conflicting entries. ` +
-          `This happens when the target pins a nested version override that collides with a hoisted version still needed by another reachable dependency. ` +
+        `Path collision at "${newLoc}": source locations "${previousOrigLoc}" and "${origLoc}" both map there with conflicting entries and no rule applies to pick a winner ` +
+          `(neither is a target-nested override, or both are). ` +
           `Please report a reproduction at https://github.com/0x80/isolate-package/issues.`,
       );
     }
 
     outPackages[newLoc] = { ...srcEntry };
     origLocByNewLoc.set(newLoc, origLoc);
+  }
+
+  /** Re-nest each displaced entry under the reachable consumers that
+   * originally resolved to it via node_modules walk-up. */
+  for (const collision of collisions) {
+    const loserName = extractPackageNameFromLockfileLoc(collision.loserOrigLoc);
+    if (!loserName) continue;
+
+    for (const consumer of reachable) {
+      const consumerSrcLoc = consumer.location;
+      if (consumerSrcLoc === collision.loserOrigLoc) continue;
+      if (consumerSrcLoc === targetLinkLoc) continue;
+
+      const consumerEntry = srcPackages[consumerSrcLoc];
+      if (!consumerEntry) continue;
+      /** Workspace links carry dependency metadata on the importer entry,
+       * not the link entry itself. Skip the link side. */
+      if (consumerEntry.link) continue;
+
+      if (!entryDependsOn(consumerEntry, loserName)) continue;
+
+      const resolvedSrcLoc = resolveDepInSrcLockfile(
+        consumerSrcLoc,
+        loserName,
+        srcPackages,
+      );
+      if (resolvedSrcLoc !== collision.loserOrigLoc) continue;
+
+      const consumerNewLoc = remapToOutputLoc(consumerSrcLoc);
+      /** Consumer maps to the isolate root (the target itself). The root
+       * slot is already taken by the winning version. The target's own
+       * dependencies use that version — we cannot serve a different one
+       * here without nesting under the target, which would be its own
+       * collision. Accept the resolution shift. */
+      if (consumerNewLoc === "") continue;
+
+      /** If the consumer was itself displaced by another collision (its
+       * src-side entry doesn't match the entry we actually placed at its
+       * new location), the consumer isn't really present in the isolate.
+       * Its original dep needs are irrelevant here. */
+      const consumerOutEntry = outPackages[consumerNewLoc];
+      if (
+        !consumerOutEntry ||
+        !entriesAreEquivalent(consumerOutEntry, consumerEntry)
+      ) {
+        continue;
+      }
+
+      const nestedLoc = `${consumerNewLoc}/node_modules/${loserName}`;
+
+      const existingNested = outPackages[nestedLoc];
+      if (existingNested) {
+        if (entriesAreEquivalent(existingNested, collision.loserEntry)) {
+          continue;
+        }
+        throw new Error(
+          `Cannot re-nest displaced "${loserName}" under "${consumerNewLoc}": ` +
+            `the slot "${nestedLoc}" already contains a different entry. ` +
+            `Please report a reproduction at https://github.com/0x80/isolate-package/issues.`,
+        );
+      }
+
+      outPackages[nestedLoc] = { ...collision.loserEntry };
+    }
   }
 
   /**
@@ -394,6 +498,71 @@ function entriesAreEquivalent(
     a.integrity === b.integrity &&
     !!a.link === !!b.link
   );
+}
+
+/**
+ * Extracts the package name from a lockfile install location. Handles scoped
+ * packages, where the name is two segments after the last `node_modules/`.
+ *
+ *   "node_modules/foo"                          -> "foo"
+ *   "node_modules/@scope/foo"                   -> "@scope/foo"
+ *   "node_modules/a/node_modules/b"             -> "b"
+ *   "node_modules/a/node_modules/@scope/b"      -> "@scope/b"
+ *
+ * Returns null for locations that don't contain `node_modules/`.
+ */
+function extractPackageNameFromLockfileLoc(loc: string): string | null {
+  const marker = "node_modules/";
+  const lastIdx = loc.lastIndexOf(marker);
+  if (lastIdx < 0) return null;
+  const tail = loc.slice(lastIdx + marker.length);
+  if (tail.startsWith("@")) {
+    const slashIdx = tail.indexOf("/");
+    if (slashIdx < 0) return tail;
+    /** Stop at the second `/` so we don't include any further nesting. */
+    const secondSlash = tail.indexOf("/", slashIdx + 1);
+    return secondSlash < 0 ? tail : tail.slice(0, secondSlash);
+  }
+  const slashIdx = tail.indexOf("/");
+  return slashIdx < 0 ? tail : tail.slice(0, slashIdx);
+}
+
+/**
+ * Returns true if the lockfile entry lists `depName` in any of its dependency
+ * fields. Includes peer/optional/dev because any of them may have been the
+ * reason for the dep being installed at runtime.
+ */
+function entryDependsOn(entry: LockfilePackageEntry, depName: string): boolean {
+  return (
+    entry.dependencies?.[depName] !== undefined ||
+    entry.devDependencies?.[depName] !== undefined ||
+    entry.peerDependencies?.[depName] !== undefined ||
+    entry.optionalDependencies?.[depName] !== undefined
+  );
+}
+
+/**
+ * Resolves `depName` against `srcPackages` from the perspective of a consumer
+ * at `consumerLoc`, mirroring Node.js `node_modules` walk-up. Returns the
+ * lockfile key of the entry the consumer would load at runtime, or null when
+ * no candidate exists.
+ */
+function resolveDepInSrcLockfile(
+  consumerLoc: string,
+  depName: string,
+  srcPackages: Record<string, LockfilePackageEntry>,
+): string | null {
+  let scope = consumerLoc;
+  while (true) {
+    const candidate =
+      scope === ""
+        ? `node_modules/${depName}`
+        : `${scope}/node_modules/${depName}`;
+    if (srcPackages[candidate]) return candidate;
+    if (scope === "") return null;
+    const idx = scope.lastIndexOf("/node_modules/");
+    scope = idx < 0 ? "" : scope.slice(0, idx);
+  }
 }
 
 function overlayManifestDeps(

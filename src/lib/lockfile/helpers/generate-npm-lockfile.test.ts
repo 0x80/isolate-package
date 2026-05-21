@@ -405,12 +405,14 @@ describe("buildIsolatedLockfileJson", () => {
   });
 
   /**
-   * When the target's nested entry remaps onto the same path as a hoisted
-   * entry still needed by another reachable dependency, and the two
-   * entries differ in content, we must refuse to produce the lockfile
-   * rather than silently drop one version.
+   * Reproduces https://github.com/0x80/isolate-package/issues/187. When the
+   * target's nested entry remaps onto the same path as a hoisted entry still
+   * needed by another reachable dependency, the target's nested version must
+   * win at the new root (the target becomes the isolate root) and the
+   * displaced hoisted entry must be re-nested under each consumer that
+   * originally resolved to it.
    */
-  it("throws on a remap collision with conflicting entries", () => {
+  it("re-nests the displaced hoisted entry under each consumer that resolved to it", () => {
     const srcData: Parameters<typeof buildIsolatedLockfileJson>[0]["srcData"] =
       {
         name: "root",
@@ -430,13 +432,13 @@ describe("buildIsolatedLockfileJson", () => {
             dependencies: { semver: "^7" },
           },
           "node_modules/shared": { resolved: "packages/shared", link: true },
-          /** Hoisted v7 used by the internal dep. */
+          /** Hoisted v7 used by the internal dep "shared". */
           "node_modules/semver": {
             version: "7.7.4",
             resolved: "https://registry.npmjs.org/semver/-/semver-7.7.4.tgz",
             integrity: "sha512-hoisted-v7",
           },
-          /** Nested v6 used by the target — will collide with the hoisted one. */
+          /** Nested v6 used by the target — collides with the hoisted one. */
           "packages/api/node_modules/semver": {
             version: "6.3.1",
             resolved: "https://registry.npmjs.org/semver/-/semver-6.3.1.tgz",
@@ -457,15 +459,308 @@ describe("buildIsolatedLockfileJson", () => {
       { location: "packages/api/node_modules/semver", isLink: false },
     ];
 
-    expect(() =>
-      buildIsolatedLockfileJson({
-        srcData,
-        reachable,
-        targetImporterLoc: "packages/api",
-        targetLinkLoc: "node_modules/api",
-        targetPackageManifest: { name: "api", version: "1.0.0" },
-      }),
-    ).toThrow(/Path collision at "node_modules\/semver"/);
+    const out = buildIsolatedLockfileJson({
+      srcData,
+      reachable,
+      targetImporterLoc: "packages/api",
+      targetLinkLoc: "node_modules/api",
+      targetPackageManifest: {
+        name: "api",
+        version: "1.0.0",
+        dependencies: { semver: "^6", shared: "file:./packages/shared" },
+      },
+    });
+
+    /** Target's nested v6 wins at the new root. */
+    expect(out.packages["node_modules/semver"]).toEqual({
+      version: "6.3.1",
+      resolved: "https://registry.npmjs.org/semver/-/semver-6.3.1.tgz",
+      integrity: "sha512-nested-v6",
+    });
+
+    /** Original nested path must not leak through. */
+    expect(out.packages["packages/api/node_modules/semver"]).toBeUndefined();
+
+    /** Displaced v7 is re-nested under the consumer that resolved to it. */
+    expect(out.packages["packages/shared/node_modules/semver"]).toEqual({
+      version: "7.7.4",
+      resolved: "https://registry.npmjs.org/semver/-/semver-7.7.4.tgz",
+      integrity: "sha512-hoisted-v7",
+    });
+  });
+
+  /**
+   * When multiple reachable consumers each resolve to the displaced hoisted
+   * entry, every consumer should get its own nested copy.
+   */
+  it("re-nests the displaced entry under every consumer that needs it", () => {
+    const srcData: Parameters<typeof buildIsolatedLockfileJson>[0]["srcData"] =
+      {
+        name: "root",
+        version: "0.0.0",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "root", version: "0.0.0" },
+          "packages/api": {
+            name: "api",
+            version: "1.0.0",
+            dependencies: { "resolve-from": "^5" },
+          },
+          /** Target's nested override — wins at the new root. */
+          "packages/api/node_modules/resolve-from": {
+            version: "5.0.0",
+            resolved:
+              "https://registry.npmjs.org/resolve-from/-/resolve-from-5.0.0.tgz",
+            integrity: "sha512-nested-v5",
+          },
+          /** Hoisted older version used by two transitive deps. */
+          "node_modules/resolve-from": {
+            version: "4.0.0",
+            resolved:
+              "https://registry.npmjs.org/resolve-from/-/resolve-from-4.0.0.tgz",
+            integrity: "sha512-hoisted-v4",
+          },
+          "node_modules/cosmiconfig": {
+            version: "7.0.0",
+            resolved:
+              "https://registry.npmjs.org/cosmiconfig/-/cosmiconfig-7.0.0.tgz",
+            integrity: "sha512-cosmi",
+            dependencies: { "resolve-from": "^4" },
+          },
+          "node_modules/import-fresh": {
+            version: "3.3.0",
+            resolved:
+              "https://registry.npmjs.org/import-fresh/-/import-fresh-3.3.0.tgz",
+            integrity: "sha512-import-fresh",
+            dependencies: { "resolve-from": "^4" },
+          },
+        },
+      };
+
+    const reachable: ReachableNode[] = [
+      { location: "packages/api", isLink: false },
+      { location: "packages/api/node_modules/resolve-from", isLink: false },
+      { location: "node_modules/resolve-from", isLink: false },
+      { location: "node_modules/cosmiconfig", isLink: false },
+      { location: "node_modules/import-fresh", isLink: false },
+    ];
+
+    const out = buildIsolatedLockfileJson({
+      srcData,
+      reachable,
+      targetImporterLoc: "packages/api",
+      targetLinkLoc: "node_modules/api",
+      targetPackageManifest: {
+        name: "api",
+        version: "1.0.0",
+        dependencies: { "resolve-from": "^5" },
+      },
+    });
+
+    expect(out.packages["node_modules/resolve-from"]!.version).toBe("5.0.0");
+    expect(
+      out.packages["node_modules/cosmiconfig/node_modules/resolve-from"],
+    ).toEqual({
+      version: "4.0.0",
+      resolved:
+        "https://registry.npmjs.org/resolve-from/-/resolve-from-4.0.0.tgz",
+      integrity: "sha512-hoisted-v4",
+    });
+    expect(
+      out.packages["node_modules/import-fresh/node_modules/resolve-from"],
+    ).toEqual({
+      version: "4.0.0",
+      resolved:
+        "https://registry.npmjs.org/resolve-from/-/resolve-from-4.0.0.tgz",
+      integrity: "sha512-hoisted-v4",
+    });
+  });
+
+  /**
+   * If a reachable consumer has its own nested copy that already satisfies
+   * the dep, it should not get an additional copy of the displaced entry.
+   */
+  it("skips consumers that have their own nested resolution", () => {
+    const srcData: Parameters<typeof buildIsolatedLockfileJson>[0]["srcData"] =
+      {
+        name: "root",
+        version: "0.0.0",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "root", version: "0.0.0" },
+          "packages/api": {
+            name: "api",
+            version: "1.0.0",
+            dependencies: { "resolve-from": "^5" },
+          },
+          "packages/api/node_modules/resolve-from": {
+            version: "5.0.0",
+            resolved:
+              "https://registry.npmjs.org/resolve-from/-/resolve-from-5.0.0.tgz",
+            integrity: "sha512-nested-v5",
+          },
+          /** Displaced hoisted version. */
+          "node_modules/resolve-from": {
+            version: "4.0.0",
+            resolved:
+              "https://registry.npmjs.org/resolve-from/-/resolve-from-4.0.0.tgz",
+            integrity: "sha512-hoisted-v4",
+          },
+          /** Consumer with its own nested override (v3) — should not be re-nested. */
+          "node_modules/legacy-dep": {
+            version: "1.0.0",
+            resolved:
+              "https://registry.npmjs.org/legacy-dep/-/legacy-dep-1.0.0.tgz",
+            integrity: "sha512-legacy-dep",
+            dependencies: { "resolve-from": "^3" },
+          },
+          "node_modules/legacy-dep/node_modules/resolve-from": {
+            version: "3.0.0",
+            resolved:
+              "https://registry.npmjs.org/resolve-from/-/resolve-from-3.0.0.tgz",
+            integrity: "sha512-legacy-v3",
+          },
+          /** Consumer without an own override — resolves to the displaced v4. */
+          "node_modules/cosmiconfig": {
+            version: "7.0.0",
+            resolved:
+              "https://registry.npmjs.org/cosmiconfig/-/cosmiconfig-7.0.0.tgz",
+            integrity: "sha512-cosmi",
+            dependencies: { "resolve-from": "^4" },
+          },
+        },
+      };
+
+    const reachable: ReachableNode[] = [
+      { location: "packages/api", isLink: false },
+      { location: "packages/api/node_modules/resolve-from", isLink: false },
+      { location: "node_modules/resolve-from", isLink: false },
+      { location: "node_modules/legacy-dep", isLink: false },
+      {
+        location: "node_modules/legacy-dep/node_modules/resolve-from",
+        isLink: false,
+      },
+      { location: "node_modules/cosmiconfig", isLink: false },
+    ];
+
+    const out = buildIsolatedLockfileJson({
+      srcData,
+      reachable,
+      targetImporterLoc: "packages/api",
+      targetLinkLoc: "node_modules/api",
+      targetPackageManifest: {
+        name: "api",
+        version: "1.0.0",
+        dependencies: { "resolve-from": "^5" },
+      },
+    });
+
+    /** legacy-dep keeps its own nested v3 — no extra copy at this path. */
+    expect(
+      out.packages["node_modules/legacy-dep/node_modules/resolve-from"]!
+        .version,
+    ).toBe("3.0.0");
+
+    /** cosmiconfig had no own override and gets the displaced v4 nested. */
+    expect(
+      out.packages["node_modules/cosmiconfig/node_modules/resolve-from"]!
+        .version,
+    ).toBe("4.0.0");
+  });
+
+  /**
+   * Cascade scenario: a reachable node is simultaneously (a) the loser of one
+   * collision (its slot is taken by a target-nested winner) and (b) a
+   * potential consumer of another displaced entry. Because the displaced
+   * consumer is not actually present in the isolate, the re-nesting loop must
+   * skip it — otherwise it would try to nest under a slot already held by an
+   * unrelated target-nested entry and throw a spurious secondary-collision
+   * error.
+   */
+  it("skips re-nesting under a consumer whose own entry has been displaced", () => {
+    const srcData: Parameters<typeof buildIsolatedLockfileJson>[0]["srcData"] =
+      {
+        name: "root",
+        version: "0.0.0",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "root", version: "0.0.0" },
+          "packages/api": {
+            name: "api",
+            version: "1.0.0",
+            dependencies: { "dep-a": "*", "dep-x": "^5" },
+          },
+          /** Target's nested A@v2 displaces the hoisted A@v1. */
+          "packages/api/node_modules/dep-a": {
+            version: "2.0.0",
+            resolved: "https://registry.npmjs.org/dep-a/-/dep-a-2.0.0.tgz",
+            integrity: "sha512-a-v2",
+            dependencies: { "dep-x": "^3" },
+          },
+          /** A@v2 brings its own nested X@v3. */
+          "packages/api/node_modules/dep-a/node_modules/dep-x": {
+            version: "3.0.0",
+            resolved: "https://registry.npmjs.org/dep-x/-/dep-x-3.0.0.tgz",
+            integrity: "sha512-x-v3",
+          },
+          /** Target's nested X@v5 displaces the hoisted X@v1. */
+          "packages/api/node_modules/dep-x": {
+            version: "5.0.0",
+            resolved: "https://registry.npmjs.org/dep-x/-/dep-x-5.0.0.tgz",
+            integrity: "sha512-x-v5",
+          },
+          /** Hoisted A@v1, still reachable through another transitive path. */
+          "node_modules/dep-a": {
+            version: "1.0.0",
+            resolved: "https://registry.npmjs.org/dep-a/-/dep-a-1.0.0.tgz",
+            integrity: "sha512-a-v1",
+            dependencies: { "dep-x": "^1" },
+          },
+          /** Hoisted X@v1, which A@v1 originally resolved to. */
+          "node_modules/dep-x": {
+            version: "1.0.0",
+            resolved: "https://registry.npmjs.org/dep-x/-/dep-x-1.0.0.tgz",
+            integrity: "sha512-x-v1",
+          },
+        },
+      };
+
+    const reachable: ReachableNode[] = [
+      { location: "packages/api", isLink: false },
+      { location: "packages/api/node_modules/dep-a", isLink: false },
+      {
+        location: "packages/api/node_modules/dep-a/node_modules/dep-x",
+        isLink: false,
+      },
+      { location: "packages/api/node_modules/dep-x", isLink: false },
+      { location: "node_modules/dep-a", isLink: false },
+      { location: "node_modules/dep-x", isLink: false },
+    ];
+
+    const out = buildIsolatedLockfileJson({
+      srcData,
+      reachable,
+      targetImporterLoc: "packages/api",
+      targetLinkLoc: "node_modules/api",
+      targetPackageManifest: {
+        name: "api",
+        version: "1.0.0",
+        dependencies: { "dep-a": "*", "dep-x": "^5" },
+      },
+    });
+
+    /** The displaced hoisted A@v1 leaves no consumer present in the isolate
+     * (its only reachable consumer was itself), so no re-nesting happens for
+     * dep-x under node_modules/dep-a — the existing X@v3 placed via remap
+     * stays untouched. */
+    expect(out.packages["node_modules/dep-a"]!.version).toBe("2.0.0");
+    expect(out.packages["node_modules/dep-x"]!.version).toBe("5.0.0");
+    expect(out.packages["node_modules/dep-a/node_modules/dep-x"]!.version).toBe(
+      "3.0.0",
+    );
   });
 
   /**
