@@ -100,8 +100,8 @@ async function run() {
 run().catch((error) => {
   if (error instanceof Error) {
     console.error(error.stack);
-    process.exit(1);
   } else {
     console.error(error);
   }
+  process.exit(1);
 });

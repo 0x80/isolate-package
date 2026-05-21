@@ -17,11 +17,9 @@ export async function pack(srcDir: string, dstDir: string) {
   const log = useLogger();
 
   const execOptions = {
+    cwd: srcDir,
     maxBuffer: 10 * 1024 * 1024,
   };
-
-  const previousCwd = process.cwd();
-  process.chdir(srcDir);
 
   /**
    * PNPM pack seems to be a lot faster than NPM pack, so when PNPM is detected
@@ -67,8 +65,6 @@ export async function pack(srcDir: string, dstDir: string) {
   assert(fileName, `Failed to parse file name from: ${lastLine}`);
 
   const filePath = path.join(dstDir, fileName);
-
-  process.chdir(previousCwd);
 
   /**
    * `pnpm pack` (and occasionally `npm pack`) can return before the tarball is
