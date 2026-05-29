@@ -303,6 +303,105 @@ describe("generatePnpmLockfile", () => {
     expect(writtenLockfile.packageExtensionsChecksum).toBe("abc123");
   });
 
+  it("should restore catalogs after pruning, narrowed to referenced importers (#198)", async () => {
+    const lockfile = {
+      lockfileVersion: "9.0",
+      importers: {
+        "apps/my-app": {
+          specifiers: { shared: "workspace:*", lodash: "catalog:" },
+          dependencies: { shared: "link:../../packages/shared" },
+        },
+        "packages/shared": {
+          specifiers: { ramda: "catalog:utils" },
+          dependencies: {},
+        },
+        "packages/other": {
+          specifiers: { unused: "catalog:" },
+          dependencies: {},
+        },
+      },
+      catalogs: {
+        default: {
+          lodash: { specifier: "^4.17.21", version: "4.17.21" },
+          unused: { specifier: "^1.0.0", version: "1.0.0" },
+        },
+        utils: {
+          ramda: { specifier: "^0.30.0", version: "0.30.0" },
+        },
+      },
+      packages: {},
+    };
+    readWantedLockfile_v9.mockResolvedValue(lockfile as never);
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+
+    /** Simulate prune dropping the catalogs snapshot */
+    pruneLockfile_v9.mockImplementation((lf) => {
+      const result = { ...(lf as unknown as Record<string, unknown>) };
+      delete result.catalogs;
+      return result as never;
+    });
+
+    await generatePnpmLockfile({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/apps/my-app",
+      isolateDir: "/workspace/apps/my-app/isolate",
+      internalDepPackageNames: ["shared"],
+      packagesRegistry: {
+        shared: {
+          absoluteDir: "/workspace/packages/shared",
+          rootRelativeDir: "packages/shared",
+          manifest: { name: "shared", version: "1.0.0" },
+        },
+      },
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+      majorVersion: 9,
+      includeDevDependencies: false,
+    });
+
+    const writeCall = writeWantedLockfile_v9.mock.calls[0]!;
+    const writtenLockfile = writeCall[1] as {
+      catalogs?: Record<string, Record<string, unknown>>;
+    };
+
+    /**
+     * Only catalog entries referenced by the retained importers (target +
+     * internal dep "shared") are restored. The "unused" entry, referenced only
+     * by the excluded "packages/other", must not leak into the output.
+     */
+    expect(writtenLockfile.catalogs).toEqual({
+      default: { lodash: { specifier: "^4.17.21", version: "4.17.21" } },
+      utils: { ramda: { specifier: "^0.30.0", version: "0.30.0" } },
+    });
+  });
+
+  it("should not set catalogs when the source lockfile has none", async () => {
+    const lockfile = createMockLockfile();
+    readWantedLockfile_v9.mockResolvedValue(lockfile as never);
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    pruneLockfile_v9.mockImplementation((lf) => lf as never);
+
+    await generatePnpmLockfile({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/apps/my-app",
+      isolateDir: "/workspace/apps/my-app/isolate",
+      internalDepPackageNames: ["shared"],
+      packagesRegistry: {
+        shared: {
+          absoluteDir: "/workspace/packages/shared",
+          rootRelativeDir: "packages/shared",
+          manifest: { name: "shared", version: "1.0.0" },
+        },
+      },
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+      majorVersion: 9,
+      includeDevDependencies: false,
+    });
+
+    const writeCall = writeWantedLockfile_v9.mock.calls[0]!;
+    const writtenLockfile = writeCall[1] as { catalogs?: unknown };
+    expect(writtenLockfile.catalogs).toBeUndefined();
+  });
+
   it("should include patchedDependencies in written lockfile", async () => {
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);

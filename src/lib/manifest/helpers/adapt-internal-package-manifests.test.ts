@@ -20,6 +20,10 @@ vi.mock("./resolve-catalog-dependencies", () => ({
 
 const { usePackageManager } = vi.mocked(await import("#/lib/package-manager"));
 
+const { resolveCatalogDependencies } = vi.mocked(
+  await import("./resolve-catalog-dependencies"),
+);
+
 const { writeManifest } = vi.mocked(await import("../io"));
 
 const { adaptInternalPackageManifests } =
@@ -177,5 +181,70 @@ describe("adaptInternalPackageManifests", () => {
     const writtenManifest = writeManifest.mock.calls[0]![1];
 
     expect(writtenManifest.devDependencies).toBeUndefined();
+  });
+
+  it("should preserve catalog: specifiers for pnpm without resolving them (#198)", async () => {
+    const manifest: PackageManifest = {
+      name: "@repo/shared",
+      version: "1.0.0",
+      dependencies: {
+        "lodash.merge": "catalog:",
+      },
+    };
+
+    const packagesRegistry = createRegistry({
+      "@repo/shared": {
+        rootRelativeDir: "packages/shared",
+        manifest,
+      },
+    });
+
+    await adaptInternalPackageManifests({
+      internalPackageNames: ["@repo/shared"],
+      packagesRegistry,
+      isolateDir: "/output",
+      forceNpm: false,
+      workspaceRootDir: "/workspace",
+    });
+
+    /**
+     * For pnpm the isolated output is itself a workspace with its catalog
+     * definitions preserved, so the specifier is kept verbatim rather than
+     * resolved (which would desync it from the lockfile importers).
+     */
+    expect(resolveCatalogDependencies).not.toHaveBeenCalled();
+
+    const writtenManifest = writeManifest.mock.calls[0]![1];
+    expect(writtenManifest.dependencies).toEqual({
+      "lodash.merge": "catalog:",
+    });
+  });
+
+  it("should resolve catalog dependencies when forceNpm is enabled", async () => {
+    const manifest: PackageManifest = {
+      name: "@repo/shared",
+      version: "1.0.0",
+      dependencies: {
+        "lodash.merge": "catalog:",
+      },
+    };
+
+    const packagesRegistry = createRegistry({
+      "@repo/shared": {
+        rootRelativeDir: "packages/shared",
+        manifest,
+      },
+    });
+
+    await adaptInternalPackageManifests({
+      internalPackageNames: ["@repo/shared"],
+      packagesRegistry,
+      isolateDir: "/output",
+      forceNpm: true,
+      workspaceRootDir: "/workspace",
+    });
+
+    /** With forceNpm the catalog is not available in the output, so resolve. */
+    expect(resolveCatalogDependencies).toHaveBeenCalledOnce();
   });
 });

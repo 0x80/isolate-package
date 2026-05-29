@@ -18,6 +18,17 @@ import type { PackageManifest, PackagesRegistry, PatchFile } from "#/lib/types";
 import { getErrorMessage, isRushWorkspace } from "#/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
+/**
+ * A pnpm catalog snapshot as stored in the lockfile: a map of catalog name
+ * (e.g. "default") to a map of dependency name to its resolved entry. The
+ * pinned `@pnpm/lockfile-file` types predate catalogs, so we model the shape
+ * locally.
+ */
+type CatalogSnapshots = Record<
+  string,
+  Record<string, { specifier: string; version: string }>
+>;
+
 export async function generatePnpmLockfile({
   workspaceRootDir,
   targetPackageDir,
@@ -168,6 +179,23 @@ export async function generatePnpmLockfile({
     }
 
     /**
+     * Pruning drops the catalogs snapshot, but the isolated importers keep
+     * their "catalog:" specifiers (for pnpm we don't resolve catalog deps in
+     * the manifest, since the output is itself a workspace). Restore the
+     * snapshot, narrowed to the entries actually referenced by the retained
+     * importers, so it stays in sync with the manifests and the preserved
+     * pnpm-workspace.yaml (see issue #198).
+     */
+    const catalogs = pickReferencedCatalogs(
+      (lockfile as { catalogs?: CatalogSnapshots }).catalogs,
+      prunedLockfile.importers,
+    );
+
+    if (catalogs) {
+      (prunedLockfile as { catalogs?: CatalogSnapshots }).catalogs = catalogs;
+    }
+
+    /**
      * Use pre-computed patched dependencies with transformed paths. The paths
      * are already adapted by copyPatches to match the isolated directory
      * structure, preserving the original folder structure (not flattened).
@@ -189,4 +217,47 @@ export async function generatePnpmLockfile({
     log.error(`Failed to generate lockfile: ${getErrorMessage(error)}`);
     throw error;
   }
+}
+
+/**
+ * Narrow a catalogs snapshot to only the entries referenced by the given
+ * importers through "catalog:" specifiers. This mirrors what pnpm itself
+ * writes, so the restored snapshot doesn't leak catalog entries belonging to
+ * unrelated workspace packages that aren't part of the isolated output.
+ *
+ * Catalogs are a pnpm v9 feature; for older lockfiles `catalogs` is undefined
+ * and this returns undefined.
+ */
+function pickReferencedCatalogs(
+  catalogs: CatalogSnapshots | undefined,
+  importers: Record<string, { specifiers?: Record<string, string> }>,
+): CatalogSnapshots | undefined {
+  if (!catalogs) {
+    return undefined;
+  }
+
+  const referenced: CatalogSnapshots = {};
+
+  for (const importer of Object.values(importers)) {
+    for (const [depName, specifier] of Object.entries(
+      importer.specifiers ?? {},
+    )) {
+      if (!specifier.startsWith("catalog:")) {
+        continue;
+      }
+
+      /**
+       * "catalog:" and "catalog:default" both map to the default catalog;
+       * "catalog:<name>" maps to a named catalog.
+       */
+      const groupName = specifier.slice("catalog:".length) || "default";
+      const entry = catalogs[groupName]?.[depName];
+
+      if (entry) {
+        (referenced[groupName] ??= {})[depName] = entry;
+      }
+    }
+  }
+
+  return Object.keys(referenced).length > 0 ? referenced : undefined;
 }
