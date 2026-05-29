@@ -22,7 +22,7 @@ import { pnpmMapImporter } from "./pnpm-map-importer";
  * A pnpm catalog snapshot as stored in the lockfile: a map of catalog name
  * (e.g. "default") to a map of dependency name to its resolved entry. The
  * pinned `@pnpm/lockfile-file` types predate catalogs, so we model the shape
- * locally.
+ * locally for the cast below.
  */
 type CatalogSnapshots = Record<
   string,
@@ -181,15 +181,14 @@ export async function generatePnpmLockfile({
     /**
      * Pruning drops the catalogs snapshot, but the isolated importers keep
      * their "catalog:" specifiers (for pnpm we don't resolve catalog deps in
-     * the manifest, since the output is itself a workspace). Restore the
-     * snapshot, narrowed to the entries actually referenced by the retained
-     * importers, so it stays in sync with the manifests and the preserved
-     * pnpm-workspace.yaml (see issue #198).
+     * the manifest, since the output is itself a workspace). Restore it
+     * verbatim — like overrides above — so it stays in sync with the importer
+     * specifiers and the preserved pnpm-workspace.yaml catalog definitions,
+     * which are themselves copied verbatim (see issue #198). pnpm tolerates
+     * catalog entries that no retained importer references, so there is no need
+     * to narrow the snapshot.
      */
-    const catalogs = pickReferencedCatalogs(
-      (lockfile as { catalogs?: CatalogSnapshots }).catalogs,
-      prunedLockfile.importers,
-    );
+    const catalogs = (lockfile as { catalogs?: CatalogSnapshots }).catalogs;
 
     if (catalogs) {
       (prunedLockfile as { catalogs?: CatalogSnapshots }).catalogs = catalogs;
@@ -217,47 +216,4 @@ export async function generatePnpmLockfile({
     log.error(`Failed to generate lockfile: ${getErrorMessage(error)}`);
     throw error;
   }
-}
-
-/**
- * Narrow a catalogs snapshot to only the entries referenced by the given
- * importers through "catalog:" specifiers. This mirrors what pnpm itself
- * writes, so the restored snapshot doesn't leak catalog entries belonging to
- * unrelated workspace packages that aren't part of the isolated output.
- *
- * Catalogs are a pnpm v9 feature; for older lockfiles `catalogs` is undefined
- * and this returns undefined.
- */
-function pickReferencedCatalogs(
-  catalogs: CatalogSnapshots | undefined,
-  importers: Record<string, { specifiers?: Record<string, string> }>,
-): CatalogSnapshots | undefined {
-  if (!catalogs) {
-    return undefined;
-  }
-
-  const referenced: CatalogSnapshots = {};
-
-  for (const importer of Object.values(importers)) {
-    for (const [depName, specifier] of Object.entries(
-      importer.specifiers ?? {},
-    )) {
-      if (!specifier.startsWith("catalog:")) {
-        continue;
-      }
-
-      /**
-       * "catalog:" and "catalog:default" both map to the default catalog;
-       * "catalog:<name>" maps to a named catalog.
-       */
-      const groupName = specifier.slice("catalog:".length) || "default";
-      const entry = catalogs[groupName]?.[depName];
-
-      if (entry) {
-        (referenced[groupName] ??= {})[depName] = entry;
-      }
-    }
-  }
-
-  return Object.keys(referenced).length > 0 ? referenced : undefined;
 }
