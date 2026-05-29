@@ -27,6 +27,15 @@ export async function adaptInternalPackageManifests({
 }) {
   const packageManager = usePackageManager();
 
+  /**
+   * For PNPM (non-forceNpm) the isolated output is itself a pnpm workspace with
+   * its `pnpm-workspace.yaml` catalog definitions preserved, so "catalog:"
+   * specifiers are kept verbatim to stay in sync with the lockfile importers
+   * (see issue #198). For other package managers the catalog is not available
+   * in the output, so we resolve the specifiers to versions.
+   */
+  const isPnpmWorkspaceOutput = packageManager.name === "pnpm" && !forceNpm;
+
   await Promise.all(
     internalPackageNames.map(async (packageName) => {
       const { manifest, rootRelativeDir } = got(packagesRegistry, packageName);
@@ -45,14 +54,15 @@ export async function adaptInternalPackageManifests({
         strippedManifest.scripts = omit(strippedManifest.scripts, ["prepare"]);
       }
 
-      /** Resolve catalog dependencies before adapting internal deps */
-      const manifestWithResolvedCatalogs = {
-        ...strippedManifest,
-        dependencies: await resolveCatalogDependencies(
-          strippedManifest.dependencies,
-          workspaceRootDir,
-        ),
-      };
+      const preparedManifest = isPnpmWorkspaceOutput
+        ? strippedManifest
+        : {
+            ...strippedManifest,
+            dependencies: await resolveCatalogDependencies(
+              strippedManifest.dependencies,
+              workspaceRootDir,
+            ),
+          };
 
       const outputManifest =
         (packageManager.name === "pnpm" || packageManager.name === "bun") &&
@@ -61,10 +71,10 @@ export async function adaptInternalPackageManifests({
              * For PNPM and Bun the output itself is a workspace so we can preserve
              * the specifiers with "workspace:*" in the output manifest.
              */
-            manifestWithResolvedCatalogs
+            preparedManifest
           : /** For other package managers we replace the links to internal dependencies */
             adaptManifestInternalDeps({
-              manifest: manifestWithResolvedCatalogs,
+              manifest: preparedManifest,
               packagesRegistry,
               parentRootRelativeDir: rootRelativeDir,
             });

@@ -41,14 +41,26 @@ export async function adaptTargetPackageManifest({
     ? manifest
     : omit(manifest, ["devDependencies"]);
 
-  /** Resolve catalog dependencies before adapting internal deps */
-  const manifestWithResolvedCatalogs = {
-    ...inputManifest,
-    dependencies: await resolveCatalogDependencies(
-      inputManifest.dependencies,
-      workspaceRootDir,
-    ),
-  };
+  /**
+   * For PNPM (non-forceNpm) the isolated output is itself a pnpm workspace and
+   * the `pnpm-workspace.yaml` with its catalog definitions is preserved, so
+   * "catalog:" specifiers can be kept verbatim — just like "workspace:*". The
+   * lockfile importers also keep their "catalog:" specifiers, so resolving them
+   * here would create a mismatch and break `pnpm install --frozen-lockfile`
+   * (see issue #198). For other package managers (and forceNpm) the catalog is
+   * not available in the output, so we resolve the specifiers to versions.
+   */
+  const isPnpmWorkspaceOutput = packageManager.name === "pnpm" && !forceNpm;
+
+  const preparedManifest = isPnpmWorkspaceOutput
+    ? inputManifest
+    : {
+        ...inputManifest,
+        dependencies: await resolveCatalogDependencies(
+          inputManifest.dependencies,
+          workspaceRootDir,
+        ),
+      };
 
   const adaptedManifest =
     (packageManager.name === "pnpm" || packageManager.name === "bun") &&
@@ -59,13 +71,10 @@ export async function adaptTargetPackageManifest({
          * want to adopt workspace-level fields from the root package.json
          * (pnpm.overrides for PNPM, top-level overrides for Bun).
          */
-        await adoptPnpmFieldsFromRoot(
-          manifestWithResolvedCatalogs,
-          workspaceRootDir,
-        )
+        await adoptPnpmFieldsFromRoot(preparedManifest, workspaceRootDir)
       : /** For other package managers we replace the links to internal dependencies */
         adaptManifestInternalDeps({
-          manifest: manifestWithResolvedCatalogs,
+          manifest: preparedManifest,
           packagesRegistry,
         });
 

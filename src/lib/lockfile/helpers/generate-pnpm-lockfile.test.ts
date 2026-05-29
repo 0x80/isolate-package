@@ -303,6 +303,87 @@ describe("generatePnpmLockfile", () => {
     expect(writtenLockfile.packageExtensionsChecksum).toBe("abc123");
   });
 
+  it("should restore the catalogs snapshot after pruning (#198)", async () => {
+    const catalogs = {
+      default: {
+        lodash: { specifier: "^4.17.21", version: "4.17.21" },
+      },
+      utils: {
+        ramda: { specifier: "^0.30.0", version: "0.30.0" },
+      },
+    };
+    const lockfile = {
+      ...createMockLockfile(),
+      catalogs,
+    };
+    readWantedLockfile_v9.mockResolvedValue(lockfile as never);
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+
+    /** Simulate prune dropping the catalogs snapshot */
+    pruneLockfile_v9.mockImplementation((lf) => {
+      const result = { ...(lf as unknown as Record<string, unknown>) };
+      delete result.catalogs;
+      return result as never;
+    });
+
+    await generatePnpmLockfile({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/apps/my-app",
+      isolateDir: "/workspace/apps/my-app/isolate",
+      internalDepPackageNames: ["shared"],
+      packagesRegistry: {
+        shared: {
+          absoluteDir: "/workspace/packages/shared",
+          rootRelativeDir: "packages/shared",
+          manifest: { name: "shared", version: "1.0.0" },
+        },
+      },
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+      majorVersion: 9,
+      includeDevDependencies: false,
+    });
+
+    const writeCall = writeWantedLockfile_v9.mock.calls[0]!;
+    const writtenLockfile = writeCall[1] as {
+      catalogs?: Record<string, Record<string, unknown>>;
+    };
+
+    /**
+     * The catalogs snapshot is restored verbatim (like overrides), so it stays
+     * in sync with the importer specifiers and the verbatim pnpm-workspace.yaml
+     * copy.
+     */
+    expect(writtenLockfile.catalogs).toEqual(catalogs);
+  });
+
+  it("should not set catalogs when the source lockfile has none", async () => {
+    const lockfile = createMockLockfile();
+    readWantedLockfile_v9.mockResolvedValue(lockfile as never);
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    pruneLockfile_v9.mockImplementation((lf) => lf as never);
+
+    await generatePnpmLockfile({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/apps/my-app",
+      isolateDir: "/workspace/apps/my-app/isolate",
+      internalDepPackageNames: ["shared"],
+      packagesRegistry: {
+        shared: {
+          absoluteDir: "/workspace/packages/shared",
+          rootRelativeDir: "packages/shared",
+          manifest: { name: "shared", version: "1.0.0" },
+        },
+      },
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+      majorVersion: 9,
+      includeDevDependencies: false,
+    });
+
+    const writeCall = writeWantedLockfile_v9.mock.calls[0]!;
+    const writtenLockfile = writeCall[1] as { catalogs?: unknown };
+    expect(writtenLockfile.catalogs).toBeUndefined();
+  });
+
   it("should include patchedDependencies in written lockfile", async () => {
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);

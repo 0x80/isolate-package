@@ -18,6 +18,17 @@ import type { PackageManifest, PackagesRegistry, PatchFile } from "#/lib/types";
 import { getErrorMessage, isRushWorkspace } from "#/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
+/**
+ * A pnpm catalog snapshot as stored in the lockfile: a map of catalog name
+ * (e.g. "default") to a map of dependency name to its resolved entry. The
+ * pinned `@pnpm/lockfile-file` types predate catalogs, so we model the shape
+ * locally for the cast below.
+ */
+type CatalogSnapshots = Record<
+  string,
+  Record<string, { specifier: string; version: string }>
+>;
+
 export async function generatePnpmLockfile({
   workspaceRootDir,
   targetPackageDir,
@@ -165,6 +176,22 @@ export async function generatePnpmLockfile({
     if (lockfile.packageExtensionsChecksum) {
       prunedLockfile.packageExtensionsChecksum =
         lockfile.packageExtensionsChecksum;
+    }
+
+    /**
+     * Pruning drops the catalogs snapshot, but the isolated importers keep
+     * their "catalog:" specifiers (for pnpm we don't resolve catalog deps in
+     * the manifest, since the output is itself a workspace). Restore it
+     * verbatim — like overrides above — so it stays in sync with the importer
+     * specifiers and the preserved pnpm-workspace.yaml catalog definitions,
+     * which are themselves copied verbatim (see issue #198). pnpm tolerates
+     * catalog entries that no retained importer references, so there is no need
+     * to narrow the snapshot.
+     */
+    const catalogs = (lockfile as { catalogs?: CatalogSnapshots }).catalogs;
+
+    if (catalogs) {
+      (prunedLockfile as { catalogs?: CatalogSnapshots }).catalogs = catalogs;
     }
 
     /**
