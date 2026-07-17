@@ -177,9 +177,17 @@ export async function copyPatches({
     await fs.copy(sourcePatchPath, targetPatchPath);
     log.debug(`Copied patch for ${packageSpec}: ${patchPath}`);
 
-    /** Get the hash from the original lockfile, or use empty string if not found */
+    /**
+     * Get the hash from the original lockfile, or use empty string if not
+     * found. pnpm 11 simplified the lockfile `patchedDependencies` format from
+     * `Record<string, { path, hash }>` to `Record<string, string>` (selector to
+     * hash), so the entry may be a bare hash string. See issue #201.
+     */
     const originalPatchFile = lockfilePatchedDependencies?.[packageSpec];
-    const hash = originalPatchFile?.hash ?? "";
+    const hash =
+      typeof originalPatchFile === "string"
+        ? originalPatchFile
+        : (originalPatchFile?.hash ?? "");
 
     if (packageManagerName === "pnpm" && !hash) {
       log.warn(`No hash found for patch ${packageSpec} in lockfile`);
@@ -201,10 +209,14 @@ export async function copyPatches({
 /**
  * Read the patchedDependencies from the original lockfile to get the hashes.
  * Since the file content is the same after copying, the hash remains valid.
+ *
+ * The value type is `PatchFile | string` because pnpm 11 simplified the format
+ * to store the bare hash string per selector, while pnpm <=10 stored a
+ * `{ path, hash }` object. See issue #201.
  */
 async function readLockfilePatchedDependencies(
   workspaceRootDir: string,
-): Promise<Record<string, PatchFile> | undefined> {
+): Promise<Record<string, PatchFile | string> | undefined> {
   try {
     const { majorVersion } = usePackageManager();
     const useVersion9 = majorVersion >= 9;

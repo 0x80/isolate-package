@@ -653,4 +653,124 @@ describe("copyPatches", () => {
     expect(reachable!.has("@react-pdf/renderer")).toBe(true);
     expect(reachable!.has("@react-pdf/render")).toBe(true);
   });
+
+  it("should read the patch hash from the pnpm 11 string lockfile format (regression: issue #201)", async () => {
+    /**
+     * pnpm 11 simplified the lockfile `patchedDependencies` format from
+     * `Record<string, { path, hash }>` to `Record<string, string>` (selector to
+     * hash). The hash must be read from the bare string, otherwise it ends up
+     * empty and pnpm rejects the isolated install with
+     * ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.
+     */
+    const targetManifest: PackageManifest = {
+      name: "test",
+      version: "1.0.0",
+      dependencies: { lodash: "^4.0.0" },
+    };
+
+    readTypedYamlSync.mockReturnValue({
+      patchedDependencies: {
+        "lodash@4.17.21": "patches/lodash.patch",
+      },
+    });
+    readTypedJson.mockResolvedValue({
+      name: "root",
+      version: "1.0.0",
+    } as PackageManifest);
+
+    filterPatchedDependencies.mockReturnValue({
+      "lodash@4.17.21": "patches/lodash.patch",
+    });
+
+    fs.existsSync.mockReturnValue(true);
+
+    usePackageManager.mockReturnValue({
+      name: "pnpm",
+      majorVersion: 9,
+      version: "9.0.0",
+      packageManagerString: "pnpm@9.0.0",
+    });
+
+    readWantedLockfile_v9.mockResolvedValue({
+      lockfileVersion: "9.0",
+      patchedDependencies: {
+        "lodash@4.17.21": "sha256-abc123",
+      },
+    } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
+
+    const result = await copyPatches({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/packages/test",
+      internalDepPackageNames: [],
+      targetPackageManifest: targetManifest,
+      isolateDir: "/workspace/isolate",
+      packagesRegistry: {},
+      includeDevDependencies: false,
+    });
+
+    expect(result).toEqual({
+      "lodash@4.17.21": {
+        path: "patches/lodash.patch",
+        hash: "sha256-abc123",
+      },
+    });
+  });
+
+  it("should read the patch hash from the pnpm <=10 object lockfile format (regression: issue #201)", async () => {
+    const targetManifest: PackageManifest = {
+      name: "test",
+      version: "1.0.0",
+      dependencies: { lodash: "^4.0.0" },
+    };
+
+    readTypedYamlSync.mockReturnValue({
+      patchedDependencies: {
+        "lodash@4.17.21": "patches/lodash.patch",
+      },
+    });
+    readTypedJson.mockResolvedValue({
+      name: "root",
+      version: "1.0.0",
+    } as PackageManifest);
+
+    filterPatchedDependencies.mockReturnValue({
+      "lodash@4.17.21": "patches/lodash.patch",
+    });
+
+    fs.existsSync.mockReturnValue(true);
+
+    usePackageManager.mockReturnValue({
+      name: "pnpm",
+      majorVersion: 9,
+      version: "9.0.0",
+      packageManagerString: "pnpm@9.0.0",
+    });
+
+    readWantedLockfile_v9.mockResolvedValue({
+      lockfileVersion: "9.0",
+      patchedDependencies: {
+        "lodash@4.17.21": {
+          path: "patches/lodash.patch",
+          hash: "sha256-def456",
+        },
+      },
+    } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
+
+    const result = await copyPatches({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/packages/test",
+      internalDepPackageNames: [],
+      targetPackageManifest: targetManifest,
+      isolateDir: "/workspace/isolate",
+      packagesRegistry: {},
+      includeDevDependencies: false,
+    });
+
+    expect(result).toEqual({
+      "lodash@4.17.21": {
+        path: "patches/lodash.patch",
+        hash: "sha256-def456",
+      },
+    });
+  });
 });

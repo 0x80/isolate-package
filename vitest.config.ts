@@ -3,7 +3,8 @@ import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    exclude: [...configDefaults.exclude],
+    /** Exclude nested git worktrees so we don't run another branch's tests */
+    exclude: [...configDefaults.exclude, "**/.worktrees/**"],
     setupFiles: ["./src/testing/setup.ts"],
   },
   resolve: {
