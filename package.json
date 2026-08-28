@@ -1,6 +1,6 @@
 {
   "name": "isolate-package",
-  "version": "1.35.1",
+  "version": "1.36.0",
   "description": "Isolate monorepo packages to form a self-contained deployable unit",
   "keywords": [
     "ci",
