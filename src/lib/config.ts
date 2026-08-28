@@ -12,6 +12,15 @@ export type IsolateConfigResolved = {
   includeDevDependencies: boolean;
   isolateDirName: string;
   logLevel: LogLevel;
+  /**
+   * Path to the package that should be isolated. A relative path is resolved
+   * against the current working directory, which is then assumed to be the
+   * workspace root. An absolute path makes isolation independent of the
+   * current working directory; the workspace root is then taken from
+   * `workspaceRoot` or auto-detected by walking upward from the target
+   * package directory. When omitted, the current working directory is the
+   * target package.
+   */
   targetPackagePath?: string;
   tsconfigPath: string;
   workspacePackages?: string[];
@@ -175,18 +184,21 @@ function validateConfig(config: IsolateConfig) {
 
 /**
  * Resolve the target package directory and workspace root directory from the
- * configuration. When targetPackagePath is set, the config is assumed to live
- * at the workspace root. Otherwise it lives in the target package directory.
- *
- * When `workspaceRoot` is not explicitly set, auto-detect the monorepo root by
- * walking upward from the target package directory.
+ * configuration. When targetPackagePath is a relative path, it is resolved
+ * against the current working directory and the config is assumed to live at
+ * the workspace root. When targetPackagePath is an absolute path, the current
+ * working directory is irrelevant and the workspace root is resolved like it
+ * is for the no-targetPackagePath case: from the `workspaceRoot` setting, or
+ * otherwise auto-detected by walking upward from the target package directory.
  */
 export function resolveWorkspacePaths(config: IsolateConfigResolved) {
   const targetPackageDir = config.targetPackagePath
-    ? path.join(process.cwd(), config.targetPackagePath)
+    ? path.isAbsolute(config.targetPackagePath)
+      ? config.targetPackagePath
+      : path.join(process.cwd(), config.targetPackagePath)
     : process.cwd();
 
-  if (config.targetPackagePath) {
+  if (config.targetPackagePath && !path.isAbsolute(config.targetPackagePath)) {
     return { targetPackageDir, workspaceRootDir: process.cwd() };
   }
 

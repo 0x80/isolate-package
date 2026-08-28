@@ -130,8 +130,14 @@ Only when you decide to place the isolate configuration in the root of the
 monorepo, you use this setting to point it to the target you want to isolate,
 e.g. `./packages/my-firebase-package`.
 
-If this option is used the `workspaceRoot` setting will be ignored and assumed
-to be the current working directory.
+If this option is set to a relative path, the `workspaceRoot` setting will be
+ignored and the workspace root is assumed to be the current working directory.
+
+The path can also be absolute, which makes isolation independent of the
+current working directory. In that case the workspace root is resolved the
+same way as when `targetPackagePath` is omitted: from the `workspaceRoot`
+setting, or otherwise auto-detected by walking upward from the target package
+directory.
 
 ### tsconfigPath
 
@@ -168,5 +174,6 @@ You only need to set this explicitly when auto-detection fails, for example
 when the target package is nested more than a few levels deep inside the
 workspace.
 
-When you use the `targetPackagePath` option, this setting is ignored and the
-workspace root is assumed to be the current working directory.
+When you set the `targetPackagePath` option to a relative path, this setting
+is ignored and the workspace root is assumed to be the current working
+directory. With an absolute `targetPackagePath` this setting is honored.
