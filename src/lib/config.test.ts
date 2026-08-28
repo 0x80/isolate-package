@@ -2,7 +2,12 @@ import fs from "fs-extra";
 import path from "node:path";
 import os from "node:os";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { defineConfig, loadConfigFromFile } from "./config";
+import {
+  defineConfig,
+  type IsolateConfigResolved,
+  loadConfigFromFile,
+  resolveWorkspacePaths,
+} from "./config";
 
 /** Shared mock logger instance so assertions can check calls. */
 const mockLogger = {
@@ -159,5 +164,101 @@ describe("defineConfig", () => {
     const input = { isolateDirName: "output", workspaceRoot: "../.." };
     const result = defineConfig(input);
     expect(result).toBe(input);
+  });
+});
+
+describe("resolveWorkspacePaths", () => {
+  /** The required config fields; path-related options are added per test. */
+  const baseConfig: IsolateConfigResolved = {
+    includeDevDependencies: false,
+    isolateDirName: "isolate",
+    logLevel: "info",
+    tsconfigPath: "./tsconfig.json",
+    forceNpm: false,
+  };
+
+  let tempDir: string;
+  let originalCwd: string;
+
+  beforeEach(async () => {
+    originalCwd = process.cwd();
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "isolate-paths-test-"));
+    /**
+     * Resolve symlinks (macOS tmpdir) so comparisons against process.cwd()
+     * and detected roots are stable.
+     */
+    tempDir = await fs.realpath(dir);
+    /** Bound upward workspace detection to the fixture. */
+    await fs.mkdir(path.join(tempDir, ".git"));
+  });
+
+  afterEach(async () => {
+    process.chdir(originalCwd);
+    await fs.remove(tempDir);
+  });
+
+  it("treats a relative targetPackagePath as cwd-relative with cwd as workspace root", () => {
+    process.chdir(tempDir);
+
+    const result = resolveWorkspacePaths({
+      ...baseConfig,
+      targetPackagePath: "./packages/functions",
+    });
+
+    expect(result.targetPackageDir).toBe(
+      path.join(tempDir, "./packages/functions"),
+    );
+    expect(result.workspaceRootDir).toBe(tempDir);
+  });
+
+  it("uses an absolute targetPackagePath independent of cwd and auto-detects the workspace root", async () => {
+    await fs.writeFile(
+      path.join(tempDir, "pnpm-workspace.yaml"),
+      "packages:\n  - packages/*\n",
+    );
+    const targetPackageDir = path.join(tempDir, "packages", "functions");
+    await fs.mkdirp(targetPackageDir);
+    await fs.writeFile(
+      path.join(targetPackageDir, "package.json"),
+      '{"name":"functions"}',
+    );
+    /** Run from an unrelated directory to prove cwd independence. */
+    process.chdir(os.tmpdir());
+
+    const result = resolveWorkspacePaths({
+      ...baseConfig,
+      targetPackagePath: targetPackageDir,
+    });
+
+    expect(result.targetPackageDir).toBe(targetPackageDir);
+    expect(result.workspaceRootDir).toBe(tempDir);
+  });
+
+  it("honors the workspaceRoot setting for an absolute targetPackagePath", async () => {
+    const targetPackageDir = path.join(tempDir, "packages", "functions");
+    await fs.mkdirp(targetPackageDir);
+    process.chdir(os.tmpdir());
+
+    const result = resolveWorkspacePaths({
+      ...baseConfig,
+      targetPackagePath: targetPackageDir,
+      workspaceRoot: "../..",
+    });
+
+    expect(result.targetPackageDir).toBe(targetPackageDir);
+    expect(result.workspaceRootDir).toBe(path.join(targetPackageDir, "../.."));
+  });
+
+  it("throws for an absolute targetPackagePath when no workspace root is found", async () => {
+    const targetPackageDir = path.join(tempDir, "packages", "functions");
+    await fs.mkdirp(targetPackageDir);
+    process.chdir(os.tmpdir());
+
+    expect(() =>
+      resolveWorkspacePaths({
+        ...baseConfig,
+        targetPackagePath: targetPackageDir,
+      }),
+    ).toThrow(/Failed to auto-detect monorepo workspace root/);
   });
 });
