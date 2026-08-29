@@ -17,6 +17,9 @@ importers:
       '@npmcli/config':
         specifier: ^10.8.1
         version: 10.9.0
+      '@pnpm/deps.path':
+        specifier: ^1100.1.0
+        version: 1100.1.0
       '@pnpm/logger':
         specifier: ^1100.0.0
         version: 1100.0.0
@@ -3301,7 +3304,7 @@ snapshots:
       lru-cache: 11.3.6
       npm-pick-manifest: 11.0.3
       proc-log: 6.1.0
-      semver: 7.7.4
+      semver: 7.8.5
       which: 6.0.1
 
   '@npmcli/installed-package-contents@4.0.0':
@@ -3523,13 +3526,13 @@ snapshots:
       '@pnpm/crypto.base32-hash': 2.0.0
       '@pnpm/types': 9.4.2
       encode-registry: 3.0.1
-      semver: 7.7.4
+      semver: 7.8.5
 
   '@pnpm/dependency-path@3.0.0':
     dependencies:
       '@pnpm/crypto.base32-hash': 3.0.0
       '@pnpm/types': 10.0.0
-      semver: 7.7.4
+      semver: 7.8.5
 
   '@pnpm/deps.path@1100.1.0':
     dependencies:
@@ -3654,7 +3657,7 @@ snapshots:
       '@pnpm/lockfile-types': 5.1.5
       comver-to-semver: 1.0.0
       ramda: '@pnpm/ramda@0.28.1'
-      semver: 7.7.4
+      semver: 7.8.5
 
   '@pnpm/network.git-utils@1100.0.3':
     dependencies:
@@ -4832,7 +4835,7 @@ snapshots:
       graceful-fs: 4.2.11
       nopt: 9.0.0
       proc-log: 6.1.0
-      semver: 7.7.4
+      semver: 7.8.5
       tar: 7.5.15
       tinyglobby: 0.2.16
       undici: 6.25.0

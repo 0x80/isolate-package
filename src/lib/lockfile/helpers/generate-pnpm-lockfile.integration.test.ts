@@ -278,6 +278,10 @@ describe("generatePnpmLockfile integration", () => {
       "my-config": { specifier: "1.0.0", version: "1.0.0" },
     });
     expect(rootImporter).not.toHaveProperty("packageManagerDependencies");
+    expect(documents[0]?.packages).toEqual({
+      "my-config@1.0.0": expect.any(Object),
+    });
+    expect(documents[0]?.snapshots).toEqual({});
   });
 
   /**

@@ -5,6 +5,7 @@ import {
   getLockfileImporterId as getLockfileImporterId_v8,
   writeWantedLockfile as writeWantedLockfile_v8,
 } from "pnpm_lockfile_file_v8";
+import { refToRelative, removePeersSuffix } from "@pnpm/deps.path";
 import type { EnvLockfile } from "pnpm_lockfile_file_v9";
 import {
   getLockfileImporterId as getLockfileImporterId_v9,
@@ -14,7 +15,7 @@ import {
 } from "pnpm_lockfile_file_v9";
 import { pruneLockfile as pruneLockfile_v8 } from "pnpm_prune_lockfile_v8";
 import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
-import { omit, pick } from "remeda";
+import { pick } from "remeda";
 import { useLogger } from "#/lib/logger";
 import type { PackageManifest, PackagesRegistry, PatchFile } from "#/lib/types";
 import {
@@ -246,6 +247,7 @@ export async function generatePnpmLockfile({
         lockfileRootDir,
         isolateDir,
         targetPackageManifest,
+        isRush,
       });
     } else {
       await writeWantedLockfile_v8(isolateDir, {
@@ -262,32 +264,25 @@ export async function generatePnpmLockfile({
 }
 
 /**
- * Since pnpm 12 the lockfile can be a stream of two YAML documents: an "env"
- * document, followed by the project document. The env document pins two
- * independent things — the package manager itself
- * (`packageManagerDependencies`) and the workspace's config dependencies
- * (`configDependencies`) — recording the resolutions and integrity hashes for
- * specifiers that live in `pnpm-workspace.yaml`. An isolated output that keeps
- * either of those but drops the env document is rejected by
- * `pnpm install --frozen-lockfile` with
- * ERR_PNPM_FROZEN_LOCKFILE_WITH_OUTDATED_LOCKFILE.
- *
- * The env document describes the environment rather than the workspace graph,
- * so there is nothing to prune from it and it is copied without pruning. The
- * one thing that can need dropping is `packageManagerDependencies`: when
- * `omitPackageManager` strips the field from the output manifest, pnpm would
- * consider that pin stale for the opposite reason. The config dependencies
- * still have to survive that, because `pnpm-workspace.yaml` is copied to the
- * isolate verbatim and keeps declaring them.
+ * Since pnpm 12 the lockfile can be a stream of two YAML documents. The leading
+ * env document pins the package manager and workspace config dependencies,
+ * including their resolution graphs. An isolated output keeps only the pins
+ * it still declares: `omitPackageManager` removes the package manager pin, and
+ * Rush output removes config pins because its workspace file is generated
+ * without config dependency declarations. The corresponding package and
+ * snapshot graphs are pruned by reachability when either kind of pin is
+ * removed. When every pin remains, the original document is copied verbatim.
  */
 async function copyEnvLockfile({
   lockfileRootDir,
   isolateDir,
   targetPackageManifest,
+  isRush,
 }: {
   lockfileRootDir: string;
   isolateDir: string;
   targetPackageManifest: PackageManifest;
+  isRush: boolean;
 }) {
   const log = useLogger();
 
@@ -327,58 +322,130 @@ async function copyEnvLockfile({
     return;
   }
 
-  if (targetPackageManifest.packageManager) {
+  if (targetPackageManifest.packageManager && !isRush) {
     log.debug("Copying the lockfile env document");
 
     await writeEnvLockfile_v9(isolateDir, envLockfile);
     return;
   }
 
-  const withoutPackageManager = omitEnvPackageManagerDependencies(envLockfile);
+  const filteredEnvLockfile = filterEnvLockfile(envLockfile, {
+    keepConfigDependencies: !isRush,
+    keepPackageManagerDependencies: Boolean(
+      targetPackageManifest.packageManager,
+    ),
+  });
 
-  if (!pinsConfigDependencies(withoutPackageManager)) {
+  if (!pinsEnvDependencies(filteredEnvLockfile)) {
     log.debug(
-      "Skipping the lockfile env document because the output manifest has no packageManager field and the document pins no config dependencies",
+      "Skipping the lockfile env document because the isolated output declares none of its dependencies",
     );
     return;
   }
 
-  log.debug(
-    "Copying the lockfile env document without its packageManagerDependencies",
-  );
+  log.debug("Copying the filtered lockfile env document");
 
-  await writeEnvLockfile_v9(isolateDir, withoutPackageManager);
+  await writeEnvLockfile_v9(isolateDir, filteredEnvLockfile);
 }
 
 /**
- * Strip the `packageManagerDependencies` pin from every importer of an env
- * document, leaving the rest of it untouched. The `packages` and `snapshots`
- * entries the pin resolved to are left in place, because nothing reads them:
- * verified by running `pnpm install --frozen-lockfile` (pnpm 12) against
- * exactly this output — the lockfile is accepted as up to date, and env
- * entries never enter the isolate's virtual store whether an importer
- * references them or not. Pruning them would be a reachability walk from the
- * remaining `configDependencies` rather than a re-resolution, so it is
- * affordable; it is left undone because the residue is some unread YAML.
+ * Keep only the env dependencies declared by the isolated output, then retain
+ * their reachable package and snapshot entries. Rush isolates use a generated
+ * workspace file and therefore declare no config dependencies; ordinary
+ * isolates keep the copied workspace declarations. The output manifest
+ * independently determines whether the package manager pin remains.
  */
-function omitEnvPackageManagerDependencies(
+function filterEnvLockfile(
   envLockfile: EnvLockfile,
+  {
+    keepConfigDependencies,
+    keepPackageManagerDependencies,
+  }: {
+    keepConfigDependencies: boolean;
+    keepPackageManagerDependencies: boolean;
+  },
 ): EnvLockfile {
+  const importers = Object.fromEntries(
+    Object.entries(envLockfile.importers).map(([importerId, importer]) => {
+      const {
+        configDependencies,
+        packageManagerDependencies,
+        ...otherImporterFields
+      } = importer;
+
+      return [
+        importerId,
+        {
+          ...otherImporterFields,
+          configDependencies: keepConfigDependencies
+            ? (configDependencies ?? {})
+            : {},
+          ...(keepPackageManagerDependencies && packageManagerDependencies
+            ? { packageManagerDependencies }
+            : {}),
+        },
+      ];
+    }),
+  ) as EnvLockfile["importers"];
+
+  const reachableSnapshotKeys = collectReachableEnvSnapshotKeys({
+    importers,
+    snapshots: envLockfile.snapshots,
+  });
+  const reachablePackageKeys = new Set(
+    [...reachableSnapshotKeys].map((packageKey) =>
+      removePeersSuffix(packageKey),
+    ),
+  );
+
   return {
     ...envLockfile,
-    importers: Object.fromEntries(
-      Object.entries(envLockfile.importers).map(([importerId, importer]) => [
-        importerId,
-        omit(importer, ["packageManagerDependencies"]),
-      ]),
-    ) as EnvLockfile["importers"],
+    importers,
+    packages: pick(envLockfile.packages, [...reachablePackageKeys]),
+    snapshots: pick(envLockfile.snapshots, [...reachableSnapshotKeys]),
   };
 }
 
-/** Whether an env document pins any config dependency */
-function pinsConfigDependencies(envLockfile: EnvLockfile) {
+/** Find every env package reachable from the retained importer dependencies. */
+function collectReachableEnvSnapshotKeys({
+  importers,
+  snapshots,
+}: Pick<EnvLockfile, "importers" | "snapshots">) {
+  const pending = Object.values(importers).flatMap((importer) =>
+    Object.entries({
+      ...importer.configDependencies,
+      ...importer.packageManagerDependencies,
+    }).map(([packageName, dependency]) =>
+      refToRelative(dependency.version, packageName),
+    ),
+  );
+  const reachable = new Set<string>();
+
+  for (const packageKey of pending) {
+    if (!packageKey || reachable.has(packageKey)) continue;
+
+    reachable.add(packageKey);
+
+    const snapshot = snapshots[packageKey];
+    if (!snapshot) continue;
+
+    for (const [dependencyName, reference] of Object.entries({
+      ...snapshot.dependencies,
+      ...snapshot.optionalDependencies,
+    })) {
+      pending.push(refToRelative(reference, dependencyName));
+    }
+  }
+
+  return reachable;
+}
+
+/** Whether an env document still pins any dependency. */
+function pinsEnvDependencies(envLockfile: EnvLockfile) {
   return Object.values(envLockfile.importers).some(
-    (importer) => Object.keys(importer.configDependencies ?? {}).length > 0,
+    (importer) =>
+      Object.keys(importer.configDependencies ?? {}).length > 0 ||
+      Object.keys(importer.packageManagerDependencies ?? {}).length > 0,
   );
 }
 
