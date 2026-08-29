@@ -1,13 +1,14 @@
 import fs from "fs-extra";
 import { got } from "get-or-throw";
 import assert from "node:assert";
+import type { Stats } from "node:fs";
 import path from "node:path";
 import { unique } from "remeda";
 import type { IsolateConfig } from "./lib/config";
 import {
   resolveConfig,
   resolveTargetPackageDir,
-  resolveWorkspacePaths,
+  resolveWorkspaceRootDir,
 } from "./lib/config";
 import { processLockfile } from "./lib/lockfile";
 import { setLogLevel, useLogger } from "./lib/logger";
@@ -41,6 +42,7 @@ import {
 
 const __dirname = getDirname(import.meta.url);
 
+/** Create an isolator that returns the unchanged target for non-Node sources. */
 export function createIsolator(initialConfig?: IsolateConfig) {
   const resolvedConfig = resolveConfig(initialConfig);
 
@@ -56,32 +58,60 @@ export function createIsolator(initialConfig?: IsolateConfig) {
     log.debug("Using isolate-package version", libraryVersion);
 
     const targetPackageDir = resolveTargetPackageDir(config);
-    const targetStats = await fs.stat(targetPackageDir);
-
-    assert(
-      targetStats.isDirectory(),
-      `Target package path is not a directory: ${targetPackageDir}`,
-    );
-
-    const targetManifestPath = path.join(targetPackageDir, "package.json");
-    let targetHasManifest = true;
+    let targetStats: Stats;
 
     try {
-      await fs.stat(targetManifestPath);
+      targetStats = await fs.stat(targetPackageDir);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-      targetHasManifest = false;
+      throw new Error(
+        `Target package path does not exist: ${targetPackageDir}`,
+        { cause: error },
+      );
     }
 
-    if (!targetHasManifest) {
-      log.debug(
+    if (!targetStats.isDirectory()) {
+      throw new Error(
+        `Target package path is not a directory: ${targetPackageDir}`,
+      );
+    }
+
+    const targetManifestPath = path.join(targetPackageDir, "package.json");
+    let targetManifestStats: Stats;
+
+    try {
+      targetManifestStats = await fs.stat(targetManifestPath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      log.info(
         "Skipping isolation because the target directory has no package.json",
         targetPackageDir,
       );
+
+      const existingIsolateDir = path.join(
+        targetPackageDir,
+        config.isolateDirName,
+      );
+
+      if (await fs.pathExists(existingIsolateDir)) {
+        log.warn(
+          "The skipped target contains an existing isolate directory that may be stale",
+          existingIsolateDir,
+        );
+      }
+
       return targetPackageDir;
     }
 
-    const { workspaceRootDir } = resolveWorkspacePaths(config);
+    if (!targetManifestStats.isFile()) {
+      throw new Error(`Package manifest is not a file: ${targetManifestPath}`);
+    }
+
+    const targetPackageManifest = (await readTypedJson(
+      targetManifestPath,
+    )) as PackageManifest;
+
+    const workspaceRootDir = resolveWorkspaceRootDir(config, targetPackageDir);
 
     const buildOutputDir = getBuildOutputDir({
       targetPackageDir,
@@ -120,10 +150,6 @@ export function createIsolator(initialConfig?: IsolateConfig) {
 
     const tmpDir = path.join(isolateDir, "__tmp");
     await fs.ensureDir(tmpDir);
-
-    const targetPackageManifest = (await readTypedJson(
-      targetManifestPath,
-    )) as PackageManifest;
 
     /** Validate mandatory fields for the target package */
     validateManifestMandatoryFields(
@@ -417,7 +443,7 @@ export function createIsolator(initialConfig?: IsolateConfig) {
   };
 }
 
-/** Keep the original function for backward compatibility */
+/** Return the isolate directory, or the unchanged target for non-Node sources. */
 export async function isolate(config?: IsolateConfig): Promise<string> {
   return createIsolator(config)();
 }

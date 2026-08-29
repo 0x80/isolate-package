@@ -44,7 +44,9 @@ describe("isolate", () => {
 
     await expect(
       isolate({ targetPackagePath: targetPackageDir }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(
+      `Target package path does not exist: ${targetPackageDir}`,
+    );
   });
 
   it("rejects a target path that is not a directory", async () => {
@@ -65,15 +67,62 @@ describe("isolate", () => {
       path.join(os.tmpdir(), "isolate-node-functions-test-"),
     );
     temporaryDirectories.push(workspaceRoot);
-    const targetPackageDir = path.join(workspaceRoot, "functions-node");
+    const targetPackageDir = path.join(
+      workspaceRoot,
+      "packages",
+      "functions-node",
+    );
     await fs.ensureDir(targetPackageDir);
+    await fs.writeJson(path.join(workspaceRoot, "package.json"), {
+      name: "workspace",
+      version: "1.0.0",
+      private: true,
+      workspaces: ["packages/*"],
+    });
+    await fs.writeJson(path.join(workspaceRoot, "package-lock.json"), {
+      name: "workspace",
+      version: "1.0.0",
+      lockfileVersion: 3,
+      requires: true,
+      packages: {
+        "": {
+          name: "workspace",
+          version: "1.0.0",
+          workspaces: ["packages/*"],
+        },
+        "packages/functions-node": {
+          name: "functions-node",
+          version: "1.0.0",
+        },
+      },
+    });
     await fs.writeJson(path.join(targetPackageDir, "package.json"), {
       name: "functions-node",
       version: "1.0.0",
+      files: ["index.js"],
+    });
+    await fs.writeFile(path.join(targetPackageDir, "index.js"), "export {};\n");
+
+    const result = await isolate({
+      targetPackagePath: targetPackageDir,
+      buildDirName: ".",
     });
 
+    expect(result).toBe(path.join(targetPackageDir, "isolate"));
     await expect(
-      isolate({ targetPackagePath: targetPackageDir, workspaceRoot: ".." }),
-    ).rejects.toThrow(/Failed to infer the build output directory/);
+      fs.readJson(path.join(result, "package.json")),
+    ).resolves.toMatchObject({ name: "functions-node", version: "1.0.0" });
+  });
+
+  it("rejects an invalid package.json path", async () => {
+    const targetPackageDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "isolate-invalid-manifest-test-"),
+    );
+    temporaryDirectories.push(targetPackageDir);
+    await fs.ensureDir(path.join(targetPackageDir, "package.json"));
+
+    await expect(
+      isolate({ targetPackagePath: targetPackageDir }),
+    ).rejects.toThrow();
   });
 });

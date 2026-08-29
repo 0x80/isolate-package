@@ -139,6 +139,10 @@ same way as when `targetPackagePath` is omitted: from the `workspaceRoot`
 setting, or otherwise auto-detected by walking upward from the target package
 directory.
 
+If the target directory has no `package.json`, isolation is skipped and the
+original target path is returned unchanged. This lets mixed-runtime tools pass
+non-Node sources, such as Python functions, through the same API.
+
 ### tsconfigPath
 
 Type: `string`, default: `"./tsconfig.json"`
