@@ -106,6 +106,13 @@ The codebase uses `~/` as path alias for `src/` (configured in tsconfig.json).
 
 Tests use Vitest and are co-located with source files (`*.test.ts`).
 
+When a change exists to get different behavior out of a dependency, at least
+one test must exercise that dependency unmocked. Mocking the package whose
+behavior the change was made for proves nothing about it. Use the
+`*.integration.test.ts` pattern with a fixture under
+`__fixtures__/<name>/workspace`, as `generate-npm-lockfile.integration.test.ts`
+and `generate-pnpm-lockfile.integration.test.ts` do.
+
 ## Code Style
 
 - Use JSDoc style comments (`/** ... */`) for all comments, including
