@@ -83,6 +83,19 @@ export function createIsolator(initialConfig?: IsolateConfig) {
       targetManifestStats = await fs.stat(targetManifestPath);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+
+      try {
+        await fs.lstat(targetManifestPath);
+        throw new Error(
+          `Package manifest cannot be resolved: ${targetManifestPath}`,
+          { cause: error },
+        );
+      } catch (manifestError) {
+        if ((manifestError as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw manifestError;
+        }
+      }
+
       log.info(
         "Skipping isolation because the target directory has no package.json",
         targetPackageDir,

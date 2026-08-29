@@ -111,4 +111,19 @@ describe("isolate", () => {
       `Package manifest is not a file: ${path.join(targetPackageDir, "package.json")}`,
     );
   });
+
+  it("rejects a dangling package.json symlink", async () => {
+    const targetPackageDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "isolate-dangling-manifest-test-"),
+    );
+    temporaryDirectories.push(targetPackageDir);
+    const targetManifestPath = path.join(targetPackageDir, "package.json");
+    await fs.symlink("missing-package.json", targetManifestPath);
+
+    await expect(
+      isolate({ targetPackagePath: targetPackageDir }),
+    ).rejects.toThrow(
+      `Package manifest cannot be resolved: ${targetManifestPath}`,
+    );
+  });
 });
