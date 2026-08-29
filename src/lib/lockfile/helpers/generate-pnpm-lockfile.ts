@@ -297,7 +297,7 @@ async function copyEnvLockfile({
    * already succeeded by this point, so failing the whole isolate on the env
    * document alone would turn a readable workspace into a hard error.
    */
-  let envLockfile;
+  let envLockfile: EnvLockfile | null;
 
   try {
     envLockfile = await readEnvLockfile_v9(lockfileRootDir);
