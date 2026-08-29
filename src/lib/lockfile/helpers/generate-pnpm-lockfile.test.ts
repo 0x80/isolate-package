@@ -619,19 +619,27 @@ describe("generatePnpmLockfile", () => {
       },
       packages: {
         "my-config@1.0.0": { resolution: { integrity: "config" } },
+        "config-runtime@1.0.0": { resolution: { integrity: "runtime" } },
         "pnpm@12.0.0": { resolution: { integrity: "pnpm" } },
         "@pnpm/exe.linux-x64@12.0.0": {
           resolution: { integrity: "executable" },
         },
+        "unrelated@1.0.0": { resolution: { integrity: "unrelated" } },
       },
       snapshots: {
-        "my-config@1.0.0": {},
+        "my-config@1.0.0": {
+          dependencies: {
+            "config-runtime": "1.0.0(peer@2.0.0)",
+          },
+        },
+        "config-runtime@1.0.0(peer@2.0.0)": {},
         "pnpm@12.0.0": {
           optionalDependencies: {
             "@pnpm/exe.linux-x64": "12.0.0",
           },
         },
         "@pnpm/exe.linux-x64@12.0.0": {},
+        "unrelated@1.0.0": {},
       },
     } satisfies EnvLockfile;
 
@@ -716,8 +724,18 @@ describe("generatePnpmLockfile", () => {
           },
           packages: {
             "my-config@1.0.0": { resolution: { integrity: "config" } },
+            "config-runtime@1.0.0": {
+              resolution: { integrity: "runtime" },
+            },
           },
-          snapshots: { "my-config@1.0.0": {} },
+          snapshots: {
+            "my-config@1.0.0": {
+              dependencies: {
+                "config-runtime": "1.0.0(peer@2.0.0)",
+              },
+            },
+            "config-runtime@1.0.0(peer@2.0.0)": {},
+          },
         },
       );
     });
@@ -760,6 +778,15 @@ describe("generatePnpmLockfile", () => {
           },
         },
       );
+    });
+
+    it("should skip the env document for a Rush output without packageManager", async () => {
+      isRushWorkspace.mockReturnValue(true);
+      readEnvLockfile_v9.mockResolvedValue(envLockfileWithConfigDependency);
+
+      await generate({ name: "my-app", version: "1.0.0" });
+
+      expect(writeEnvLockfile_v9).not.toHaveBeenCalled();
     });
 
     it("should skip the env document when the workspace lockfile has none", async () => {

@@ -5,6 +5,7 @@ import {
   getLockfileImporterId as getLockfileImporterId_v8,
   writeWantedLockfile as writeWantedLockfile_v8,
 } from "pnpm_lockfile_file_v8";
+import { refToRelative, removeSuffix } from "@pnpm/deps.path";
 import type { EnvLockfile } from "pnpm_lockfile_file_v9";
 import {
   getLockfileImporterId as getLockfileImporterId_v9,
@@ -263,23 +264,13 @@ export async function generatePnpmLockfile({
 }
 
 /**
- * Since pnpm 12 the lockfile can be a stream of two YAML documents: an "env"
- * document, followed by the project document. The env document pins two
- * independent things — the package manager itself
- * (`packageManagerDependencies`) and the workspace's config dependencies
- * (`configDependencies`) — recording the resolutions and integrity hashes for
- * specifiers that live in `pnpm-workspace.yaml`. An isolated output that keeps
- * either of those but drops the env document is rejected by
- * `pnpm install --frozen-lockfile` with
- * ERR_PNPM_FROZEN_LOCKFILE_WITH_OUTDATED_LOCKFILE.
- *
- * The env document describes the environment rather than the workspace graph,
- * so there is nothing to prune from it and it is copied without pruning. The
- * one thing that can need dropping is `packageManagerDependencies`: when
- * `omitPackageManager` strips the field from the output manifest, pnpm would
- * consider that pin stale for the opposite reason. The config dependencies
- * still have to survive that, because `pnpm-workspace.yaml` is copied to the
- * isolate verbatim and keeps declaring them.
+ * Since pnpm 12 the lockfile can be a stream of two YAML documents. The leading
+ * env document pins the package manager and workspace config dependencies,
+ * including their resolution graphs. An isolated output keeps only the pins
+ * it still declares: `omitPackageManager` removes the package manager pin, and
+ * Rush output removes config pins because its workspace file is generated
+ * without config dependency declarations. The corresponding package and
+ * snapshot graphs are pruned by reachability before the document is written.
  */
 async function copyEnvLockfile({
   lockfileRootDir,
@@ -390,21 +381,24 @@ function filterEnvLockfile(
     ]),
   ) as EnvLockfile["importers"];
 
-  const reachablePackageKeys = collectReachableEnvPackageKeys({
+  const reachableSnapshotKeys = collectReachableEnvSnapshotKeys({
     importers,
     snapshots: envLockfile.snapshots,
   });
+  const reachablePackageKeys = new Set(
+    [...reachableSnapshotKeys].map((packageKey) => removeSuffix(packageKey)),
+  );
 
   return {
     ...envLockfile,
     importers,
     packages: pick(envLockfile.packages, [...reachablePackageKeys]),
-    snapshots: pick(envLockfile.snapshots, [...reachablePackageKeys]),
+    snapshots: pick(envLockfile.snapshots, [...reachableSnapshotKeys]),
   };
 }
 
 /** Find every env package reachable from the retained importer dependencies. */
-function collectReachableEnvPackageKeys({
+function collectReachableEnvSnapshotKeys({
   importers,
   snapshots,
 }: Pick<EnvLockfile, "importers" | "snapshots">) {
@@ -413,7 +407,7 @@ function collectReachableEnvPackageKeys({
       ...importer.configDependencies,
       ...importer.packageManagerDependencies,
     }).map(([packageName, dependency]) =>
-      envDependencyToPackageKey(packageName, dependency.version),
+      refToRelative(dependency.version, packageName),
     ),
   );
   const reachable = new Set<string>();
@@ -430,31 +424,11 @@ function collectReachableEnvPackageKeys({
       ...snapshot.dependencies,
       ...snapshot.optionalDependencies,
     })) {
-      pending.push(envDependencyToPackageKey(dependencyName, reference));
+      pending.push(refToRelative(reference, dependencyName));
     }
   }
 
   return reachable;
-}
-
-/** Convert a lockfile dependency reference to its package/snapshot key. */
-function envDependencyToPackageKey(packageName: string, reference: string) {
-  if (reference.startsWith("link:")) return null;
-  if (reference.startsWith("@")) return reference;
-
-  const atIndex = reference.indexOf("@");
-  const colonIndex = reference.indexOf(":");
-  const peerIndex = reference.indexOf("(");
-
-  if (
-    atIndex !== -1 &&
-    (colonIndex === -1 || atIndex < colonIndex) &&
-    (peerIndex === -1 || atIndex < peerIndex)
-  ) {
-    return reference;
-  }
-
-  return `${packageName}@${reference}`;
 }
 
 /** Whether an env document still pins any dependency. */
