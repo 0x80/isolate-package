@@ -14,6 +14,7 @@ const copiedPatches: Record<string, PatchFile> = {
 
 describe("usesPnpmWorkspacePatchedDependencies", () => {
   it("uses workspace patch paths from pnpm 11 onwards", () => {
+    expect(usesPnpmWorkspacePatchedDependencies(9)).toBe(false);
     expect(usesPnpmWorkspacePatchedDependencies(10)).toBe(false);
     expect(usesPnpmWorkspacePatchedDependencies(11)).toBe(true);
     expect(usesPnpmWorkspacePatchedDependencies(Number.NaN)).toBe(false);

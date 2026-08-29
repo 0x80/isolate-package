@@ -155,7 +155,7 @@ export async function copyPatches({
    * Read the pnpm lockfile to get patch hashes. Bun doesn't store hashes in
    * its lockfile so we skip this for Bun.
    */
-  const lockfilePatchedDependencies =
+  const lockfilePatchResult =
     packageManagerName === "pnpm"
       ? await readLockfilePatchedDependencies(workspaceRootDir)
       : undefined;
@@ -183,7 +183,8 @@ export async function copyPatches({
      * `Record<string, { path, hash }>` to `Record<string, string>` (selector to
      * hash), so the entry may be a bare hash string. See issue #201.
      */
-    const originalPatchFile = lockfilePatchedDependencies?.[packageSpec];
+    const originalPatchFile =
+      lockfilePatchResult?.patchedDependencies?.[packageSpec];
     const hash =
       typeof originalPatchFile === "string"
         ? originalPatchFile
@@ -194,6 +195,13 @@ export async function copyPatches({
       usesPnpmWorkspacePatchedDependencies(majorVersion) &&
       !hash
     ) {
+      if (lockfilePatchResult?.readError) {
+        throw new Error(
+          `Could not read pnpm lockfile while resolving patch ${packageSpec}`,
+          { cause: lockfilePatchResult.readError },
+        );
+      }
+
       throw new Error(`No hash found for patch ${packageSpec} in lockfile`);
     }
 
@@ -237,7 +245,10 @@ export async function copyPatches({
  */
 async function readLockfilePatchedDependencies(
   workspaceRootDir: string,
-): Promise<Record<string, PatchFile | string> | undefined> {
+): Promise<{
+  patchedDependencies?: Record<string, PatchFile | string>;
+  readError?: unknown;
+}> {
   try {
     const { majorVersion } = usePackageManager();
     const useVersion9 = majorVersion >= 9;
@@ -247,9 +258,8 @@ async function readLockfilePatchedDependencies(
       ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })
       : await readWantedLockfile_v8(lockfileDir, { ignoreIncompatible: false });
 
-    return lockfile?.patchedDependencies;
-  } catch {
-    /** Package manager not detected or lockfile not readable */
-    return undefined;
+    return { patchedDependencies: lockfile?.patchedDependencies };
+  } catch (error) {
+    return { readError: error };
   }
 }

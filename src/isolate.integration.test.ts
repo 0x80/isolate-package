@@ -168,6 +168,16 @@ describe("isolate integration", () => {
         workspaceRoot: "../..",
       });
 
+      await expect(
+        fs.readFile(
+          path.join(isolateDir, "patches", "left-pad@1.3.0.patch"),
+          "utf8",
+        ),
+      ).resolves.toBe(leftPadPatchContents);
+      await expect(
+        fs.pathExists(path.join(isolateDir, "patches", "stale-left-pad.patch")),
+      ).resolves.toBe(false);
+
       const manifest = await fs.readJson(path.join(isolateDir, "package.json"));
       const workspaceSettings = parse(
         await fs.readFile(path.join(isolateDir, "pnpm-workspace.yaml"), "utf8"),

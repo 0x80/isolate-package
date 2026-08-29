@@ -225,8 +225,8 @@ export async function generatePnpmLockfile({
      */
     if (useVersion9) {
       /**
-       * pnpm 11 stores only the patch hash in the lockfile. The matching path
-       * is written to the isolate's pnpm workspace configuration.
+       * pnpm 11 and later store only the patch hash in the lockfile. The
+       * matching path is written to the isolate's pnpm workspace configuration.
        */
       const patchWithoutHash = Object.entries(patchedDependencies ?? {}).find(
         ([, patchFile]) =>
