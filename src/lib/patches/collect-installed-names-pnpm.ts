@@ -1,15 +1,11 @@
 import path from "node:path";
-import {
-  getLockfileImporterId as getLockfileImporterId_v8,
-  readWantedLockfile as readWantedLockfile_v8,
-} from "pnpm_lockfile_file_v8";
-import {
-  getLockfileImporterId as getLockfileImporterId_v9,
-  readWantedLockfile as readWantedLockfile_v9,
-} from "pnpm_lockfile_file_v9";
+import { getLockfileImporterId as getLockfileImporterId_v8 } from "pnpm_lockfile_file_v8";
+import { getLockfileImporterId as getLockfileImporterId_v9 } from "pnpm_lockfile_file_v9";
+import { readPnpmLockfile } from "#/lib/lockfile/read-pnpm-lockfile";
 import { useLogger } from "#/lib/logger";
 import type { PackagesRegistry } from "#/lib/types";
 import {
+  getErrorMessage,
   getPackageName,
   getPnpmLockfileDir,
   isRushWorkspace,
@@ -49,9 +45,18 @@ export async function collectInstalledNamesFromPnpmLockfile({
     const isRush = isRushWorkspace(workspaceRootDir);
     const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
-    const lockfile = useVersion9
-      ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })
-      : await readWantedLockfile_v8(lockfileDir, { ignoreIncompatible: false });
+    const lockfileResult = await readPnpmLockfile(lockfileDir, majorVersion, {
+      onFailure: "return-error",
+    });
+
+    if (lockfileResult && "readError" in lockfileResult) {
+      log.debug(
+        `Failed to read pnpm lockfile for installed names: ${getErrorMessage(lockfileResult.readError)}`,
+      );
+      return new Set();
+    }
+
+    const lockfile = lockfileResult;
 
     if (!lockfile) {
       log.debug("No pnpm lockfile available for installed-names walk");

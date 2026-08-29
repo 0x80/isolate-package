@@ -3,20 +3,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   getLockfileImporterId as getLockfileImporterId_v8,
-  readWantedLockfile as readWantedLockfile_v8,
   writeWantedLockfile as writeWantedLockfile_v8,
 } from "pnpm_lockfile_file_v8";
-/**
- * The `_v9` alias names the lockfile format, not the package. It resolves to
- * `@pnpm/lockfile.fs`, the maintained successor of `@pnpm/lockfile-file`, whose
- * last release predates the two-document lockfile that pnpm 12 writes (see
- * issue #205). Both read and write lockfile format v9.
- */
 import type { EnvLockfile } from "pnpm_lockfile_file_v9";
 import {
   getLockfileImporterId as getLockfileImporterId_v9,
   readEnvLockfile as readEnvLockfile_v9,
-  readWantedLockfile as readWantedLockfile_v9,
   writeEnvLockfile as writeEnvLockfile_v9,
   writeWantedLockfile as writeWantedLockfile_v9,
 } from "pnpm_lockfile_file_v9";
@@ -34,6 +26,7 @@ import {
   getPnpmPatchedDependenciesOutput,
   usesPnpmWorkspacePatchedDependencies,
 } from "#/lib/patches/pnpm-patched-dependencies";
+import { readPnpmLockfile } from "../read-pnpm-lockfile";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
 /**
@@ -85,15 +78,9 @@ export async function generatePnpmLockfile({
 
     const lockfileRootDir = getPnpmLockfileDir(workspaceRootDir);
 
-    const lockfile = useVersion9
-      ? await readWantedLockfile_v9(lockfileRootDir, {
-          ignoreIncompatible: false,
-        })
-      : await readWantedLockfile_v8(lockfileRootDir, {
-          ignoreIncompatible: false,
-        });
+    const lockfile = await readPnpmLockfile(lockfileRootDir, majorVersion);
 
-    assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
+    assert(lockfile, `No input lockfile found at ${lockfileRootDir}`);
 
     const targetImporterId = useVersion9
       ? getLockfileImporterId_v9(workspaceRootDir, targetPackageDir)
@@ -308,9 +295,9 @@ async function copyEnvLockfile({
    * The reader resolves to null for a single-document lockfile — the ordinary
    * pnpm 9 to 11 case — but it throws rather than returning null when the file
    * exists and cannot be read or parsed: it special-cases only ENOENT, and the
-   * env document is passed through `yaml.load`. `readWantedLockfile` above has
-   * already succeeded by this point, so failing the whole isolate on the env
-   * document alone would turn a readable workspace into a hard error.
+   * env document is passed through `yaml.load`. The workspace lockfile read
+   * has already succeeded by this point, so failing the whole isolate on the
+   * env document alone would turn a readable workspace into a hard error.
    */
   let envLockfile: EnvLockfile | null;
 
