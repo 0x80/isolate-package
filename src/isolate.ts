@@ -95,7 +95,7 @@ export function createIsolator(initialConfig?: IsolateConfig) {
 
       if (await fs.pathExists(existingIsolateDir)) {
         log.warn(
-          "The skipped target contains an existing isolate directory that may be stale",
+          "The skipped target contains an existing isolate path that may be stale",
           existingIsolateDir,
         );
       }

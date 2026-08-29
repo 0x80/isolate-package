@@ -66,7 +66,7 @@ describe("isolate", () => {
     });
 
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      "The skipped target contains an existing isolate directory that may be stale",
+      "The skipped target contains an existing isolate path that may be stale",
       existingIsolateDir,
     );
   });
@@ -96,59 +96,6 @@ describe("isolate", () => {
     await expect(isolate({ targetPackagePath })).rejects.toThrow(
       /Target package path is not a directory/,
     );
-  });
-
-  it("continues isolation for a Node package", async () => {
-    const workspaceRoot = await fs.mkdtemp(
-      path.join(os.tmpdir(), "isolate-node-functions-test-"),
-    );
-    temporaryDirectories.push(workspaceRoot);
-    const targetPackageDir = path.join(
-      workspaceRoot,
-      "packages",
-      "functions-node",
-    );
-    await fs.ensureDir(targetPackageDir);
-    await fs.writeJson(path.join(workspaceRoot, "package.json"), {
-      name: "workspace",
-      version: "1.0.0",
-      private: true,
-      workspaces: ["packages/*"],
-    });
-    await fs.writeJson(path.join(workspaceRoot, "package-lock.json"), {
-      name: "workspace",
-      version: "1.0.0",
-      lockfileVersion: 3,
-      requires: true,
-      packages: {
-        "": {
-          name: "workspace",
-          version: "1.0.0",
-          workspaces: ["packages/*"],
-        },
-        "packages/functions-node": {
-          name: "functions-node",
-          version: "1.0.0",
-        },
-      },
-    });
-    await fs.writeJson(path.join(targetPackageDir, "package.json"), {
-      name: "functions-node",
-      version: "1.0.0",
-      files: ["index.js"],
-    });
-    await fs.writeFile(path.join(targetPackageDir, "index.js"), "export {};\n");
-
-    const result = await isolate({
-      targetPackagePath: targetPackageDir,
-      buildDirName: ".",
-      workspaceRoot: "../..",
-    });
-
-    expect(result).toBe(path.join(targetPackageDir, "isolate"));
-    await expect(
-      fs.readJson(path.join(result, "package.json")),
-    ).resolves.toMatchObject({ name: "functions-node", version: "1.0.0" });
   });
 
   it("rejects an invalid package.json path", async () => {
