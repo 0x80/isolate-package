@@ -198,10 +198,6 @@ export async function copyPatches({
       throw new Error(`No hash found for patch ${packageSpec} in lockfile`);
     }
 
-    if (packageManagerName === "pnpm" && !hash) {
-      log.warn(`No hash found for patch ${packageSpec} in lockfile`);
-    }
-
     copiedPatches[packageSpec] = {
       path: patchPath,
       hash,

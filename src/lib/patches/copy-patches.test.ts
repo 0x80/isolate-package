@@ -73,6 +73,9 @@ const fs = vi.mocked((await import("fs-extra")).default);
 const { filterPatchedDependencies, readTypedJson, readTypedYamlSync } =
   vi.mocked(await import("#/lib/utils"));
 const { usePackageManager } = vi.mocked(await import("#/lib/package-manager"));
+const { readWantedLockfile: readWantedLockfile_v8 } = vi.mocked(
+  await import("pnpm_lockfile_file_v8"),
+);
 const { readWantedLockfile: readWantedLockfile_v9 } = vi.mocked(
   await import("pnpm_lockfile_file_v9"),
 );
@@ -760,7 +763,7 @@ describe("copyPatches", () => {
     });
   });
 
-  it.each([9, 10])(
+  it.each([8, 9, 10])(
     "rejects pnpm %i patches without a lockfile hash before copying files",
     async (majorVersion) => {
       const targetManifest: PackageManifest = {
@@ -790,12 +793,24 @@ describe("copyPatches", () => {
         version: `${majorVersion}.0.0`,
         packageManagerString: `pnpm@${majorVersion}.0.0`,
       });
-      readWantedLockfile_v9.mockResolvedValue({
-        lockfileVersion: "9.0",
-        patchedDependencies: {
-          "lodash@4.17.21": "sha256-lodash",
-        },
-      } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
+      if (majorVersion >= 9) {
+        readWantedLockfile_v9.mockResolvedValue({
+          lockfileVersion: "9.0",
+          patchedDependencies: {
+            "lodash@4.17.21": "sha256-lodash",
+          },
+        } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
+      } else {
+        readWantedLockfile_v8.mockResolvedValue({
+          lockfileVersion: "6.0",
+          patchedDependencies: {
+            "lodash@4.17.21": {
+              path: "patches/lodash.patch",
+              hash: "sha256-lodash",
+            },
+          },
+        } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v8>>);
+      }
 
       await expect(
         copyPatches({
