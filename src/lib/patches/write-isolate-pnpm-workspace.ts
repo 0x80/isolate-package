@@ -3,10 +3,7 @@ import path from "node:path";
 import { useLogger } from "#/lib/logger";
 import type { PatchFile, PnpmSettings } from "#/lib/types";
 import { readTypedYamlSync, writeTypedYamlSync } from "#/lib/utils";
-import {
-  getPnpmPatchedDependenciesOutput,
-  getPnpmPatchedDependencyPaths,
-} from "./pnpm-patched-dependencies";
+import { getPnpmPatchedDependenciesOutput } from "./pnpm-patched-dependencies";
 
 type GeneratedPnpmWorkspaceSettings = PnpmSettings & {
   packages: string[];
@@ -26,10 +23,10 @@ type GeneratedPnpmWorkspaceSettings = PnpmSettings & {
  * - The source yaml cannot be read or parsed and pnpm does not need a
  *   `patchedDependencies` field. pnpm 11 and later instead fail clearly when
  *   copied patches require adapted paths in that file.
- * - The parsed settings have no `patchedDependencies` field and pnpm is older
- *   than version 11.
+ * - The parsed settings have no `patchedDependencies` field and pnpm does not
+ *   need workspace patch paths.
  * - Every entry in `patchedDependencies` is also present in `copiedPatches`
- *   and pnpm is older than version 11.
+ *   and pnpm does not need workspace patch paths.
  *
  * Otherwise, `patchedDependencies` is rewritten to the entries in
  * `copiedPatches` (or removed entirely when none remain). pnpm 11 and later
@@ -63,7 +60,7 @@ export function writeIsolatePnpmWorkspace({
   } catch (error) {
     if (workspacePatchPaths) {
       throw new Error(
-        "Cannot write pnpm 11 patch paths without readable workspace settings",
+        "Cannot write pnpm patch paths without readable workspace settings",
         { cause: error },
       );
     }
@@ -78,7 +75,7 @@ export function writeIsolatePnpmWorkspace({
   if (!isPnpmWorkspaceSettings(settings)) {
     if (workspacePatchPaths) {
       throw new Error(
-        "Cannot write pnpm 11 patch paths without readable workspace settings",
+        "Cannot write pnpm patch paths without readable workspace settings",
       );
     }
 
@@ -105,7 +102,7 @@ export function writeIsolatePnpmWorkspace({
     return;
   }
 
-  const patchPaths = getPnpmPatchedDependencyPaths(copiedPatches);
+  const patchPaths = patchOutput.workspace ?? patchOutput.manifest ?? {};
   const filteredEntries = Object.entries(patchPaths);
 
   if (filteredEntries.length > 0) {

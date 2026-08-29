@@ -355,6 +355,10 @@ export function createIsolator(initialConfig?: IsolateConfig) {
 
       if (shouldRemoveLegacyPnpmPatchedDependencies) {
         delete manifest.pnpm?.patchedDependencies;
+
+        if (manifest.pnpm && Object.keys(manifest.pnpm).length === 0) {
+          delete manifest.pnpm;
+        }
       }
 
       if (hasCopiedPatches) {

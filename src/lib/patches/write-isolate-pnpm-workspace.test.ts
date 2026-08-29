@@ -430,7 +430,7 @@ describe("writeIsolatePnpmWorkspace", () => {
         },
       }),
     ).toThrow(
-      "Cannot write pnpm 11 patch paths without readable workspace settings",
+      "Cannot write pnpm patch paths without readable workspace settings",
     );
 
     expect(fs.copyFileSync).not.toHaveBeenCalled();
@@ -453,7 +453,7 @@ describe("writeIsolatePnpmWorkspace", () => {
         },
       }),
     ).toThrow(
-      "Cannot write pnpm 11 patch paths without readable workspace settings",
+      "Cannot write pnpm patch paths without readable workspace settings",
     );
 
     expect(fs.copyFileSync).not.toHaveBeenCalled();
@@ -476,7 +476,7 @@ describe("writeIsolatePnpmWorkspace", () => {
         },
       }),
     ).toThrow(
-      "Cannot write pnpm 11 patch paths without readable workspace settings",
+      "Cannot write pnpm patch paths without readable workspace settings",
     );
 
     expect(fs.copyFileSync).not.toHaveBeenCalled();

@@ -176,11 +176,13 @@ describe("isolate integration", () => {
         await fs.readFile(path.join(isolateDir, "pnpm-lock.yaml"), "utf8"),
       );
 
-      expect(manifest.pnpm?.patchedDependencies).toEqual(
-        majorVersion >= 11
-          ? undefined
-          : { "left-pad@1.3.0": "patches/left-pad@1.3.0.patch" },
-      );
+      if (majorVersion >= 11) {
+        expect(manifest.pnpm).toBeUndefined();
+      } else {
+        expect(manifest.pnpm?.patchedDependencies).toEqual({
+          "left-pad@1.3.0": "patches/left-pad@1.3.0.patch",
+        });
+      }
       expect(workspaceSettings.patchedDependencies).toEqual({
         "left-pad@1.3.0": "patches/left-pad@1.3.0.patch",
       });

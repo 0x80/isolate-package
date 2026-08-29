@@ -218,6 +218,20 @@ describe("generatePnpmLockfile integration", () => {
       });
 
       expect(documents.at(-1)?.patchedDependencies).toEqual(expected);
+
+      const patchHash =
+        "9e0f13b98377d5c4c2e7b7b6ba81f2619588134e4df976f8b79cc200b02cf500";
+      const patchedVersion = `1.3.0(patch_hash=${patchHash})`;
+      const projectDocument = documents.at(-1);
+
+      expect(rootImporterOf(projectDocument)).toMatchObject({
+        dependencies: {
+          "left-pad": { specifier: "1.3.0", version: patchedVersion },
+        },
+      });
+      expect(projectDocument?.snapshots).toHaveProperty(
+        `left-pad@${patchedVersion}`,
+      );
     },
   );
 
