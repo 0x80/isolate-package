@@ -1,7 +1,6 @@
 import fs from "fs-extra";
 import path from "node:path";
-import { readWantedLockfile as readWantedLockfile_v8 } from "pnpm_lockfile_file_v8";
-import { readWantedLockfile as readWantedLockfile_v9 } from "pnpm_lockfile_file_v9";
+import { readPnpmLockfile } from "#/lib/lockfile/read-pnpm-lockfile";
 import { useLogger } from "#/lib/logger";
 import { usePackageManager } from "#/lib/package-manager";
 import { collectReachablePackageNames } from "#/lib/registry";
@@ -251,12 +250,9 @@ async function readLockfilePatchedDependencies(
 }> {
   try {
     const { majorVersion } = usePackageManager();
-    const useVersion9 = majorVersion >= 9;
     const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
-    const lockfile = useVersion9
-      ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })
-      : await readWantedLockfile_v8(lockfileDir, { ignoreIncompatible: false });
+    const lockfile = await readPnpmLockfile(lockfileDir, majorVersion);
 
     return { patchedDependencies: lockfile?.patchedDependencies };
   } catch (error) {
