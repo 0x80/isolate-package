@@ -50,6 +50,7 @@ describe("writeIsolatePnpmWorkspace", () => {
     writeIsolatePnpmWorkspace({
       workspaceRootDir,
       isolateDir,
+      majorVersion: 10,
       copiedPatches,
     });
 
@@ -77,6 +78,7 @@ describe("writeIsolatePnpmWorkspace", () => {
     writeIsolatePnpmWorkspace({
       workspaceRootDir,
       isolateDir,
+      majorVersion: 10,
       copiedPatches: {},
     });
 
@@ -95,6 +97,7 @@ describe("writeIsolatePnpmWorkspace", () => {
     writeIsolatePnpmWorkspace({
       workspaceRootDir,
       isolateDir,
+      majorVersion: 10,
       copiedPatches: {},
     });
 
@@ -102,6 +105,35 @@ describe("writeIsolatePnpmWorkspace", () => {
     expect(fs.copyFileSync).toHaveBeenCalledWith(
       "/workspace/pnpm-workspace.yaml",
       "/workspace/isolate/pnpm-workspace.yaml",
+    );
+  });
+
+  it("writes copied patch paths to pnpm 11 workspaces", () => {
+    readTypedYamlSync.mockReturnValue({
+      packages: ["packages/*"],
+    });
+
+    writeIsolatePnpmWorkspace({
+      workspaceRootDir,
+      isolateDir,
+      majorVersion: 11,
+      copiedPatches: {
+        "lodash@4.17.21": {
+          path: "patches/lodash@4.17.21.patch",
+          hash: "sha256-abc123",
+        },
+      },
+    });
+
+    expect(fs.copyFileSync).not.toHaveBeenCalled();
+    expect(writeTypedYamlSync).toHaveBeenCalledWith(
+      "/workspace/isolate/pnpm-workspace.yaml",
+      {
+        packages: ["packages/*"],
+        patchedDependencies: {
+          "lodash@4.17.21": "patches/lodash@4.17.21.patch",
+        },
+      },
     );
   });
 
@@ -123,6 +155,7 @@ describe("writeIsolatePnpmWorkspace", () => {
     writeIsolatePnpmWorkspace({
       workspaceRootDir,
       isolateDir,
+      majorVersion: 10,
       copiedPatches,
     });
 
@@ -160,6 +193,7 @@ describe("writeIsolatePnpmWorkspace", () => {
     writeIsolatePnpmWorkspace({
       workspaceRootDir,
       isolateDir,
+      majorVersion: 11,
       copiedPatches: {},
     });
 
@@ -201,6 +235,7 @@ describe("writeIsolatePnpmWorkspace", () => {
     writeIsolatePnpmWorkspace({
       workspaceRootDir,
       isolateDir,
+      majorVersion: 11,
       copiedPatches,
     });
 
@@ -239,6 +274,7 @@ describe("writeIsolatePnpmWorkspace", () => {
     writeIsolatePnpmWorkspace({
       workspaceRootDir,
       isolateDir,
+      majorVersion: 10,
       copiedPatches,
     });
 
@@ -257,6 +293,7 @@ describe("writeIsolatePnpmWorkspace", () => {
     writeIsolatePnpmWorkspace({
       workspaceRootDir,
       isolateDir,
+      majorVersion: 10,
       copiedPatches: {},
     });
 

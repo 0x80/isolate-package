@@ -221,17 +221,22 @@ export async function generatePnpmLockfile({
      */
     if (useVersion9) {
       /**
-       * The pruner and the writer come from separate packages with their own
-       * copies of the lockfile types, which disagree on `lockfileVersion` and on
-       * `patchedDependencies`: the modern writer types the latter as a map of
-       * bare hashes, because pnpm 11 simplified the on-disk format (see issue
-       * #201). We keep writing the `{ path, hash }` form that pnpm 9 and 10
-       * expect — pnpm 11 and up migrate it when reading, and the writer passes
-       * the value through untouched.
+       * pnpm 11 stores only the patch hash in the lockfile. The matching path
+       * is written to pnpm-workspace.yaml by writeIsolatePnpmWorkspace.
        */
+      const lockfilePatchedDependencies =
+        majorVersion >= 11 && patchedDependencies
+          ? Object.fromEntries(
+              Object.entries(patchedDependencies).map(([spec, patchFile]) => [
+                spec,
+                patchFile.hash,
+              ]),
+            )
+          : patchedDependencies;
+
       await writeWantedLockfile_v9(isolateDir, {
         ...prunedLockfile,
-        patchedDependencies,
+        patchedDependencies: lockfilePatchedDependencies,
       } as unknown as Parameters<typeof writeWantedLockfile_v9>[1]);
 
       /**

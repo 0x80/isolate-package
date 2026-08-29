@@ -16,20 +16,25 @@ import { readTypedYamlSync, writeTypedYamlSync } from "#/lib/utils";
  * any of the following hold:
  *
  * - The source yaml cannot be read or parsed.
- * - The parsed settings have no `patchedDependencies` field.
+ * - The parsed settings have no `patchedDependencies` field and pnpm is older
+ *   than version 11.
  * - Every entry in `patchedDependencies` is also present in `copiedPatches`
- *   (no exclusions, so rewriting would only churn formatting).
+ *   and pnpm is older than version 11.
  *
  * Otherwise, `patchedDependencies` is rewritten to the entries in
- * `copiedPatches` (or removed entirely when none remain).
+ * `copiedPatches` (or removed entirely when none remain). pnpm 11 and later
+ * always use this field for copied patches because their lockfile stores only
+ * the patch hash.
  */
 export function writeIsolatePnpmWorkspace({
   workspaceRootDir,
   isolateDir,
+  majorVersion,
   copiedPatches,
 }: {
   workspaceRootDir: string;
   isolateDir: string;
+  majorVersion: number;
   copiedPatches: Record<string, PatchFile>;
 }) {
   const log = useLogger();
@@ -48,7 +53,15 @@ export function writeIsolatePnpmWorkspace({
     return;
   }
 
-  if (!settings || !settings.patchedDependencies) {
+  if (!settings) {
+    fs.copyFileSync(sourcePath, targetPath);
+    return;
+  }
+
+  const needsPnpm11PatchPaths =
+    majorVersion >= 11 && Object.keys(copiedPatches).length > 0;
+
+  if (!settings.patchedDependencies && !needsPnpm11PatchPaths) {
     fs.copyFileSync(sourcePath, targetPath);
     return;
   }
@@ -57,11 +70,11 @@ export function writeIsolatePnpmWorkspace({
    * If every patch declared in the source yaml was kept, copy verbatim so
    * comments, ordering, and trailing whitespace are preserved.
    */
-  const sourceSpecs = Object.keys(settings.patchedDependencies);
+  const sourceSpecs = Object.keys(settings.patchedDependencies ?? {});
   const copiedSpecs = new Set(Object.keys(copiedPatches));
   const hasExclusions = sourceSpecs.some((spec) => !copiedSpecs.has(spec));
 
-  if (!hasExclusions) {
+  if (!hasExclusions && !needsPnpm11PatchPaths) {
     fs.copyFileSync(sourcePath, targetPath);
     return;
   }

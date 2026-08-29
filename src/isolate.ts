@@ -350,7 +350,10 @@ export function createIsolator(initialConfig?: IsolateConfig) {
 
         if (packageManager.name === "bun") {
           manifest.patchedDependencies = patchEntries;
-        } else {
+        } else if (
+          packageManager.name !== "pnpm" ||
+          packageManager.majorVersion < 11
+        ) {
           manifest.pnpm ??= {};
           manifest.pnpm.patchedDependencies = patchEntries;
         }
@@ -400,6 +403,7 @@ export function createIsolator(initialConfig?: IsolateConfig) {
         writeIsolatePnpmWorkspace({
           workspaceRootDir,
           isolateDir,
+          majorVersion: packageManager.majorVersion,
           copiedPatches,
         });
       }
