@@ -605,6 +605,36 @@ describe("generatePnpmLockfile", () => {
       snapshots: {},
     } satisfies EnvLockfile;
 
+    const envLockfileWithConfigDependency = {
+      lockfileVersion: "9.0",
+      importers: {
+        ".": {
+          configDependencies: {
+            "my-config": { specifier: "1.0.0", version: "1.0.0" },
+          },
+          packageManagerDependencies: {
+            pnpm: { specifier: "12.0.0", version: "12.0.0" },
+          },
+        },
+      },
+      packages: {
+        "my-config@1.0.0": { resolution: { integrity: "config" } },
+        "pnpm@12.0.0": { resolution: { integrity: "pnpm" } },
+        "@pnpm/exe.linux-x64@12.0.0": {
+          resolution: { integrity: "executable" },
+        },
+      },
+      snapshots: {
+        "my-config@1.0.0": {},
+        "pnpm@12.0.0": {
+          optionalDependencies: {
+            "@pnpm/exe.linux-x64": "12.0.0",
+          },
+        },
+        "@pnpm/exe.linux-x64@12.0.0": {},
+      },
+    } satisfies EnvLockfile;
+
     beforeEach(() => {
       const lockfile = createMockLockfile();
       readWantedLockfile_v9.mockResolvedValue(lockfile as never);
@@ -666,6 +696,70 @@ describe("generatePnpmLockfile", () => {
       await generate({ name: "my-app", version: "1.0.0" });
 
       expect(writeEnvLockfile_v9).not.toHaveBeenCalled();
+    });
+
+    it("should prune package manager packages when the output omits packageManager", async () => {
+      readEnvLockfile_v9.mockResolvedValue(envLockfileWithConfigDependency);
+
+      await generate({ name: "my-app", version: "1.0.0" });
+
+      expect(writeEnvLockfile_v9).toHaveBeenCalledWith(
+        "/workspace/apps/my-app/isolate",
+        {
+          lockfileVersion: "9.0",
+          importers: {
+            ".": {
+              configDependencies: {
+                "my-config": { specifier: "1.0.0", version: "1.0.0" },
+              },
+            },
+          },
+          packages: {
+            "my-config@1.0.0": { resolution: { integrity: "config" } },
+          },
+          snapshots: { "my-config@1.0.0": {} },
+        },
+      );
+    });
+
+    it("should omit config dependencies that a generated Rush workspace does not declare", async () => {
+      isRushWorkspace.mockReturnValue(true);
+      readEnvLockfile_v9.mockResolvedValue(envLockfileWithConfigDependency);
+
+      await generate({
+        name: "my-app",
+        version: "1.0.0",
+        packageManager: "pnpm@12.0.0",
+      });
+
+      expect(writeEnvLockfile_v9).toHaveBeenCalledWith(
+        "/workspace/apps/my-app/isolate",
+        {
+          lockfileVersion: "9.0",
+          importers: {
+            ".": {
+              configDependencies: {},
+              packageManagerDependencies: {
+                pnpm: { specifier: "12.0.0", version: "12.0.0" },
+              },
+            },
+          },
+          packages: {
+            "pnpm@12.0.0": { resolution: { integrity: "pnpm" } },
+            "@pnpm/exe.linux-x64@12.0.0": {
+              resolution: { integrity: "executable" },
+            },
+          },
+          snapshots: {
+            "pnpm@12.0.0": {
+              optionalDependencies: {
+                "@pnpm/exe.linux-x64": "12.0.0",
+              },
+            },
+            "@pnpm/exe.linux-x64@12.0.0": {},
+          },
+        },
+      );
     });
 
     it("should skip the env document when the workspace lockfile has none", async () => {
