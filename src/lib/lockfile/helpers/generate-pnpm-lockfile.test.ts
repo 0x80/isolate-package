@@ -620,6 +620,9 @@ describe("generatePnpmLockfile", () => {
       packages: {
         "my-config@1.0.0": { resolution: { integrity: "config" } },
         "config-runtime@1.0.0": { resolution: { integrity: "runtime" } },
+        "patched-runtime@1.0.0(patch_hash=abc)": {
+          resolution: { integrity: "patched" },
+        },
         "pnpm@12.0.0": { resolution: { integrity: "pnpm" } },
         "@pnpm/exe.linux-x64@12.0.0": {
           resolution: { integrity: "executable" },
@@ -630,9 +633,11 @@ describe("generatePnpmLockfile", () => {
         "my-config@1.0.0": {
           dependencies: {
             "config-runtime": "1.0.0(peer@2.0.0)",
+            "patched-runtime": "1.0.0(patch_hash=abc)",
           },
         },
         "config-runtime@1.0.0(peer@2.0.0)": {},
+        "patched-runtime@1.0.0(patch_hash=abc)": {},
         "pnpm@12.0.0": {
           optionalDependencies: {
             "@pnpm/exe.linux-x64": "12.0.0",
@@ -727,14 +732,19 @@ describe("generatePnpmLockfile", () => {
             "config-runtime@1.0.0": {
               resolution: { integrity: "runtime" },
             },
+            "patched-runtime@1.0.0(patch_hash=abc)": {
+              resolution: { integrity: "patched" },
+            },
           },
           snapshots: {
             "my-config@1.0.0": {
               dependencies: {
                 "config-runtime": "1.0.0(peer@2.0.0)",
+                "patched-runtime": "1.0.0(patch_hash=abc)",
               },
             },
             "config-runtime@1.0.0(peer@2.0.0)": {},
+            "patched-runtime@1.0.0(patch_hash=abc)": {},
           },
         },
       );

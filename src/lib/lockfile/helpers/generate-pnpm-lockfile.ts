@@ -5,7 +5,7 @@ import {
   getLockfileImporterId as getLockfileImporterId_v8,
   writeWantedLockfile as writeWantedLockfile_v8,
 } from "pnpm_lockfile_file_v8";
-import { refToRelative, removeSuffix } from "@pnpm/deps.path";
+import { refToRelative, removePeersSuffix } from "@pnpm/deps.path";
 import type { EnvLockfile } from "pnpm_lockfile_file_v9";
 import {
   getLockfileImporterId as getLockfileImporterId_v9,
@@ -270,7 +270,8 @@ export async function generatePnpmLockfile({
  * it still declares: `omitPackageManager` removes the package manager pin, and
  * Rush output removes config pins because its workspace file is generated
  * without config dependency declarations. The corresponding package and
- * snapshot graphs are pruned by reachability before the document is written.
+ * snapshot graphs are pruned by reachability when either kind of pin is
+ * removed. When every pin remains, the original document is copied verbatim.
  */
 async function copyEnvLockfile({
   lockfileRootDir,
@@ -365,20 +366,26 @@ function filterEnvLockfile(
   },
 ): EnvLockfile {
   const importers = Object.fromEntries(
-    Object.entries(envLockfile.importers).map(([importerId, importer]) => [
-      importerId,
-      {
-        configDependencies: keepConfigDependencies
-          ? importer.configDependencies
-          : {},
-        ...(keepPackageManagerDependencies &&
-        importer.packageManagerDependencies
-          ? {
-              packageManagerDependencies: importer.packageManagerDependencies,
-            }
-          : {}),
-      },
-    ]),
+    Object.entries(envLockfile.importers).map(([importerId, importer]) => {
+      const {
+        configDependencies,
+        packageManagerDependencies,
+        ...otherImporterFields
+      } = importer;
+
+      return [
+        importerId,
+        {
+          ...otherImporterFields,
+          configDependencies: keepConfigDependencies
+            ? (configDependencies ?? {})
+            : {},
+          ...(keepPackageManagerDependencies && packageManagerDependencies
+            ? { packageManagerDependencies }
+            : {}),
+        },
+      ];
+    }),
   ) as EnvLockfile["importers"];
 
   const reachableSnapshotKeys = collectReachableEnvSnapshotKeys({
@@ -386,7 +393,9 @@ function filterEnvLockfile(
     snapshots: envLockfile.snapshots,
   });
   const reachablePackageKeys = new Set(
-    [...reachableSnapshotKeys].map((packageKey) => removeSuffix(packageKey)),
+    [...reachableSnapshotKeys].map((packageKey) =>
+      removePeersSuffix(packageKey),
+    ),
   );
 
   return {
@@ -435,7 +444,7 @@ function collectReachableEnvSnapshotKeys({
 function pinsEnvDependencies(envLockfile: EnvLockfile) {
   return Object.values(envLockfile.importers).some(
     (importer) =>
-      Object.keys(importer.configDependencies).length > 0 ||
+      Object.keys(importer.configDependencies ?? {}).length > 0 ||
       Object.keys(importer.packageManagerDependencies ?? {}).length > 0,
   );
 }
