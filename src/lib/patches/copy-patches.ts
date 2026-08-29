@@ -227,7 +227,7 @@ export async function copyPatches({
  * Since the file content is the same after copying, the hash remains valid.
  *
  * The value type is `PatchFile | string` because pnpm 11 simplified the format
- * to store the bare hash string per selector, while pnpm <=10 stored a
+ * to store the bare hash string per selector, while pnpm 8 stored a
  * `{ path, hash }` object (see issue #201). On the v9 path the string arrives
  * for a second reason as well: `@pnpm/lockfile.fs` migrates the object form to
  * a bare hash while reading, so only the v8 reader still yields an object.
