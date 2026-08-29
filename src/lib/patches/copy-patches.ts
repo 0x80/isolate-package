@@ -19,7 +19,6 @@ import {
 } from "#/lib/utils";
 import { collectInstalledNamesFromBunLockfile } from "./collect-installed-names-bun";
 import { collectInstalledNamesFromPnpmLockfile } from "./collect-installed-names-pnpm";
-import { usesPnpmWorkspacePatchedDependencies } from "./pnpm-patched-dependencies";
 
 export async function copyPatches({
   workspaceRootDir,
@@ -177,8 +176,7 @@ export async function copyPatches({
     }
 
     /**
-     * Get the hash from the original lockfile, or use empty string if not
-     * found. pnpm 11 simplified the lockfile `patchedDependencies` format from
+     * pnpm 11 simplified the lockfile `patchedDependencies` format from
      * `Record<string, { path, hash }>` to `Record<string, string>` (selector to
      * hash), so the entry may be a bare hash string. See issue #201.
      */
@@ -189,11 +187,7 @@ export async function copyPatches({
         ? originalPatchFile
         : (originalPatchFile?.hash ?? "");
 
-    if (
-      packageManagerName === "pnpm" &&
-      usesPnpmWorkspacePatchedDependencies(majorVersion) &&
-      !hash
-    ) {
+    if (packageManagerName === "pnpm" && !hash) {
       if (lockfilePatchResult?.readError) {
         throw new Error(
           `Could not read pnpm lockfile while resolving patch ${packageSpec}`,

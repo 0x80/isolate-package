@@ -51,7 +51,19 @@ vi.mock("pnpm_lockfile_file_v8", () => ({
 }));
 
 vi.mock("pnpm_lockfile_file_v9", () => ({
-  readWantedLockfile: vi.fn(() => Promise.resolve(null)),
+  readWantedLockfile: vi.fn(() =>
+    Promise.resolve({
+      lockfileVersion: "9.0",
+      patchedDependencies: {
+        "@firebase/app@1.2.3": "sha256-firebase",
+        "lodash@4.17.21": "sha256-lodash",
+        "pkg-a@1.0.0": "sha256-pkg-a",
+        "pkg-b@1.0.0": "sha256-pkg-b",
+        "tslib@2.0.0": "sha256-tslib",
+        "vitest@1.0.0": "sha256-vitest",
+      },
+    }),
+  ),
   getLockfileImporterId: vi.fn(
     (root: string, dir: string) => dir.replace(`${root}/`, "") || ".",
   ),
@@ -208,7 +220,10 @@ describe("copyPatches", () => {
       });
 
       expect(result).toEqual({
-        "lodash@4.17.21": { path: "patches/lodash.patch", hash: "" },
+        "lodash@4.17.21": {
+          path: "patches/lodash.patch",
+          hash: "sha256-lodash",
+        },
       });
       /** Should preserve original folder structure */
       expect(fs.ensureDir).toHaveBeenCalledWith("/workspace/isolate/patches");
@@ -248,7 +263,10 @@ describe("copyPatches", () => {
       });
 
       expect(result).toEqual({
-        "vitest@1.0.0": { path: "patches/vitest.patch", hash: "" },
+        "vitest@1.0.0": {
+          path: "patches/vitest.patch",
+          hash: "sha256-vitest",
+        },
       });
       expect(filterPatchedDependencies).toHaveBeenCalledWith({
         patchedDependencies: { "vitest@1.0.0": "patches/vitest.patch" },
@@ -325,7 +343,10 @@ describe("copyPatches", () => {
       });
 
       expect(result).toEqual({
-        "@firebase/app@1.2.3": { path: "patches/firebase-app.patch", hash: "" },
+        "@firebase/app@1.2.3": {
+          path: "patches/firebase-app.patch",
+          hash: "sha256-firebase",
+        },
       });
     });
 
@@ -362,8 +383,8 @@ describe("copyPatches", () => {
 
       /** Should preserve original paths without renaming */
       expect(result).toEqual({
-        "pkg-a@1.0.0": { path: "patches/v1/fix.patch", hash: "" },
-        "pkg-b@1.0.0": { path: "patches/v2/fix.patch", hash: "" },
+        "pkg-a@1.0.0": { path: "patches/v1/fix.patch", hash: "sha256-pkg-a" },
+        "pkg-b@1.0.0": { path: "patches/v2/fix.patch", hash: "sha256-pkg-b" },
       });
       expect(fs.copy).toHaveBeenCalledTimes(2);
       expect(fs.copy).toHaveBeenCalledWith(
@@ -407,7 +428,10 @@ describe("copyPatches", () => {
 
       /** The path should preserve the original directory structure */
       expect(result).toEqual({
-        "lodash@4.17.21": { path: "some/nested/path/lodash.patch", hash: "" },
+        "lodash@4.17.21": {
+          path: "some/nested/path/lodash.patch",
+          hash: "sha256-lodash",
+        },
       });
       expect(fs.ensureDir).toHaveBeenCalledWith(
         "/workspace/isolate/some/nested/path",
@@ -453,8 +477,14 @@ describe("copyPatches", () => {
       });
 
       expect(result).toEqual({
-        "lodash@4.17.21": { path: "patches/lodash.patch", hash: "" },
-        "@firebase/app@1.2.3": { path: "patches/firebase-app.patch", hash: "" },
+        "lodash@4.17.21": {
+          path: "patches/lodash.patch",
+          hash: "sha256-lodash",
+        },
+        "@firebase/app@1.2.3": {
+          path: "patches/firebase-app.patch",
+          hash: "sha256-firebase",
+        },
       });
       expect(fs.copy).toHaveBeenCalledTimes(2);
     });
@@ -567,7 +597,10 @@ describe("copyPatches", () => {
     });
 
     expect(result).toEqual({
-      "tslib@2.0.0": { path: "patches/tslib@2.0.0.patch", hash: "" },
+      "tslib@2.0.0": {
+        path: "patches/tslib@2.0.0.patch",
+        hash: "sha256-tslib",
+      },
     });
 
     const filterCall = filterPatchedDependencies.mock.calls[0]?.[0];
@@ -635,6 +668,9 @@ describe("copyPatches", () => {
           resolution: { integrity: "sha512-y" },
         },
       },
+      patchedDependencies: {
+        "@react-pdf/render@4.3.0": "sha256-react-pdf-render",
+      },
     } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
 
     const result = await copyPatches({
@@ -650,7 +686,7 @@ describe("copyPatches", () => {
     expect(result).toEqual({
       "@react-pdf/render@4.3.0": {
         path: "patches/@react-pdf__render@4.3.0.patch",
-        hash: "",
+        hash: "sha256-react-pdf-render",
       },
     });
 
@@ -723,6 +759,62 @@ describe("copyPatches", () => {
       },
     });
   });
+
+  it.each([9, 10])(
+    "rejects pnpm %i patches without a lockfile hash before copying files",
+    async (majorVersion) => {
+      const targetManifest: PackageManifest = {
+        name: "test",
+        version: "1.0.0",
+        dependencies: { lodash: "^4.0.0", underscore: "^1.0.0" },
+      };
+
+      readTypedYamlSync.mockReturnValue({
+        patchedDependencies: {
+          "lodash@4.17.21": "patches/lodash.patch",
+          "underscore@1.13.7": "patches/underscore.patch",
+        },
+      });
+      readTypedJson.mockResolvedValue({
+        name: "root",
+        version: "1.0.0",
+      } as PackageManifest);
+      filterPatchedDependencies.mockReturnValue({
+        "lodash@4.17.21": "patches/lodash.patch",
+        "underscore@1.13.7": "patches/underscore.patch",
+      });
+      fs.existsSync.mockReturnValue(true);
+      usePackageManager.mockReturnValue({
+        name: "pnpm",
+        majorVersion,
+        version: `${majorVersion}.0.0`,
+        packageManagerString: `pnpm@${majorVersion}.0.0`,
+      });
+      readWantedLockfile_v9.mockResolvedValue({
+        lockfileVersion: "9.0",
+        patchedDependencies: {
+          "lodash@4.17.21": "sha256-lodash",
+        },
+      } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
+
+      await expect(
+        copyPatches({
+          workspaceRootDir: "/workspace",
+          targetPackageDir: "/workspace/packages/test",
+          internalDepPackageNames: [],
+          targetPackageManifest: targetManifest,
+          isolateDir: "/workspace/isolate",
+          packagesRegistry: {},
+          includeDevDependencies: false,
+        }),
+      ).rejects.toThrow(
+        "No hash found for patch underscore@1.13.7 in lockfile",
+      );
+
+      expect(fs.ensureDir).not.toHaveBeenCalled();
+      expect(fs.copy).not.toHaveBeenCalled();
+    },
+  );
 
   it("rejects pnpm 11 patches without a lockfile hash before copying files", async () => {
     const targetManifest: PackageManifest = {
