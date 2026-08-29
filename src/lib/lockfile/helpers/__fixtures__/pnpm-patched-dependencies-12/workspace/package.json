@@ -1,0 +1,5 @@
+{
+  "name": "patch-validation-workspace",
+  "private": true,
+  "packageManager": "pnpm@12.0.0"
+}

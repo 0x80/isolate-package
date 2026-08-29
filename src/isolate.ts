@@ -28,7 +28,14 @@ import {
 import { detectPackageManager, shouldUsePnpmPack } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
 import { copyPatches } from "./lib/patches/copy-patches";
-import { writeIsolatePnpmWorkspace } from "./lib/patches/write-isolate-pnpm-workspace";
+import {
+  getPnpmPatchedDependenciesOutput,
+  usesPnpmWorkspacePatchedDependencies,
+} from "./lib/patches/pnpm-patched-dependencies";
+import {
+  writeGeneratedIsolatePnpmWorkspace,
+  writeIsolatePnpmWorkspace,
+} from "./lib/patches/write-isolate-pnpm-workspace";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
 import {
@@ -37,7 +44,6 @@ import {
   isRushWorkspace,
   readTypedJson,
   resetIsolateDir,
-  writeTypedYamlSync,
 } from "./lib/utils";
 
 const __dirname = getDirname(import.meta.url);
@@ -330,34 +336,53 @@ export function createIsolator(initialConfig?: IsolateConfig) {
     });
 
     const hasCopiedPatches = Object.keys(copiedPatches).length > 0;
+    const pnpmPatchOutput = getPnpmPatchedDependenciesOutput({
+      majorVersion: packageManager.majorVersion,
+      copiedPatches,
+    });
+    const shouldRemoveLegacyPnpmPatchedDependencies =
+      packageManager.name === "pnpm" &&
+      !config.forceNpm &&
+      usesPnpmWorkspacePatchedDependencies(packageManager.majorVersion);
 
-    /** Update manifest if patches were copied or npm fallback is needed */
-    if (hasCopiedPatches || usedFallbackToNpm) {
+    /** Update patch metadata for copied patches, pnpm 11 workspace output, or an npm fallback. */
+    if (
+      hasCopiedPatches ||
+      usedFallbackToNpm ||
+      shouldRemoveLegacyPnpmPatchedDependencies
+    ) {
       const manifest = await readManifest(isolateDir);
 
-      if (hasCopiedPatches) {
-        /**
-         * Extract just the paths for the manifest (lockfile needs full
-         * PatchFile). PNPM stores patches under pnpm.patchedDependencies, Bun
-         * at the top level.
-         */
-        const patchEntries = Object.fromEntries(
-          Object.entries(copiedPatches).map(([spec, patchFile]) => [
-            spec,
-            patchFile.path,
-          ]),
-        );
+      if (shouldRemoveLegacyPnpmPatchedDependencies) {
+        delete manifest.pnpm?.patchedDependencies;
 
-        if (packageManager.name === "bun") {
-          manifest.patchedDependencies = patchEntries;
-        } else {
-          manifest.pnpm ??= {};
-          manifest.pnpm.patchedDependencies = patchEntries;
+        if (manifest.pnpm && Object.keys(manifest.pnpm).length === 0) {
+          delete manifest.pnpm;
         }
+      }
 
-        log.debug(
-          `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
-        );
+      if (hasCopiedPatches) {
+        if (packageManager.name === "bun") {
+          manifest.patchedDependencies = Object.fromEntries(
+            Object.entries(copiedPatches).map(([spec, patchFile]) => [
+              spec,
+              patchFile.path,
+            ]),
+          );
+          log.debug(
+            `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
+          );
+        } else if (packageManager.name === "pnpm") {
+          const { manifest: pnpmPatchPaths } = pnpmPatchOutput;
+
+          if (pnpmPatchPaths) {
+            manifest.pnpm ??= {};
+            manifest.pnpm.patchedDependencies = pnpmPatchPaths;
+            log.debug(
+              `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
+            );
+          }
+        }
       }
 
       if (usedFallbackToNpm) {
@@ -393,15 +418,25 @@ export function createIsolator(initialConfig?: IsolateConfig) {
 
         const packages = packagesFolderNames.map((x) => path.join(x, "/*"));
 
-        writeTypedYamlSync(path.join(isolateDir, "pnpm-workspace.yaml"), {
+        writeGeneratedIsolatePnpmWorkspace({
+          isolateDir,
           packages,
+          majorVersion: packageManager.majorVersion,
+          copiedPatches,
         });
       } else {
         writeIsolatePnpmWorkspace({
           workspaceRootDir,
           isolateDir,
+          majorVersion: packageManager.majorVersion,
           copiedPatches,
         });
+      }
+
+      if (pnpmPatchOutput.workspace) {
+        log.debug(
+          `Added ${Object.keys(copiedPatches).length} patches to isolated pnpm-workspace.yaml`,
+        );
       }
     }
 

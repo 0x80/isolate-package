@@ -20,6 +20,7 @@ import {
 } from "#/lib/utils";
 import { collectInstalledNamesFromBunLockfile } from "./collect-installed-names-bun";
 import { collectInstalledNamesFromPnpmLockfile } from "./collect-installed-names-pnpm";
+import { usesPnpmWorkspacePatchedDependencies } from "./pnpm-patched-dependencies";
 
 export async function copyPatches({
   workspaceRootDir,
@@ -154,11 +155,16 @@ export async function copyPatches({
    * Read the pnpm lockfile to get patch hashes. Bun doesn't store hashes in
    * its lockfile so we skip this for Bun.
    */
-  const lockfilePatchedDependencies =
+  const lockfilePatchResult =
     packageManagerName === "pnpm"
       ? await readLockfilePatchedDependencies(workspaceRootDir)
       : undefined;
 
+  const patchFilesToCopy: {
+    packageSpec: string;
+    sourcePath: string;
+    targetPath: string;
+  }[] = [];
   const copiedPatches: Record<string, PatchFile> = {};
 
   for (const [packageSpec, patchPath] of Object.entries(filteredPatches)) {
@@ -171,23 +177,33 @@ export async function copyPatches({
       continue;
     }
 
-    /** Preserve original folder structure */
-    const targetPatchPath = path.join(isolateDir, patchPath);
-    await fs.ensureDir(path.dirname(targetPatchPath));
-    await fs.copy(sourcePatchPath, targetPatchPath);
-    log.debug(`Copied patch for ${packageSpec}: ${patchPath}`);
-
     /**
      * Get the hash from the original lockfile, or use empty string if not
      * found. pnpm 11 simplified the lockfile `patchedDependencies` format from
      * `Record<string, { path, hash }>` to `Record<string, string>` (selector to
      * hash), so the entry may be a bare hash string. See issue #201.
      */
-    const originalPatchFile = lockfilePatchedDependencies?.[packageSpec];
+    const originalPatchFile =
+      lockfilePatchResult?.patchedDependencies?.[packageSpec];
     const hash =
       typeof originalPatchFile === "string"
         ? originalPatchFile
         : (originalPatchFile?.hash ?? "");
+
+    if (
+      packageManagerName === "pnpm" &&
+      usesPnpmWorkspacePatchedDependencies(majorVersion) &&
+      !hash
+    ) {
+      if (lockfilePatchResult?.readError) {
+        throw new Error(
+          `Could not read pnpm lockfile while resolving patch ${packageSpec}`,
+          { cause: lockfilePatchResult.readError },
+        );
+      }
+
+      throw new Error(`No hash found for patch ${packageSpec} in lockfile`);
+    }
 
     if (packageManagerName === "pnpm" && !hash) {
       log.warn(`No hash found for patch ${packageSpec} in lockfile`);
@@ -197,6 +213,17 @@ export async function copyPatches({
       path: patchPath,
       hash,
     };
+    patchFilesToCopy.push({
+      packageSpec,
+      sourcePath: sourcePatchPath,
+      targetPath: path.join(isolateDir, patchPath),
+    });
+  }
+
+  for (const patchFile of patchFilesToCopy) {
+    await fs.ensureDir(path.dirname(patchFile.targetPath));
+    await fs.copy(patchFile.sourcePath, patchFile.targetPath);
+    log.debug(`Copied patch for ${patchFile.packageSpec}`);
   }
 
   if (Object.keys(copiedPatches).length > 0) {
@@ -218,7 +245,10 @@ export async function copyPatches({
  */
 async function readLockfilePatchedDependencies(
   workspaceRootDir: string,
-): Promise<Record<string, PatchFile | string> | undefined> {
+): Promise<{
+  patchedDependencies?: Record<string, PatchFile | string>;
+  readError?: unknown;
+}> {
   try {
     const { majorVersion } = usePackageManager();
     const useVersion9 = majorVersion >= 9;
@@ -228,9 +258,8 @@ async function readLockfilePatchedDependencies(
       ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })
       : await readWantedLockfile_v8(lockfileDir, { ignoreIncompatible: false });
 
-    return lockfile?.patchedDependencies;
-  } catch {
-    /** Package manager not detected or lockfile not readable */
-    return undefined;
+    return { patchedDependencies: lockfile?.patchedDependencies };
+  } catch (error) {
+    return { readError: error };
   }
 }

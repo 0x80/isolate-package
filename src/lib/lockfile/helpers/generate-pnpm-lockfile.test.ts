@@ -451,6 +451,76 @@ describe("generatePnpmLockfile", () => {
     expect(writtenLockfile.patchedDependencies).toEqual(patchedDependencies);
   });
 
+  it("writes patched dependency hashes for pnpm 11 and later", async () => {
+    const lockfile = createMockLockfile();
+    readWantedLockfile_v9.mockResolvedValue(lockfile as never);
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
+    pruneLockfile_v9.mockImplementation((lf) => lf as never);
+
+    await generatePnpmLockfile({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/apps/my-app",
+      isolateDir: "/workspace/apps/my-app/isolate",
+      internalDepPackageNames: ["shared"],
+      packagesRegistry: {
+        shared: {
+          absoluteDir: "/workspace/packages/shared",
+          rootRelativeDir: "packages/shared",
+          manifest: { name: "shared", version: "1.0.0" },
+        },
+      },
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+      majorVersion: 11,
+      includeDevDependencies: false,
+      patchedDependencies: {
+        "lodash@4.17.21": {
+          path: "patches/lodash.patch",
+          hash: "sha256-abc123",
+        },
+      },
+    });
+
+    const writeCall = writeWantedLockfile_v9.mock.calls[0]!;
+    const writtenLockfile = writeCall[1] as {
+      patchedDependencies?: Record<string, unknown>;
+    };
+    expect(writtenLockfile.patchedDependencies).toEqual({
+      "lodash@4.17.21": "sha256-abc123",
+    });
+  });
+
+  it("rejects a pnpm 11 patch without a lockfile hash", async () => {
+    const lockfile = createMockLockfile();
+    readWantedLockfile_v9.mockResolvedValue(lockfile as never);
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
+    pruneLockfile_v9.mockImplementation((lf) => lf as never);
+
+    await expect(
+      generatePnpmLockfile({
+        workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/apps/my-app",
+        isolateDir: "/workspace/apps/my-app/isolate",
+        internalDepPackageNames: ["shared"],
+        packagesRegistry: {
+          shared: {
+            absoluteDir: "/workspace/packages/shared",
+            rootRelativeDir: "packages/shared",
+            manifest: { name: "shared", version: "1.0.0" },
+          },
+        },
+        targetPackageManifest: { name: "my-app", version: "1.0.0" },
+        majorVersion: 11,
+        includeDevDependencies: false,
+        patchedDependencies: {
+          "lodash@4.17.21": {
+            path: "patches/lodash.patch",
+            hash: "",
+          },
+        },
+      }),
+    ).rejects.toThrow("Patch lodash@4.17.21 has no lockfile hash");
+  });
+
   it("should throw when lockfile is not found", async () => {
     readWantedLockfile_v9.mockResolvedValue(null as never);
 

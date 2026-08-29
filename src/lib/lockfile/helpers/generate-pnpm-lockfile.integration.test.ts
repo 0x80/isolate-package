@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseAllDocuments } from "yaml";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { PatchFile } from "#/lib/types";
 import { generatePnpmLockfile } from "./generate-pnpm-lockfile";
 
 const FIXTURES_DIR = path.join(import.meta.dirname, "__fixtures__");
@@ -81,11 +82,19 @@ describe("generatePnpmLockfile integration", () => {
     packageManager,
     fixture = "pnpm-two-document",
     mutateLockfile,
+    majorVersion = 12,
+    targetPackageName = "svc",
+    targetPackageRelativePath = "apps/svc",
+    patchedDependencies,
   }: {
     packageManager: string | undefined;
     fixture?: string;
     /** Rewrite the workspace lockfile before isolating, to shape its env document */
     mutateLockfile?: (lockfile: string) => string;
+    majorVersion?: number;
+    targetPackageName?: string;
+    targetPackageRelativePath?: string;
+    patchedDependencies?: Record<string, PatchFile>;
   }) {
     const { tmpBase, workspaceRoot } = await setupFixture(fixture);
     cleanupPaths.push(tmpBase);
@@ -98,7 +107,10 @@ describe("generatePnpmLockfile integration", () => {
       );
     }
 
-    const targetPackageDir = path.join(workspaceRoot, "apps/svc");
+    const targetPackageDir = path.join(
+      workspaceRoot,
+      targetPackageRelativePath,
+    );
     const isolateDir = path.join(targetPackageDir, "isolate");
     await fs.ensureDir(isolateDir);
 
@@ -109,13 +121,14 @@ describe("generatePnpmLockfile integration", () => {
       internalDepPackageNames: [],
       packagesRegistry: {},
       targetPackageManifest: {
-        name: "svc",
+        name: targetPackageName,
         version: "1.0.0",
         dependencies: { "left-pad": "1.3.0" },
         ...(packageManager ? { packageManager } : {}),
       },
-      majorVersion: 12,
+      majorVersion,
       includeDevDependencies: false,
+      patchedDependencies,
     });
 
     return readLockfileDocuments(isolateDir);
@@ -131,6 +144,96 @@ describe("generatePnpmLockfile integration", () => {
       dependencies: { "left-pad": { specifier: "1.3.0", version: "1.3.0" } },
     });
   });
+
+  it("writes patched dependencies in pnpm 10's object format", async () => {
+    const { documents } = await isolate({
+      packageManager: "pnpm@10.0.0",
+      majorVersion: 10,
+      patchedDependencies: {
+        "left-pad@1.3.0": {
+          path: "patches/left-pad@1.3.0.patch",
+          hash: "sha256-pnpm10",
+        },
+      },
+    });
+
+    expect(documents.at(-1)?.patchedDependencies).toEqual({
+      "left-pad@1.3.0": {
+        path: "patches/left-pad@1.3.0.patch",
+        hash: "sha256-pnpm10",
+      },
+    });
+  });
+
+  it("writes patched dependencies in pnpm 12's hash format", async () => {
+    const { documents } = await isolate({
+      packageManager: "pnpm@12.0.0",
+      patchedDependencies: {
+        "left-pad@1.3.0": {
+          path: "patches/left-pad@1.3.0.patch",
+          hash: "sha256-pnpm12",
+        },
+      },
+    });
+
+    expect(documents.at(-1)?.patchedDependencies).toEqual({
+      "left-pad@1.3.0": "sha256-pnpm12",
+    });
+  });
+
+  it.each([
+    {
+      fixture: "pnpm-patched-dependencies-10",
+      majorVersion: 10,
+      expected: {
+        "left-pad@1.3.0": {
+          path: "patches/left-pad@1.3.0.patch",
+          hash: "9e0f13b98377d5c4c2e7b7b6ba81f2619588134e4df976f8b79cc200b02cf500",
+        },
+      },
+    },
+    {
+      fixture: "pnpm-patched-dependencies-12",
+      majorVersion: 12,
+      expected: {
+        "left-pad@1.3.0":
+          "9e0f13b98377d5c4c2e7b7b6ba81f2619588134e4df976f8b79cc200b02cf500",
+      },
+    },
+  ])(
+    "writes patch metadata from a real pnpm $majorVersion workspace",
+    async ({ fixture, majorVersion, expected }) => {
+      const { documents } = await isolate({
+        packageManager: `pnpm@${majorVersion}.0.0`,
+        fixture,
+        majorVersion,
+        targetPackageName: "functions",
+        targetPackageRelativePath: "packages/functions",
+        patchedDependencies: {
+          "left-pad@1.3.0": {
+            path: "patches/left-pad@1.3.0.patch",
+            hash: "9e0f13b98377d5c4c2e7b7b6ba81f2619588134e4df976f8b79cc200b02cf500",
+          },
+        },
+      });
+
+      expect(documents.at(-1)?.patchedDependencies).toEqual(expected);
+
+      const patchHash =
+        "9e0f13b98377d5c4c2e7b7b6ba81f2619588134e4df976f8b79cc200b02cf500";
+      const patchedVersion = `1.3.0(patch_hash=${patchHash})`;
+      const projectDocument = documents.at(-1);
+
+      expect(rootImporterOf(projectDocument)).toMatchObject({
+        dependencies: {
+          "left-pad": { specifier: "1.3.0", version: patchedVersion },
+        },
+      });
+      expect(projectDocument?.snapshots).toHaveProperty(
+        `left-pad@${patchedVersion}`,
+      );
+    },
+  );
 
   it("carries the env document into the isolated lockfile", async () => {
     const { content, documents } = await isolate({
