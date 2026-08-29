@@ -1,13 +1,26 @@
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { isolate } from "./isolate";
+
+const mockLogger = vi.hoisted(() => ({
+  debug: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+}));
+
+vi.mock("./lib/logger", () => ({
+  setLogLevel: vi.fn(),
+  useLogger: () => mockLogger,
+}));
 
 describe("isolate", () => {
   const temporaryDirectories: string[] = [];
 
   afterEach(async () => {
+    vi.clearAllMocks();
     await Promise.all(
       temporaryDirectories.splice(0).map((directory) => fs.remove(directory)),
     );
@@ -33,6 +46,29 @@ describe("isolate", () => {
     await expect(
       fs.pathExists(path.join(targetPackageDir, "isolate")),
     ).resolves.toBe(false);
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Skipping isolation because the target directory has no package.json",
+      targetPackageDir,
+    );
+  });
+
+  it("warns when a skipped target contains stale isolate output", async () => {
+    const targetPackageDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "isolate-stale-output-test-"),
+    );
+    temporaryDirectories.push(targetPackageDir);
+    const existingIsolateDir = path.join(targetPackageDir, "previous-output");
+    await fs.ensureDir(existingIsolateDir);
+
+    await isolate({
+      targetPackagePath: targetPackageDir,
+      isolateDirName: "previous-output",
+    });
+
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "The skipped target contains an existing isolate directory that may be stale",
+      existingIsolateDir,
+    );
   });
 
   it("rejects a target directory that does not exist", async () => {
@@ -106,6 +142,7 @@ describe("isolate", () => {
     const result = await isolate({
       targetPackagePath: targetPackageDir,
       buildDirName: ".",
+      workspaceRoot: "../..",
     });
 
     expect(result).toBe(path.join(targetPackageDir, "isolate"));
@@ -123,6 +160,8 @@ describe("isolate", () => {
 
     await expect(
       isolate({ targetPackagePath: targetPackageDir }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(
+      `Package manifest is not a file: ${path.join(targetPackageDir, "package.json")}`,
+    );
   });
 });

@@ -40,10 +40,10 @@ If your setup diverges from a traditional one, please continue reading the
    running `pnpm add isolate-package firebase-tools -D` or the Yarn / NPM
    equivalent. I tend to install firebase-tools as a devDependency in every
    Firebase package, but you could also use a global install if you prefer that.
-2. In the `firebase.json` config set `"source"` to `"./isolate"` and
-   `"predeploy"` to `["turbo build", "isolate"]` or whatever suits your build
-   tool. The important part here is that isolate is being executed after the
-   build stage.
+2. For Node functions, set `"source"` to `"./isolate"` in `firebase.json` and
+   set `"predeploy"` to `["turbo build", "isolate"]` or whatever suits your
+   build tool. The important part here is that isolate runs after the build
+   stage. Other runtimes keep their original source directory.
 3. From the target package folder, you should now be able to deploy with
    `npx firebase deploy`.
 
