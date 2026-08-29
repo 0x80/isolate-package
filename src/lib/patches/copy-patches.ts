@@ -176,9 +176,9 @@ export async function copyPatches({
     }
 
     /**
-     * pnpm 11 simplified the lockfile `patchedDependencies` format from
-     * `Record<string, { path, hash }>` to `Record<string, string>` (selector to
-     * hash), so the entry may be a bare hash string. See issue #201.
+     * Pnpm lockfile readers return either a bare hash string or an object with
+     * a path and hash. The pnpm 8 reader returns the object form, while the
+     * newer reader returns the bare hash form.
      */
     const originalPatchFile =
       lockfilePatchResult?.patchedDependencies?.[packageSpec];

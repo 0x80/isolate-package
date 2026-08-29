@@ -826,6 +826,13 @@ describe("copyPatches", () => {
         "No hash found for patch underscore@1.13.7 in lockfile",
       );
 
+      if (majorVersion === 8) {
+        expect(readWantedLockfile_v8).toHaveBeenCalled();
+        expect(readWantedLockfile_v9).not.toHaveBeenCalled();
+      } else {
+        expect(readWantedLockfile_v8).not.toHaveBeenCalled();
+        expect(readWantedLockfile_v9).toHaveBeenCalled();
+      }
       expect(fs.ensureDir).not.toHaveBeenCalled();
       expect(fs.copy).not.toHaveBeenCalled();
     },
@@ -928,7 +935,7 @@ describe("copyPatches", () => {
     expect(fs.copy).not.toHaveBeenCalled();
   });
 
-  it("should read the patch hash from the pnpm <=10 object lockfile format (regression: issue #201)", async () => {
+  it("should read the patch hash from the pnpm 8 object lockfile format (regression: issue #201)", async () => {
     const targetManifest: PackageManifest = {
       name: "test",
       version: "1.0.0",
@@ -953,20 +960,20 @@ describe("copyPatches", () => {
 
     usePackageManager.mockReturnValue({
       name: "pnpm",
-      majorVersion: 9,
-      version: "9.0.0",
-      packageManagerString: "pnpm@9.0.0",
+      majorVersion: 8,
+      version: "8.0.0",
+      packageManagerString: "pnpm@8.0.0",
     });
 
-    readWantedLockfile_v9.mockResolvedValue({
-      lockfileVersion: "9.0",
+    readWantedLockfile_v8.mockResolvedValue({
+      lockfileVersion: "6.0",
       patchedDependencies: {
         "lodash@4.17.21": {
           path: "patches/lodash.patch",
           hash: "sha256-def456",
         },
       },
-    } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
+    } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v8>>);
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
@@ -984,5 +991,7 @@ describe("copyPatches", () => {
         hash: "sha256-def456",
       },
     });
+    expect(readWantedLockfile_v8).toHaveBeenCalled();
+    expect(readWantedLockfile_v9).not.toHaveBeenCalled();
   });
 });
