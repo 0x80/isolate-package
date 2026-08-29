@@ -15,12 +15,7 @@ vi.mock("pnpm_lockfile_file_v9", () => ({
   ),
 }));
 
-vi.mock("#/lib/utils", async (importOriginal) => ({
-  /**
-   * Partial mock: `getPnpmLockfileDir` stays real so the Rush path
-   * computation is not re-implemented per test file.
-   */
-  ...(await importOriginal<typeof import("#/lib/utils")>()),
+vi.mock("#/lib/utils", () => ({
   getPackageName: vi.fn((spec: string) => {
     if (spec.startsWith("@")) {
       const parts = spec.split("@");
@@ -29,6 +24,14 @@ vi.mock("#/lib/utils", async (importOriginal) => ({
     return spec.split("@")[0] ?? "";
   }),
   isRushWorkspace: vi.fn(() => false),
+  /**
+   * Neither suite exercises a Rush workspace, so the lockfile directory is the
+   * workspace root. Mocked rather than kept real: the real helper reads
+   * `rush.json` off disk through its own `isRushWorkspace` import, which this
+   * factory cannot intercept, and that would make these tests depend on the
+   * filesystem. `get-pnpm-lockfile-dir.test.ts` covers both of its branches.
+   */
+  getPnpmLockfileDir: vi.fn((workspaceRootDir: string) => workspaceRootDir),
 }));
 
 const { readWantedLockfile: readWantedLockfile_v9 } = vi.mocked(
