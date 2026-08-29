@@ -19,7 +19,6 @@ import {
 } from "#/lib/utils";
 import { collectInstalledNamesFromBunLockfile } from "./collect-installed-names-bun";
 import { collectInstalledNamesFromPnpmLockfile } from "./collect-installed-names-pnpm";
-import { usesPnpmWorkspacePatchedDependencies } from "./pnpm-patched-dependencies";
 
 export async function copyPatches({
   workspaceRootDir,
@@ -177,10 +176,9 @@ export async function copyPatches({
     }
 
     /**
-     * Get the hash from the original lockfile, or use empty string if not
-     * found. pnpm 11 simplified the lockfile `patchedDependencies` format from
-     * `Record<string, { path, hash }>` to `Record<string, string>` (selector to
-     * hash), so the entry may be a bare hash string. See issue #201.
+     * Pnpm lockfile readers return either a bare hash string or an object with
+     * a path and hash. The pnpm 8 reader returns the object form, while the
+     * newer reader returns the bare hash form.
      */
     const originalPatchFile =
       lockfilePatchResult?.patchedDependencies?.[packageSpec];
@@ -189,11 +187,7 @@ export async function copyPatches({
         ? originalPatchFile
         : (originalPatchFile?.hash ?? "");
 
-    if (
-      packageManagerName === "pnpm" &&
-      usesPnpmWorkspacePatchedDependencies(majorVersion) &&
-      !hash
-    ) {
+    if (packageManagerName === "pnpm" && !hash) {
       if (lockfilePatchResult?.readError) {
         throw new Error(
           `Could not read pnpm lockfile while resolving patch ${packageSpec}`,
@@ -202,10 +196,6 @@ export async function copyPatches({
       }
 
       throw new Error(`No hash found for patch ${packageSpec} in lockfile`);
-    }
-
-    if (packageManagerName === "pnpm" && !hash) {
-      log.warn(`No hash found for patch ${packageSpec} in lockfile`);
     }
 
     copiedPatches[packageSpec] = {
@@ -237,7 +227,7 @@ export async function copyPatches({
  * Since the file content is the same after copying, the hash remains valid.
  *
  * The value type is `PatchFile | string` because pnpm 11 simplified the format
- * to store the bare hash string per selector, while pnpm <=10 stored a
+ * to store the bare hash string per selector, while pnpm 8 stored a
  * `{ path, hash }` object (see issue #201). On the v9 path the string arrives
  * for a second reason as well: `@pnpm/lockfile.fs` migrates the object form to
  * a bare hash while reading, so only the v8 reader still yields an object.
