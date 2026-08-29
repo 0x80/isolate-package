@@ -257,6 +257,8 @@ describe("writeIsolatePnpmWorkspace", () => {
   it("removes source patch paths from pnpm 11 workspaces when no patches were copied", () => {
     readTypedYamlSync.mockReturnValue({
       packages: ["packages/*"],
+      allowBuilds: { esbuild: true },
+      minimumReleaseAge: 10_080,
       patchedDependencies: {
         "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       },
@@ -272,7 +274,45 @@ describe("writeIsolatePnpmWorkspace", () => {
     expect(fs.copyFileSync).not.toHaveBeenCalled();
     expect(writeTypedYamlSync).toHaveBeenCalledWith(
       "/workspace/isolate/pnpm-workspace.yaml",
-      { packages: ["packages/*"] },
+      {
+        packages: ["packages/*"],
+        allowBuilds: { esbuild: true },
+        minimumReleaseAge: 10_080,
+      },
+    );
+  });
+
+  it("rewrites pnpm 11 paths when every source patch was copied", () => {
+    readTypedYamlSync.mockReturnValue({
+      packages: ["packages/*"],
+      allowBuilds: { esbuild: true },
+      patchedDependencies: {
+        "lodash@4.17.21": "patches/lodash@4.17.21.patch",
+      },
+    });
+
+    writeIsolatePnpmWorkspace({
+      workspaceRootDir,
+      isolateDir,
+      majorVersion: 11,
+      copiedPatches: {
+        "lodash@4.17.21": {
+          path: "patches/lodash@4.17.21.patch",
+          hash: "sha256-abc123",
+        },
+      },
+    });
+
+    expect(fs.copyFileSync).not.toHaveBeenCalled();
+    expect(writeTypedYamlSync).toHaveBeenCalledWith(
+      "/workspace/isolate/pnpm-workspace.yaml",
+      {
+        packages: ["packages/*"],
+        allowBuilds: { esbuild: true },
+        patchedDependencies: {
+          "lodash@4.17.21": "patches/lodash@4.17.21.patch",
+        },
+      },
     );
   });
 
@@ -372,57 +412,74 @@ describe("writeIsolatePnpmWorkspace", () => {
     );
   });
 
-  it("writes copied pnpm 11 patch paths when the yaml cannot be parsed", () => {
+  it("rejects pnpm 11 patch output when the yaml cannot be parsed", () => {
     readTypedYamlSync.mockImplementation(() => {
       throw new Error("bad yaml");
     });
 
-    writeIsolatePnpmWorkspace({
-      workspaceRootDir,
-      isolateDir,
-      majorVersion: 11,
-      copiedPatches: {
-        "lodash@4.17.21": {
-          path: "patches/lodash@4.17.21.patch",
-          hash: "sha256-abc123",
+    expect(() =>
+      writeIsolatePnpmWorkspace({
+        workspaceRootDir,
+        isolateDir,
+        majorVersion: 11,
+        copiedPatches: {
+          "lodash@4.17.21": {
+            path: "patches/lodash@4.17.21.patch",
+            hash: "sha256-abc123",
+          },
         },
-      },
-    });
+      }),
+    ).toThrow(
+      "Cannot write pnpm 11 patch paths without readable workspace settings",
+    );
 
     expect(fs.copyFileSync).not.toHaveBeenCalled();
-    expect(writeTypedYamlSync).toHaveBeenCalledWith(
-      "/workspace/isolate/pnpm-workspace.yaml",
-      {
-        patchedDependencies: {
-          "lodash@4.17.21": "patches/lodash@4.17.21.patch",
-        },
-      },
-    );
+    expect(writeTypedYamlSync).not.toHaveBeenCalled();
   });
 
-  it("writes copied pnpm 11 patch paths when the yaml has no settings", () => {
+  it("rejects pnpm 11 patch output when the yaml has no settings", () => {
     readTypedYamlSync.mockReturnValue(undefined);
 
-    writeIsolatePnpmWorkspace({
-      workspaceRootDir,
-      isolateDir,
-      majorVersion: 11,
-      copiedPatches: {
-        "lodash@4.17.21": {
-          path: "patches/lodash@4.17.21.patch",
-          hash: "sha256-abc123",
+    expect(() =>
+      writeIsolatePnpmWorkspace({
+        workspaceRootDir,
+        isolateDir,
+        majorVersion: 11,
+        copiedPatches: {
+          "lodash@4.17.21": {
+            path: "patches/lodash@4.17.21.patch",
+            hash: "sha256-abc123",
+          },
         },
-      },
-    });
+      }),
+    ).toThrow(
+      "Cannot write pnpm 11 patch paths without readable workspace settings",
+    );
 
     expect(fs.copyFileSync).not.toHaveBeenCalled();
-    expect(writeTypedYamlSync).toHaveBeenCalledWith(
-      "/workspace/isolate/pnpm-workspace.yaml",
-      {
-        patchedDependencies: {
-          "lodash@4.17.21": "patches/lodash@4.17.21.patch",
+    expect(writeTypedYamlSync).not.toHaveBeenCalled();
+  });
+
+  it("rejects pnpm 11 patch output when the yaml contains a scalar", () => {
+    readTypedYamlSync.mockReturnValue("not workspace settings");
+
+    expect(() =>
+      writeIsolatePnpmWorkspace({
+        workspaceRootDir,
+        isolateDir,
+        majorVersion: 11,
+        copiedPatches: {
+          "lodash@4.17.21": {
+            path: "patches/lodash@4.17.21.patch",
+            hash: "sha256-abc123",
+          },
         },
-      },
+      }),
+    ).toThrow(
+      "Cannot write pnpm 11 patch paths without readable workspace settings",
     );
+
+    expect(fs.copyFileSync).not.toHaveBeenCalled();
+    expect(writeTypedYamlSync).not.toHaveBeenCalled();
   });
 });

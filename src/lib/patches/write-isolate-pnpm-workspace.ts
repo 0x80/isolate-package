@@ -24,7 +24,8 @@ type GeneratedPnpmWorkspaceSettings = PnpmSettings & {
  * preserve comments, key order, and trailing whitespace.
  *
  * - The source yaml cannot be read or parsed and pnpm does not need a
- *   `patchedDependencies` field.
+ *   `patchedDependencies` field. pnpm 11 and later instead fail clearly when
+ *   copied patches require adapted paths in that file.
  * - The parsed settings have no `patchedDependencies` field and pnpm is older
  *   than version 11.
  * - Every entry in `patchedDependencies` is also present in `copiedPatches`
@@ -50,7 +51,7 @@ export function writeIsolatePnpmWorkspace({
   const sourcePath = path.join(workspaceRootDir, "pnpm-workspace.yaml");
   const targetPath = path.join(isolateDir, "pnpm-workspace.yaml");
 
-  let settings: PnpmSettings | undefined;
+  let settings: unknown;
   const patchOutput = getPnpmPatchedDependenciesOutput({
     majorVersion,
     copiedPatches,
@@ -58,16 +59,13 @@ export function writeIsolatePnpmWorkspace({
   const workspacePatchPaths = patchOutput.workspace;
 
   try {
-    settings = readTypedYamlSync(sourcePath) as PnpmSettings | undefined;
+    settings = readTypedYamlSync(sourcePath);
   } catch (error) {
     if (workspacePatchPaths) {
-      log.warn(
-        `Could not read pnpm-workspace.yaml; writing copied patch paths only: ${error instanceof Error ? error.message : String(error)}`,
+      throw new Error(
+        "Cannot write pnpm 11 patch paths without readable workspace settings",
+        { cause: error },
       );
-      writeTypedYamlSync(targetPath, {
-        patchedDependencies: workspacePatchPaths,
-      });
-      return;
     }
 
     log.warn(
@@ -77,12 +75,11 @@ export function writeIsolatePnpmWorkspace({
     return;
   }
 
-  if (!settings) {
+  if (!isPnpmWorkspaceSettings(settings)) {
     if (workspacePatchPaths) {
-      writeTypedYamlSync(targetPath, {
-        patchedDependencies: workspacePatchPaths,
-      });
-      return;
+      throw new Error(
+        "Cannot write pnpm 11 patch paths without readable workspace settings",
+      );
     }
 
     fs.copyFileSync(sourcePath, targetPath);
@@ -118,6 +115,15 @@ export function writeIsolatePnpmWorkspace({
   }
 
   writeTypedYamlSync(targetPath, settings);
+}
+
+/** Narrow parsed YAML to a mapping that can hold pnpm workspace settings. */
+function isPnpmWorkspaceSettings(settings: unknown): settings is PnpmSettings {
+  return (
+    typeof settings === "object" &&
+    settings !== null &&
+    !Array.isArray(settings)
+  );
 }
 
 /** Write the workspace configuration generated for a Rush isolate. */

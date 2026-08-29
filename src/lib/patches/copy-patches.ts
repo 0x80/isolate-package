@@ -20,6 +20,7 @@ import {
 } from "#/lib/utils";
 import { collectInstalledNamesFromBunLockfile } from "./collect-installed-names-bun";
 import { collectInstalledNamesFromPnpmLockfile } from "./collect-installed-names-pnpm";
+import { usesPnpmWorkspacePatchedDependencies } from "./pnpm-patched-dependencies";
 
 export async function copyPatches({
   workspaceRootDir,
@@ -159,6 +160,11 @@ export async function copyPatches({
       ? await readLockfilePatchedDependencies(workspaceRootDir)
       : undefined;
 
+  const patchFilesToCopy: {
+    packageSpec: string;
+    sourcePath: string;
+    targetPath: string;
+  }[] = [];
   const copiedPatches: Record<string, PatchFile> = {};
 
   for (const [packageSpec, patchPath] of Object.entries(filteredPatches)) {
@@ -170,12 +176,6 @@ export async function copyPatches({
       );
       continue;
     }
-
-    /** Preserve original folder structure */
-    const targetPatchPath = path.join(isolateDir, patchPath);
-    await fs.ensureDir(path.dirname(targetPatchPath));
-    await fs.copy(sourcePatchPath, targetPatchPath);
-    log.debug(`Copied patch for ${packageSpec}: ${patchPath}`);
 
     /**
      * Get the hash from the original lockfile, or use empty string if not
@@ -189,6 +189,14 @@ export async function copyPatches({
         ? originalPatchFile
         : (originalPatchFile?.hash ?? "");
 
+    if (
+      packageManagerName === "pnpm" &&
+      usesPnpmWorkspacePatchedDependencies(majorVersion) &&
+      !hash
+    ) {
+      throw new Error(`No hash found for patch ${packageSpec} in lockfile`);
+    }
+
     if (packageManagerName === "pnpm" && !hash) {
       log.warn(`No hash found for patch ${packageSpec} in lockfile`);
     }
@@ -197,6 +205,17 @@ export async function copyPatches({
       path: patchPath,
       hash,
     };
+    patchFilesToCopy.push({
+      packageSpec,
+      sourcePath: sourcePatchPath,
+      targetPath: path.join(isolateDir, patchPath),
+    });
+  }
+
+  for (const patchFile of patchFilesToCopy) {
+    await fs.ensureDir(path.dirname(patchFile.targetPath));
+    await fs.copy(patchFile.sourcePath, patchFile.targetPath);
+    log.debug(`Copied patch for ${patchFile.packageSpec}`);
   }
 
   if (Object.keys(copiedPatches).length > 0) {

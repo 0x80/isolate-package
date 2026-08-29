@@ -412,12 +412,12 @@ export function createIsolator(initialConfig?: IsolateConfig) {
           majorVersion: packageManager.majorVersion,
           copiedPatches,
         });
+      }
 
-        if (pnpmPatchOutput.workspace) {
-          log.debug(
-            `Added ${Object.keys(copiedPatches).length} patches to isolated pnpm-workspace.yaml`,
-          );
-        }
+      if (pnpmPatchOutput.workspace) {
+        log.debug(
+          `Added ${Object.keys(copiedPatches).length} patches to isolated pnpm-workspace.yaml`,
+        );
       }
     }
 
