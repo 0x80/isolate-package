@@ -54,6 +54,19 @@ export function createIsolator(initialConfig?: IsolateConfig) {
     const { targetPackageDir, workspaceRootDir } =
       resolveWorkspacePaths(config);
 
+    const targetManifestPath = path.join(targetPackageDir, "package.json");
+
+    if (
+      (await fs.pathExists(targetPackageDir)) &&
+      !(await fs.pathExists(targetManifestPath))
+    ) {
+      log.debug(
+        "Skipping isolation because the target directory has no package.json",
+        getRootRelativeLogPath(targetPackageDir, workspaceRootDir),
+      );
+      return targetPackageDir;
+    }
+
     const buildOutputDir = getBuildOutputDir({
       targetPackageDir,
       buildDirName: config.buildDirName,
@@ -93,7 +106,7 @@ export function createIsolator(initialConfig?: IsolateConfig) {
     await fs.ensureDir(tmpDir);
 
     const targetPackageManifest = (await readTypedJson(
-      path.join(targetPackageDir, "package.json"),
+      targetManifestPath,
     )) as PackageManifest;
 
     /** Validate mandatory fields for the target package */
