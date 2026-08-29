@@ -59,6 +59,20 @@ describe("readPnpmLockfile", () => {
     { majorVersion: 8, reader: readWantedLockfile_v8 },
     { majorVersion: 9, reader: readWantedLockfile_v9 },
   ])(
+    "preserves the missing-lockfile result for pnpm $majorVersion",
+    async ({ majorVersion, reader }) => {
+      reader.mockResolvedValue(null);
+
+      const result = await readPnpmLockfile("/workspace", majorVersion);
+
+      expect(result).toBeNull();
+    },
+  );
+
+  it.each([
+    { majorVersion: 8, reader: readWantedLockfile_v8 },
+    { majorVersion: 9, reader: readWantedLockfile_v9 },
+  ])(
     "propagates pnpm $majorVersion lockfile read failures by default",
     async ({ majorVersion, reader }) => {
       const readError = new Error("invalid lockfile");

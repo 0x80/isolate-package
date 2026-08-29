@@ -80,7 +80,7 @@ export async function generatePnpmLockfile({
 
     const lockfile = await readPnpmLockfile(lockfileRootDir, majorVersion);
 
-    assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
+    assert(lockfile, `No input lockfile found at ${lockfileRootDir}`);
 
     const targetImporterId = useVersion9
       ? getLockfileImporterId_v9(workspaceRootDir, targetPackageDir)

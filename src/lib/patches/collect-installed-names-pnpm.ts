@@ -5,6 +5,7 @@ import { readPnpmLockfile } from "#/lib/lockfile/read-pnpm-lockfile";
 import { useLogger } from "#/lib/logger";
 import type { PackagesRegistry } from "#/lib/types";
 import {
+  getErrorMessage,
   getPackageName,
   getPnpmLockfileDir,
   isRushWorkspace,
@@ -44,9 +45,18 @@ export async function collectInstalledNamesFromPnpmLockfile({
     const isRush = isRushWorkspace(workspaceRootDir);
     const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
-    const lockfile = await readPnpmLockfile(lockfileDir, majorVersion, {
-      onFailure: "return-undefined",
+    const lockfileResult = await readPnpmLockfile(lockfileDir, majorVersion, {
+      onFailure: "return-error",
     });
+
+    if (lockfileResult && "readError" in lockfileResult) {
+      log.debug(
+        `Failed to read pnpm lockfile for installed names: ${getErrorMessage(lockfileResult.readError)}`,
+      );
+      return new Set();
+    }
+
+    const lockfile = lockfileResult;
 
     if (!lockfile) {
       log.debug("No pnpm lockfile available for installed-names walk");

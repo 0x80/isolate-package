@@ -35,9 +35,10 @@ export function readPnpmLockfile(
 
 /**
  * Read a workspace lockfile with the reader for its pnpm major version.
- * A missing lockfile resolves to `null`. The failure policy is explicit at
- * this seam: callers can propagate, ignore, or retain filesystem and parse
- * errors without importing either versioned reader.
+ * A missing lockfile always resolves to `null`. Filesystem and parse errors
+ * throw by default, resolve to `undefined` with `return-undefined`, or resolve
+ * to `{ readError }` with `return-error`. This keeps each consumer's failure
+ * policy explicit without exposing either versioned reader.
  */
 export async function readPnpmLockfile(
   lockfileDirectory: string,
