@@ -78,9 +78,10 @@ the root of the monorepo. If you do want to keep the firebase config in the
 root, read the instructions for
 [deploying from the root](#deploying-from-the-root).
 
-In order to deploy to Firebase, the `functions.source` setting in
-`firebase.json` needs to point to the isolated output folder, which would be
-`./isolate` when using the default configuration.
+For Node functions, the `functions.source` setting in `firebase.json` needs to
+point to the isolated output folder, which is `./isolate` with the default
+configuration. Other runtimes without a `package.json`, such as Python, bypass
+isolation and keep their configured source directory.
 
 The `predeploy` phase should first build and then isolate the output.
 

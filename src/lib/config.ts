@@ -192,11 +192,7 @@ function validateConfig(config: IsolateConfig) {
  * otherwise auto-detected by walking upward from the target package directory.
  */
 export function resolveWorkspacePaths(config: IsolateConfigResolved) {
-  const targetPackageDir = config.targetPackagePath
-    ? path.isAbsolute(config.targetPackagePath)
-      ? config.targetPackagePath
-      : path.join(process.cwd(), config.targetPackagePath)
-    : process.cwd();
+  const targetPackageDir = resolveTargetPackageDir(config);
 
   if (config.targetPackagePath && !path.isAbsolute(config.targetPackagePath)) {
     return { targetPackageDir, workspaceRootDir: process.cwd() };
@@ -218,6 +214,14 @@ export function resolveWorkspacePaths(config: IsolateConfigResolved) {
   }
 
   return { targetPackageDir, workspaceRootDir: detected.rootDir };
+}
+
+export function resolveTargetPackageDir(config: IsolateConfigResolved) {
+  return config.targetPackagePath
+    ? path.isAbsolute(config.targetPackagePath)
+      ? config.targetPackagePath
+      : path.join(process.cwd(), config.targetPackagePath)
+    : process.cwd();
 }
 
 export function resolveConfig(

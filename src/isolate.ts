@@ -4,7 +4,11 @@ import assert from "node:assert";
 import path from "node:path";
 import { unique } from "remeda";
 import type { IsolateConfig } from "./lib/config";
-import { resolveConfig, resolveWorkspacePaths } from "./lib/config";
+import {
+  resolveConfig,
+  resolveTargetPackageDir,
+  resolveWorkspacePaths,
+} from "./lib/config";
 import { processLockfile } from "./lib/lockfile";
 import { setLogLevel, useLogger } from "./lib/logger";
 import {
@@ -51,21 +55,33 @@ export function createIsolator(initialConfig?: IsolateConfig) {
 
     log.debug("Using isolate-package version", libraryVersion);
 
-    const { targetPackageDir, workspaceRootDir } =
-      resolveWorkspacePaths(config);
+    const targetPackageDir = resolveTargetPackageDir(config);
+    const targetStats = await fs.stat(targetPackageDir);
+
+    assert(
+      targetStats.isDirectory(),
+      `Target package path is not a directory: ${targetPackageDir}`,
+    );
 
     const targetManifestPath = path.join(targetPackageDir, "package.json");
+    let targetHasManifest = true;
 
-    if (
-      (await fs.pathExists(targetPackageDir)) &&
-      !(await fs.pathExists(targetManifestPath))
-    ) {
+    try {
+      await fs.stat(targetManifestPath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      targetHasManifest = false;
+    }
+
+    if (!targetHasManifest) {
       log.debug(
         "Skipping isolation because the target directory has no package.json",
-        getRootRelativeLogPath(targetPackageDir, workspaceRootDir),
+        targetPackageDir,
       );
       return targetPackageDir;
     }
+
+    const { workspaceRootDir } = resolveWorkspacePaths(config);
 
     const buildOutputDir = getBuildOutputDir({
       targetPackageDir,

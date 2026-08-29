@@ -17,10 +17,11 @@ It is tightly coupled to PNPM and only works in PNPM workspaces.
 
 ### isolate-package
 
-`isolate-package` produces a self-contained source directory containing the
-target package, its internal dependencies as `file:` references, and a pruned
-lockfile. No install is performed — the deployment target is expected to run its
-own `install` step.
+For Node packages, `isolate-package` produces a self-contained source directory
+containing the target package, its internal dependencies as `file:` references,
+and a pruned lockfile. No install is performed — the deployment target is
+expected to run its own `install` step. Targets without a `package.json` bypass
+isolation and keep their original source directory.
 
 It works with PNPM, NPM, Bun, and Yarn.
 
@@ -36,11 +37,11 @@ It works with PNPM, NPM, Bun, and Yarn.
 
 ## Firebase compatibility
 
-Firebase-tools deployment expects a source directory with a `package.json` and a
-lockfile. It runs its own `npm install` (or equivalent) as part of the deployment
-process. `pnpm deploy` cannot produce this kind of output because it delivers a
-pre-installed `node_modules` instead of the manifest-and-lockfile combination
-that Firebase expects.
+Firebase-tools deployment of Node functions expects a source directory with a
+`package.json` and a lockfile. It runs its own `npm install` (or equivalent) as
+part of the deployment process. `pnpm deploy` cannot produce this kind of output
+because it delivers a pre-installed `node_modules` instead of the
+manifest-and-lockfile combination that Firebase expects.
 
 The
 [firebase-tools-with-isolate](https://github.com/0x80/firebase-tools-with-isolate)

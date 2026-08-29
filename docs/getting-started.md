@@ -108,7 +108,9 @@ The `isolate` binary will try to infer your build output location from a
 `tsconfig` file, but see the [buildDirName configuration](/configuration#builddirname)
 if you are not using TypeScript.
 
-By default the isolated output will become available at `./isolate`.
+By default the isolated output for a Node package will become available at
+`./isolate`. A target without a `package.json` bypasses isolation and keeps its
+original directory.
 
 All [configuration options](/configuration) can also be set via
 [CLI flags](/cli-reference), which take precedence over the config file.

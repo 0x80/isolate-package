@@ -27,7 +27,6 @@ describe("isolate", () => {
 
     const result = await isolate({
       targetPackagePath: targetPackageDir,
-      workspaceRoot: "..",
     });
 
     expect(result).toBe(targetPackageDir);
@@ -44,7 +43,37 @@ describe("isolate", () => {
     const targetPackageDir = path.join(workspaceRoot, "missing-functions");
 
     await expect(
-      isolate({ targetPackagePath: targetPackageDir, workspaceRoot: ".." }),
+      isolate({ targetPackagePath: targetPackageDir }),
     ).rejects.toThrow();
+  });
+
+  it("rejects a target path that is not a directory", async () => {
+    const workspaceRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), "isolate-file-target-test-"),
+    );
+    temporaryDirectories.push(workspaceRoot);
+    const targetPackagePath = path.join(workspaceRoot, "functions-python");
+    await fs.writeFile(targetPackagePath, "not a directory\n");
+
+    await expect(isolate({ targetPackagePath })).rejects.toThrow(
+      /Target package path is not a directory/,
+    );
+  });
+
+  it("continues isolation for a Node package", async () => {
+    const workspaceRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), "isolate-node-functions-test-"),
+    );
+    temporaryDirectories.push(workspaceRoot);
+    const targetPackageDir = path.join(workspaceRoot, "functions-node");
+    await fs.ensureDir(targetPackageDir);
+    await fs.writeJson(path.join(targetPackageDir, "package.json"), {
+      name: "functions-node",
+      version: "1.0.0",
+    });
+
+    await expect(
+      isolate({ targetPackagePath: targetPackageDir, workspaceRoot: ".." }),
+    ).rejects.toThrow(/Failed to infer the build output directory/);
   });
 });
