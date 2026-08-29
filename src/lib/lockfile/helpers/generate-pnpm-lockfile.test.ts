@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type { EnvLockfile } from "pnpm_lockfile_file_v9";
 import type { PackageManifest } from "#/lib/types";
 import { generatePnpmLockfile } from "./generate-pnpm-lockfile";
 
@@ -94,6 +95,12 @@ function createMockLockfile() {
 describe("generatePnpmLockfile", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    /**
+     * `clearAllMocks` resets calls but not implementations, so the Rush default
+     * has to be reapplied here — otherwise the one test that turns it on leaks
+     * into whatever runs next.
+     */
+    isRushWorkspace.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -488,10 +495,9 @@ describe("generatePnpmLockfile", () => {
       },
       packages: {},
       snapshots: {},
-    };
+    } satisfies EnvLockfile;
 
     beforeEach(() => {
-      isRushWorkspace.mockReturnValue(false);
       const lockfile = createMockLockfile();
       readWantedLockfile_v9.mockResolvedValue(lockfile as never);
       getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
@@ -512,7 +518,7 @@ describe("generatePnpmLockfile", () => {
     }
 
     it("should copy the env document when the output keeps a packageManager", async () => {
-      readEnvLockfile_v9.mockResolvedValue(envLockfile as never);
+      readEnvLockfile_v9.mockResolvedValue(envLockfile);
 
       await generate({
         name: "my-app",
@@ -527,8 +533,8 @@ describe("generatePnpmLockfile", () => {
       );
     });
 
-    it("should write the env document after the project document, since it is appended to the existing file", async () => {
-      readEnvLockfile_v9.mockResolvedValue(envLockfile as never);
+    it("should write the env document after the project document, since the env writer preserves what is already on disk", async () => {
+      readEnvLockfile_v9.mockResolvedValue(envLockfile);
 
       await generate({
         name: "my-app",
@@ -542,7 +548,7 @@ describe("generatePnpmLockfile", () => {
     });
 
     it("should skip the env document when the output omits the packageManager", async () => {
-      readEnvLockfile_v9.mockResolvedValue(envLockfile as never);
+      readEnvLockfile_v9.mockResolvedValue(envLockfile);
 
       await generate({ name: "my-app", version: "1.0.0" });
 
@@ -550,7 +556,7 @@ describe("generatePnpmLockfile", () => {
     });
 
     it("should skip the env document when the workspace lockfile has none", async () => {
-      readEnvLockfile_v9.mockResolvedValue(null as never);
+      readEnvLockfile_v9.mockResolvedValue(null);
 
       await generate({
         name: "my-app",
@@ -563,7 +569,7 @@ describe("generatePnpmLockfile", () => {
 
     it("should read the env document from the Rush lockfile directory", async () => {
       isRushWorkspace.mockReturnValue(true);
-      readEnvLockfile_v9.mockResolvedValue(null as never);
+      readEnvLockfile_v9.mockResolvedValue(null);
 
       await generate({
         name: "my-app",

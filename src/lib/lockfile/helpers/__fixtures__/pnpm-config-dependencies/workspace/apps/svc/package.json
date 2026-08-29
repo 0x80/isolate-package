@@ -1,0 +1,11 @@
+{
+  "name": "svc",
+  "version": "1.0.0",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "dependencies": {
+    "left-pad": "1.3.0"
+  }
+}

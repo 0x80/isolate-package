@@ -53,8 +53,11 @@ by name.
 
 **lockfile/** - Generates isolated lockfiles for each package manager:
 
-- PNPM: Prunes and adapts lockfile using `@pnpm/lockfile-file` and
-  `@pnpm/prune-lockfile` (supports v8 and v9)
+- PNPM: Prunes and adapts lockfile using `@pnpm/prune-lockfile`, reading and
+  writing with `@pnpm/lockfile-file` for lockfile v8 and `@pnpm/lockfile.fs`
+  for v9 (the maintained successor, which handles the two-document lockfile
+  pnpm 12 writes). Both are aliased in package.json as `pnpm_lockfile_file_v8`
+  and `pnpm_lockfile_file_v9`.
 - NPM: Uses `@npmcli/arborist`'s `loadVirtual` + `workspaceDependencySet`
   to compute the target's transitive closure, then copies matching entries
   verbatim from the root `package-lock.json` (preserves original resolved
