@@ -28,7 +28,10 @@ import {
 import { detectPackageManager, shouldUsePnpmPack } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
 import { copyPatches } from "./lib/patches/copy-patches";
-import { writeIsolatePnpmWorkspace } from "./lib/patches/write-isolate-pnpm-workspace";
+import {
+  writeGeneratedIsolatePnpmWorkspace,
+  writeIsolatePnpmWorkspace,
+} from "./lib/patches/write-isolate-pnpm-workspace";
 import { createPackagesRegistry, listInternalPackages } from "./lib/registry";
 import type { PackageManifest } from "./lib/types";
 import {
@@ -37,7 +40,6 @@ import {
   isRushWorkspace,
   readTypedJson,
   resetIsolateDir,
-  writeTypedYamlSync,
 } from "./lib/utils";
 
 const __dirname = getDirname(import.meta.url);
@@ -331,16 +333,12 @@ export function createIsolator(initialConfig?: IsolateConfig) {
 
     const hasCopiedPatches = Object.keys(copiedPatches).length > 0;
 
-    /** Update manifest if patches were copied or npm fallback is needed */
+    /** Update the manifest for copied patches when its format carries them or for an npm fallback. */
     if (hasCopiedPatches || usedFallbackToNpm) {
       const manifest = await readManifest(isolateDir);
 
       if (hasCopiedPatches) {
-        /**
-         * Extract just the paths for the manifest (lockfile needs full
-         * PatchFile). PNPM stores patches under pnpm.patchedDependencies, Bun
-         * at the top level.
-         */
+        /** Extract paths for package managers that read patch settings from the manifest. */
         const patchEntries = Object.fromEntries(
           Object.entries(copiedPatches).map(([spec, patchFile]) => [
             spec,
@@ -350,17 +348,19 @@ export function createIsolator(initialConfig?: IsolateConfig) {
 
         if (packageManager.name === "bun") {
           manifest.patchedDependencies = patchEntries;
+          log.debug(
+            `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
+          );
         } else if (
           packageManager.name !== "pnpm" ||
           packageManager.majorVersion < 11
         ) {
           manifest.pnpm ??= {};
           manifest.pnpm.patchedDependencies = patchEntries;
+          log.debug(
+            `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
+          );
         }
-
-        log.debug(
-          `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
-        );
       }
 
       if (usedFallbackToNpm) {
@@ -396,8 +396,11 @@ export function createIsolator(initialConfig?: IsolateConfig) {
 
         const packages = packagesFolderNames.map((x) => path.join(x, "/*"));
 
-        writeTypedYamlSync(path.join(isolateDir, "pnpm-workspace.yaml"), {
+        writeGeneratedIsolatePnpmWorkspace({
+          isolateDir,
           packages,
+          majorVersion: packageManager.majorVersion,
+          copiedPatches,
         });
       } else {
         writeIsolatePnpmWorkspace({
@@ -406,6 +409,12 @@ export function createIsolator(initialConfig?: IsolateConfig) {
           majorVersion: packageManager.majorVersion,
           copiedPatches,
         });
+
+        if (packageManager.majorVersion >= 11 && hasCopiedPatches) {
+          log.debug(
+            `Added ${Object.keys(copiedPatches).length} patches to isolated pnpm-workspace.yaml`,
+          );
+        }
       }
     }
 

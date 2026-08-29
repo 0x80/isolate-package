@@ -4,6 +4,10 @@ import { useLogger } from "#/lib/logger";
 import type { PatchFile, PnpmSettings } from "#/lib/types";
 import { readTypedYamlSync, writeTypedYamlSync } from "#/lib/utils";
 
+type GeneratedPnpmWorkspaceSettings = PnpmSettings & {
+  packages: string[];
+};
+
 /**
  * Copy `pnpm-workspace.yaml` from the workspace root to the isolate directory,
  * filtering its `patchedDependencies` field so it only references patches that
@@ -11,9 +15,9 @@ import { readTypedYamlSync, writeTypedYamlSync } from "#/lib/utils";
  * isolate fails when patches that don't apply to the target package are
  * declared in the workspace root config (see issue #178).
  *
- * The yaml is only rewritten when filtering is required. The file is copied
- * verbatim — preserving comments, key order, and trailing whitespace — when
- * any of the following hold:
+ * The yaml is rewritten when filtering changes patch entries or when pnpm 11
+ * and later need copied patch paths. Otherwise, it is copied verbatim to
+ * preserve comments, key order, and trailing whitespace.
  *
  * - The source yaml cannot be read or parsed.
  * - The parsed settings have no `patchedDependencies` field and pnpm is older
@@ -90,4 +94,30 @@ export function writeIsolatePnpmWorkspace({
   }
 
   writeTypedYamlSync(targetPath, settings);
+}
+
+/** Write the workspace configuration generated for a Rush isolate. */
+export function writeGeneratedIsolatePnpmWorkspace({
+  isolateDir,
+  packages,
+  majorVersion,
+  copiedPatches,
+}: {
+  isolateDir: string;
+  packages: string[];
+  majorVersion: number;
+  copiedPatches: Record<string, PatchFile>;
+}) {
+  const settings: GeneratedPnpmWorkspaceSettings = { packages };
+
+  if (majorVersion >= 11 && Object.keys(copiedPatches).length > 0) {
+    settings.patchedDependencies = Object.fromEntries(
+      Object.entries(copiedPatches).map(([spec, patchFile]) => [
+        spec,
+        patchFile.path,
+      ]),
+    );
+  }
+
+  writeTypedYamlSync(path.join(isolateDir, "pnpm-workspace.yaml"), settings);
 }
