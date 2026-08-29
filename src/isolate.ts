@@ -28,6 +28,7 @@ import {
 import { detectPackageManager, shouldUsePnpmPack } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
 import { copyPatches } from "./lib/patches/copy-patches";
+import { getPnpmPatchedDependenciesOutput } from "./lib/patches/pnpm-patched-dependencies";
 import {
   writeGeneratedIsolatePnpmWorkspace,
   writeIsolatePnpmWorkspace,
@@ -332,34 +333,36 @@ export function createIsolator(initialConfig?: IsolateConfig) {
     });
 
     const hasCopiedPatches = Object.keys(copiedPatches).length > 0;
+    const pnpmPatchOutput = getPnpmPatchedDependenciesOutput({
+      majorVersion: packageManager.majorVersion,
+      copiedPatches,
+    });
 
     /** Update the manifest for copied patches when its format carries them or for an npm fallback. */
     if (hasCopiedPatches || usedFallbackToNpm) {
       const manifest = await readManifest(isolateDir);
 
       if (hasCopiedPatches) {
-        /** Extract paths for package managers that read patch settings from the manifest. */
-        const patchEntries = Object.fromEntries(
-          Object.entries(copiedPatches).map(([spec, patchFile]) => [
-            spec,
-            patchFile.path,
-          ]),
-        );
-
         if (packageManager.name === "bun") {
-          manifest.patchedDependencies = patchEntries;
+          manifest.patchedDependencies = Object.fromEntries(
+            Object.entries(copiedPatches).map(([spec, patchFile]) => [
+              spec,
+              patchFile.path,
+            ]),
+          );
           log.debug(
             `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
           );
-        } else if (
-          packageManager.name !== "pnpm" ||
-          packageManager.majorVersion < 11
-        ) {
-          manifest.pnpm ??= {};
-          manifest.pnpm.patchedDependencies = patchEntries;
-          log.debug(
-            `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
-          );
+        } else if (packageManager.name === "pnpm") {
+          const { manifest: pnpmPatchPaths } = pnpmPatchOutput;
+
+          if (pnpmPatchPaths) {
+            manifest.pnpm ??= {};
+            manifest.pnpm.patchedDependencies = pnpmPatchPaths;
+            log.debug(
+              `Added ${Object.keys(copiedPatches).length} patches to isolated package.json`,
+            );
+          }
         }
       }
 
@@ -410,7 +413,7 @@ export function createIsolator(initialConfig?: IsolateConfig) {
           copiedPatches,
         });
 
-        if (packageManager.majorVersion >= 11 && hasCopiedPatches) {
+        if (pnpmPatchOutput.workspace) {
           log.debug(
             `Added ${Object.keys(copiedPatches).length} patches to isolated pnpm-workspace.yaml`,
           );

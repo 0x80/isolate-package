@@ -164,6 +164,25 @@ describe("writeIsolatePnpmWorkspace", () => {
     );
   });
 
+  it("does not add patch paths to generated pnpm 10 workspaces", () => {
+    writeGeneratedIsolatePnpmWorkspace({
+      isolateDir,
+      majorVersion: 10,
+      packages: ["packages/*"],
+      copiedPatches: {
+        "lodash@4.17.21": {
+          path: "patches/lodash@4.17.21.patch",
+          hash: "sha256-abc123",
+        },
+      },
+    });
+
+    expect(writeTypedYamlSync).toHaveBeenCalledWith(
+      "/workspace/isolate/pnpm-workspace.yaml",
+      { packages: ["packages/*"] },
+    );
+  });
+
   it("preserves unrelated top-level fields", () => {
     readTypedYamlSync.mockReturnValue({
       packages: ["packages/*"],
@@ -232,6 +251,28 @@ describe("writeIsolatePnpmWorkspace", () => {
     expect(fs.copyFileSync).toHaveBeenCalledWith(
       "/workspace/pnpm-workspace.yaml",
       "/workspace/isolate/pnpm-workspace.yaml",
+    );
+  });
+
+  it("removes source patch paths from pnpm 11 workspaces when no patches were copied", () => {
+    readTypedYamlSync.mockReturnValue({
+      packages: ["packages/*"],
+      patchedDependencies: {
+        "lodash@4.17.21": "patches/lodash@4.17.21.patch",
+      },
+    });
+
+    writeIsolatePnpmWorkspace({
+      workspaceRootDir,
+      isolateDir,
+      majorVersion: 11,
+      copiedPatches: {},
+    });
+
+    expect(fs.copyFileSync).not.toHaveBeenCalled();
+    expect(writeTypedYamlSync).toHaveBeenCalledWith(
+      "/workspace/isolate/pnpm-workspace.yaml",
+      { packages: ["packages/*"] },
     );
   });
 
@@ -328,6 +369,60 @@ describe("writeIsolatePnpmWorkspace", () => {
     expect(fs.copyFileSync).toHaveBeenCalledWith(
       "/workspace/pnpm-workspace.yaml",
       "/workspace/isolate/pnpm-workspace.yaml",
+    );
+  });
+
+  it("writes copied pnpm 11 patch paths when the yaml cannot be parsed", () => {
+    readTypedYamlSync.mockImplementation(() => {
+      throw new Error("bad yaml");
+    });
+
+    writeIsolatePnpmWorkspace({
+      workspaceRootDir,
+      isolateDir,
+      majorVersion: 11,
+      copiedPatches: {
+        "lodash@4.17.21": {
+          path: "patches/lodash@4.17.21.patch",
+          hash: "sha256-abc123",
+        },
+      },
+    });
+
+    expect(fs.copyFileSync).not.toHaveBeenCalled();
+    expect(writeTypedYamlSync).toHaveBeenCalledWith(
+      "/workspace/isolate/pnpm-workspace.yaml",
+      {
+        patchedDependencies: {
+          "lodash@4.17.21": "patches/lodash@4.17.21.patch",
+        },
+      },
+    );
+  });
+
+  it("writes copied pnpm 11 patch paths when the yaml has no settings", () => {
+    readTypedYamlSync.mockReturnValue(undefined);
+
+    writeIsolatePnpmWorkspace({
+      workspaceRootDir,
+      isolateDir,
+      majorVersion: 11,
+      copiedPatches: {
+        "lodash@4.17.21": {
+          path: "patches/lodash@4.17.21.patch",
+          hash: "sha256-abc123",
+        },
+      },
+    });
+
+    expect(fs.copyFileSync).not.toHaveBeenCalled();
+    expect(writeTypedYamlSync).toHaveBeenCalledWith(
+      "/workspace/isolate/pnpm-workspace.yaml",
+      {
+        patchedDependencies: {
+          "lodash@4.17.21": "patches/lodash@4.17.21.patch",
+        },
+      },
     );
   });
 });

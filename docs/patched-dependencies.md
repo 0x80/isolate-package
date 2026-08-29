@@ -15,6 +15,9 @@ Patches are filtered based on the target package's dependencies:
 - Patches for packages not in the target's dependency tree are excluded
 
 The patch files are copied to the isolated output, preserving their original
-directory structure. pnpm 9 and 10 store each patch path and hash in the
-lockfile. pnpm 11 and later store the hash in the lockfile and the copied patch
-path in `pnpm-workspace.yaml`. Bun stores patch paths in `package.json`.
+directory structure. pnpm 9 and 10 store the path in
+`package.json`'s `pnpm.patchedDependencies`; when the source workspace
+configuration declares the paths, its copied or filtered
+`pnpm-workspace.yaml` does too. Their lockfile entries include both the path and
+hash. pnpm 11 and later store the hash in the lockfile and the copied patch path
+in `pnpm-workspace.yaml`. Bun stores patch paths in `package.json`.

@@ -3,6 +3,10 @@ import path from "node:path";
 import { useLogger } from "#/lib/logger";
 import type { PatchFile, PnpmSettings } from "#/lib/types";
 import { readTypedYamlSync, writeTypedYamlSync } from "#/lib/utils";
+import {
+  getPnpmPatchedDependenciesOutput,
+  getPnpmPatchedDependencyPaths,
+} from "./pnpm-patched-dependencies";
 
 type GeneratedPnpmWorkspaceSettings = PnpmSettings & {
   packages: string[];
@@ -19,7 +23,8 @@ type GeneratedPnpmWorkspaceSettings = PnpmSettings & {
  * and later need copied patch paths. Otherwise, it is copied verbatim to
  * preserve comments, key order, and trailing whitespace.
  *
- * - The source yaml cannot be read or parsed.
+ * - The source yaml cannot be read or parsed and pnpm does not need a
+ *   `patchedDependencies` field.
  * - The parsed settings have no `patchedDependencies` field and pnpm is older
  *   than version 11.
  * - Every entry in `patchedDependencies` is also present in `copiedPatches`
@@ -46,10 +51,25 @@ export function writeIsolatePnpmWorkspace({
   const targetPath = path.join(isolateDir, "pnpm-workspace.yaml");
 
   let settings: PnpmSettings | undefined;
+  const patchOutput = getPnpmPatchedDependenciesOutput({
+    majorVersion,
+    copiedPatches,
+  });
+  const workspacePatchPaths = patchOutput.workspace;
 
   try {
     settings = readTypedYamlSync(sourcePath) as PnpmSettings | undefined;
   } catch (error) {
+    if (workspacePatchPaths) {
+      log.warn(
+        `Could not read pnpm-workspace.yaml; writing copied patch paths only: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      writeTypedYamlSync(targetPath, {
+        patchedDependencies: workspacePatchPaths,
+      });
+      return;
+    }
+
     log.warn(
       `Could not read pnpm-workspace.yaml, falling back to verbatim copy: ${error instanceof Error ? error.message : String(error)}`,
     );
@@ -58,34 +78,38 @@ export function writeIsolatePnpmWorkspace({
   }
 
   if (!settings) {
+    if (workspacePatchPaths) {
+      writeTypedYamlSync(targetPath, {
+        patchedDependencies: workspacePatchPaths,
+      });
+      return;
+    }
+
     fs.copyFileSync(sourcePath, targetPath);
     return;
   }
 
-  const needsPnpm11PatchPaths =
-    majorVersion >= 11 && Object.keys(copiedPatches).length > 0;
-
-  if (!settings.patchedDependencies && !needsPnpm11PatchPaths) {
+  if (!settings.patchedDependencies && !workspacePatchPaths) {
     fs.copyFileSync(sourcePath, targetPath);
     return;
   }
 
   /**
-   * If every patch declared in the source yaml was kept, copy verbatim so
-   * comments, ordering, and trailing whitespace are preserved.
+   * If every patch declared in the source yaml was kept and pnpm does not
+   * need workspace patch paths, copy verbatim to preserve comments, ordering,
+   * and trailing whitespace.
    */
   const sourceSpecs = Object.keys(settings.patchedDependencies ?? {});
   const copiedSpecs = new Set(Object.keys(copiedPatches));
   const hasExclusions = sourceSpecs.some((spec) => !copiedSpecs.has(spec));
 
-  if (!hasExclusions && !needsPnpm11PatchPaths) {
+  if (!hasExclusions && !workspacePatchPaths) {
     fs.copyFileSync(sourcePath, targetPath);
     return;
   }
 
-  const filteredEntries = Object.entries(copiedPatches).map(
-    ([spec, patchFile]) => [spec, patchFile.path] as const,
-  );
+  const patchPaths = getPnpmPatchedDependencyPaths(copiedPatches);
+  const filteredEntries = Object.entries(patchPaths);
 
   if (filteredEntries.length > 0) {
     settings.patchedDependencies = Object.fromEntries(filteredEntries);
@@ -109,14 +133,13 @@ export function writeGeneratedIsolatePnpmWorkspace({
   copiedPatches: Record<string, PatchFile>;
 }) {
   const settings: GeneratedPnpmWorkspaceSettings = { packages };
+  const patchOutput = getPnpmPatchedDependenciesOutput({
+    majorVersion,
+    copiedPatches,
+  });
 
-  if (majorVersion >= 11 && Object.keys(copiedPatches).length > 0) {
-    settings.patchedDependencies = Object.fromEntries(
-      Object.entries(copiedPatches).map(([spec, patchFile]) => [
-        spec,
-        patchFile.path,
-      ]),
-    );
+  if (patchOutput.workspace) {
+    settings.patchedDependencies = patchOutput.workspace;
   }
 
   writeTypedYamlSync(path.join(isolateDir, "pnpm-workspace.yaml"), settings);

@@ -79,6 +79,7 @@ describe("isolate integration", () => {
       name: "workspace",
       version: "1.0.0",
       private: true,
+      packageManager: "pnpm@11.0.0",
     });
     await fs.writeFile(
       path.join(workspaceRoot, "pnpm-workspace.yaml"),

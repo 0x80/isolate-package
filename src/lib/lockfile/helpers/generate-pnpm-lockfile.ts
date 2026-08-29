@@ -30,6 +30,10 @@ import {
   getPnpmLockfileDir,
   isRushWorkspace,
 } from "#/lib/utils";
+import {
+  getPnpmPatchedDependenciesOutput,
+  usesPnpmWorkspacePatchedDependencies,
+} from "#/lib/patches/pnpm-patched-dependencies";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
 /**
@@ -222,10 +226,11 @@ export async function generatePnpmLockfile({
     if (useVersion9) {
       /**
        * pnpm 11 stores only the patch hash in the lockfile. The matching path
-       * is written to pnpm-workspace.yaml by writeIsolatePnpmWorkspace.
+       * is written to the isolate's pnpm workspace configuration.
        */
       const patchWithoutHash = Object.entries(patchedDependencies ?? {}).find(
-        ([, patchFile]) => majorVersion >= 11 && !patchFile.hash,
+        ([, patchFile]) =>
+          usesPnpmWorkspacePatchedDependencies(majorVersion) && !patchFile.hash,
       );
 
       assert(
@@ -233,15 +238,11 @@ export async function generatePnpmLockfile({
         `Patch ${patchWithoutHash?.[0]} has no lockfile hash`,
       );
 
-      const lockfilePatchedDependencies =
-        majorVersion >= 11 && patchedDependencies
-          ? Object.fromEntries(
-              Object.entries(patchedDependencies).map(([spec, patchFile]) => [
-                spec,
-                patchFile.hash,
-              ]),
-            )
-          : patchedDependencies;
+      const { lockfile: lockfilePatchedDependencies } =
+        getPnpmPatchedDependenciesOutput({
+          majorVersion,
+          copiedPatches: patchedDependencies,
+        });
 
       await writeWantedLockfile_v9(isolateDir, {
         ...prunedLockfile,
