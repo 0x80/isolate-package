@@ -4,9 +4,27 @@ import type { PackageManifest } from "#/lib/types";
 import { generatePnpmLockfile } from "./generate-pnpm-lockfile";
 
 /** Mock utils */
+/**
+ * Hoisted so the `#/lib/utils` factory below can use it for both
+ * `isRushWorkspace` and the `getPnpmLockfileDir` that is derived from it.
+ */
+const isRushWorkspaceMock = vi.hoisted(() =>
+  vi.fn((_workspaceRootDir: string) => false),
+);
+
 vi.mock("#/lib/utils", () => ({
   getErrorMessage: vi.fn((err: Error) => err.message),
-  isRushWorkspace: vi.fn(() => false),
+  isRushWorkspace: isRushWorkspaceMock,
+  /**
+   * Mirrors the real helper, which is a pure path computation on top of the
+   * mocked `isRushWorkspace` above — so the Rush cases still exercise the
+   * branch rather than a hard-coded answer.
+   */
+  getPnpmLockfileDir: vi.fn((workspaceRootDir: string) =>
+    isRushWorkspaceMock(workspaceRootDir)
+      ? `${workspaceRootDir}/common/config/rush`
+      : workspaceRootDir,
+  ),
 }));
 
 /** Mock pnpm v8 lockfile functions */
@@ -533,7 +551,12 @@ describe("generatePnpmLockfile", () => {
       );
     });
 
-    it("should write the env document after the project document, since the env writer preserves what is already on disk", async () => {
+    /**
+     * Only the call order is checked here, since these are mocks: that the real
+     * writer preserves the project document is a property of the library, and
+     * the integration test is what actually asserts it.
+     */
+    it("should write the env document after the project document", async () => {
       readEnvLockfile_v9.mockResolvedValue(envLockfile);
 
       await generate({

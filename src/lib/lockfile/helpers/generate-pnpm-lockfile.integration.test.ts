@@ -55,6 +55,11 @@ function rootImporterOf(document: Record<string, unknown> | undefined) {
  * followed by the project document. Nothing here is mocked — the point of the
  * test is that the reader actually accepts that stream, which `js-yaml.load()`
  * in `@pnpm/lockfile-file@9` did not.
+ *
+ * These assert the structure of the emitted lockfile, not that pnpm accepts it:
+ * running a real `pnpm install --frozen-lockfile` would need pnpm 12 and the
+ * network in CI. That end of the contract is verified by hand against a real
+ * pnpm 12 workspace when this code changes.
  */
 describe("generatePnpmLockfile integration", () => {
   let cleanupPaths: string[] = [];

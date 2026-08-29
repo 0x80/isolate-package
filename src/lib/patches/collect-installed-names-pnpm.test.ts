@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { collectInstalledNamesFromPnpmLockfile } from "./collect-installed-names-pnpm";
 
+/**
+ * Hoisted so the `#/lib/utils` factory below can use it for both
+ * `isRushWorkspace` and the `getPnpmLockfileDir` that is derived from it.
+ */
+const isRushWorkspaceMock = vi.hoisted(() =>
+  vi.fn((_workspaceRootDir: string) => false),
+);
+
 vi.mock("pnpm_lockfile_file_v8", () => ({
   readWantedLockfile: vi.fn(() => Promise.resolve(null)),
   getLockfileImporterId: vi.fn(
@@ -23,7 +31,17 @@ vi.mock("#/lib/utils", () => ({
     }
     return spec.split("@")[0] ?? "";
   }),
-  isRushWorkspace: vi.fn(() => false),
+  isRushWorkspace: isRushWorkspaceMock,
+  /**
+   * Mirrors the real helper, which is a pure path computation on top of the
+   * mocked `isRushWorkspace` above — so the Rush cases still exercise the
+   * branch rather than a hard-coded answer.
+   */
+  getPnpmLockfileDir: vi.fn((workspaceRootDir: string) =>
+    isRushWorkspaceMock(workspaceRootDir)
+      ? `${workspaceRootDir}/common/config/rush`
+      : workspaceRootDir,
+  ),
 }));
 
 const { readWantedLockfile: readWantedLockfile_v9 } = vi.mocked(

@@ -14,7 +14,7 @@ import type {
 import {
   filterPatchedDependencies,
   getRootRelativeLogPath,
-  isRushWorkspace,
+  getPnpmLockfileDir,
   readTypedJson,
   readTypedYamlSync,
 } from "#/lib/utils";
@@ -212,7 +212,9 @@ export async function copyPatches({
  *
  * The value type is `PatchFile | string` because pnpm 11 simplified the format
  * to store the bare hash string per selector, while pnpm <=10 stored a
- * `{ path, hash }` object. See issue #201.
+ * `{ path, hash }` object (see issue #201). On the v9 path the string arrives
+ * for a second reason as well: `@pnpm/lockfile.fs` migrates the object form to
+ * a bare hash while reading, so only the v8 reader still yields an object.
  */
 async function readLockfilePatchedDependencies(
   workspaceRootDir: string,
@@ -220,11 +222,7 @@ async function readLockfilePatchedDependencies(
   try {
     const { majorVersion } = usePackageManager();
     const useVersion9 = majorVersion >= 9;
-    const isRush = isRushWorkspace(workspaceRootDir);
-
-    const lockfileDir = isRush
-      ? path.join(workspaceRootDir, "common/config/rush")
-      : workspaceRootDir;
+    const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
     const lockfile = useVersion9
       ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })

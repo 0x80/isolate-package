@@ -9,7 +9,11 @@ import {
 } from "pnpm_lockfile_file_v9";
 import { useLogger } from "#/lib/logger";
 import type { PackagesRegistry } from "#/lib/types";
-import { getPackageName, isRushWorkspace } from "#/lib/utils";
+import {
+  getPackageName,
+  getPnpmLockfileDir,
+  isRushWorkspace,
+} from "#/lib/utils";
 
 /**
  * Walk the workspace pnpm lockfile starting from the target package and its
@@ -43,9 +47,7 @@ export async function collectInstalledNamesFromPnpmLockfile({
   try {
     const useVersion9 = majorVersion >= 9;
     const isRush = isRushWorkspace(workspaceRootDir);
-    const lockfileDir = isRush
-      ? path.join(workspaceRootDir, "common/config/rush")
-      : workspaceRootDir;
+    const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
     const lockfile = useVersion9
       ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })

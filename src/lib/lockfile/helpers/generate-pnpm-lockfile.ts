@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import fs from "node:fs/promises";
 import path from "node:path";
 import {
   getLockfileImporterId as getLockfileImporterId_v8,
@@ -24,7 +25,11 @@ import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
 import { omit, pick } from "remeda";
 import { useLogger } from "#/lib/logger";
 import type { PackageManifest, PackagesRegistry, PatchFile } from "#/lib/types";
-import { getErrorMessage, isRushWorkspace } from "#/lib/utils";
+import {
+  getErrorMessage,
+  getPnpmLockfileDir,
+  isRushWorkspace,
+} from "#/lib/utils";
 import { pnpmMapImporter } from "./pnpm-map-importer";
 
 /**
@@ -74,10 +79,7 @@ export async function generatePnpmLockfile({
   try {
     const isRush = isRushWorkspace(workspaceRootDir);
 
-    /** In a Rush workspace the lockfile does not live in the workspace root */
-    const lockfileRootDir = isRush
-      ? path.join(workspaceRootDir, "common/config/rush")
-      : workspaceRootDir;
+    const lockfileRootDir = getPnpmLockfileDir(workspaceRootDir);
 
     const lockfile = useVersion9
       ? await readWantedLockfile_v9(lockfileRootDir, {
@@ -232,6 +234,12 @@ export async function generatePnpmLockfile({
         patchedDependencies,
       } as unknown as Parameters<typeof writeWantedLockfile_v9>[1]);
 
+      /**
+       * Must run after the project document is on disk: `writeEnvLockfile`
+       * reads the existing lockfile back, extracts its main document, and
+       * rewrites the file as `<env>\n---\n<main>`. Called first, it would
+       * write an env-only lockfile that the project write then overwrites.
+       */
       await copyEnvLockfile({
         lockfileRootDir,
         isolateDir,
@@ -284,6 +292,17 @@ async function copyEnvLockfile({
   const envLockfile = await readEnvLockfile_v9(lockfileRootDir);
 
   if (!envLockfile) {
+    /**
+     * The reader returns null both for a single-document lockfile — the
+     * ordinary pnpm 9 to 11 case — and for a two-document one whose env
+     * document it could not recognize. Only the second is a problem, so log
+     * which of the two this was rather than returning silently.
+     */
+    log.debug(
+      (await startsWithEnvDocument(lockfileRootDir))
+        ? "The lockfile starts with an env document but the reader did not recognize it, so the isolated lockfile will not carry one"
+        : "No lockfile env document to copy",
+    );
     return;
   }
 
@@ -296,7 +315,7 @@ async function copyEnvLockfile({
 
   const withoutPackageManager = omitEnvPackageManagerDependencies(envLockfile);
 
-  if (!hasEnvConfigDependencies(withoutPackageManager)) {
+  if (!pinsConfigDependencies(withoutPackageManager)) {
     log.debug(
       "Skipping the lockfile env document because the output manifest has no packageManager field and the document pins no config dependencies",
     );
@@ -313,9 +332,13 @@ async function copyEnvLockfile({
 /**
  * Strip the `packageManagerDependencies` pin from every importer of an env
  * document, leaving the rest of it untouched. The `packages` and `snapshots`
- * entries the pin resolved to are left in place: pnpm tolerates entries no
- * importer references, the same way it does for the catalogs snapshot above,
- * and dropping them would mean re-deriving the resolution graph here.
+ * entries the pin resolved to are left in place, because nothing reads them:
+ * verified by running `pnpm install --frozen-lockfile` (pnpm 12) against
+ * exactly this output — the lockfile is accepted as up to date, and env
+ * entries never enter the isolate's virtual store whether an importer
+ * references them or not. Pruning them would be a reachability walk from the
+ * remaining `configDependencies` rather than a re-resolution, so it is
+ * affordable; it is left undone because the residue is some unread YAML.
  */
 function omitEnvPackageManagerDependencies(
   envLockfile: EnvLockfile,
@@ -331,9 +354,31 @@ function omitEnvPackageManagerDependencies(
   };
 }
 
-/** Whether an env document still pins anything once the package manager is out */
-function hasEnvConfigDependencies(envLockfile: EnvLockfile) {
+/** Whether an env document pins any config dependency */
+function pinsConfigDependencies(envLockfile: EnvLockfile) {
   return Object.values(envLockfile.importers).some(
     (importer) => Object.keys(importer.configDependencies ?? {}).length > 0,
   );
+}
+
+/**
+ * Whether the workspace lockfile begins with a YAML document-start marker,
+ * which is how pnpm 12 signals that an env document precedes the project one.
+ * Used only to tell "there is no env document" apart from "there is one and
+ * the reader rejected it" in the log line above.
+ */
+async function startsWithEnvDocument(lockfileRootDir: string) {
+  try {
+    const handle = await fs.open(path.join(lockfileRootDir, "pnpm-lock.yaml"));
+
+    try {
+      const { buffer, bytesRead } = await handle.read(Buffer.alloc(4), 0, 4, 0);
+
+      return buffer.subarray(0, bytesRead).toString("utf8") === "---\n";
+    } finally {
+      await handle.close();
+    }
+  } catch {
+    return false;
+  }
 }
