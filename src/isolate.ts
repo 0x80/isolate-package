@@ -42,7 +42,7 @@ import {
 
 const __dirname = getDirname(import.meta.url);
 
-/** Create an isolator that returns the unchanged target for non-Node sources. */
+/** Create an isolator that returns targets without package manifests unchanged. */
 export function createIsolator(initialConfig?: IsolateConfig) {
   const resolvedConfig = resolveConfig(initialConfig);
 
@@ -443,7 +443,7 @@ export function createIsolator(initialConfig?: IsolateConfig) {
   };
 }
 
-/** Return the isolate directory, or the unchanged target for non-Node sources. */
+/** Return the isolate directory, or an unchanged target without a package manifest. */
 export async function isolate(config?: IsolateConfig): Promise<string> {
   return createIsolator(config)();
 }

@@ -43,7 +43,8 @@ If your setup diverges from a traditional one, please continue reading the
 2. For Node functions, set `"source"` to `"./isolate"` in `firebase.json` and
    set `"predeploy"` to `["turbo build", "isolate"]` or whatever suits your
    build tool. The important part here is that isolate runs after the build
-   stage. Other runtimes keep their original source directory.
+   stage. Targets without a `package.json` keep their original source
+   directory, which covers typical Python functions packages.
 3. From the target package folder, you should now be able to deploy with
    `npx firebase deploy`.
 

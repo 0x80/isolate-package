@@ -26,7 +26,7 @@ describe("isolate", () => {
     );
   });
 
-  it("returns a non-Node target directory without isolating it", async () => {
+  it("returns a target without a package manifest without isolating it", async () => {
     const workspaceRoot = await fs.mkdtemp(
       path.join(os.tmpdir(), "isolate-python-functions-test-"),
     );
