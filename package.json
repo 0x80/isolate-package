@@ -67,7 +67,7 @@
     "meow": "^14.1.0",
     "outdent": "^0.8.0",
     "pnpm_lockfile_file_v8": "npm:@pnpm/lockfile-file@8",
-    "pnpm_lockfile_file_v9": "npm:@pnpm/lockfile.fs@1100.2.4",
+    "pnpm_lockfile_file_v9": "npm:@pnpm/lockfile.fs@1100.2.2",
     "pnpm_prune_lockfile_v8": "npm:@pnpm/prune-lockfile@5",
     "pnpm_prune_lockfile_v9": "npm:@pnpm/prune-lockfile@6.0.0",
     "remeda": "^2.33.7",
