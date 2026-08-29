@@ -289,20 +289,39 @@ async function copyEnvLockfile({
 }) {
   const log = useLogger();
 
-  const envLockfile = await readEnvLockfile_v9(lockfileRootDir);
+  /**
+   * The reader resolves to null for a single-document lockfile — the ordinary
+   * pnpm 9 to 11 case — but it throws rather than returning null when the file
+   * exists and cannot be read or parsed: it special-cases only ENOENT, and the
+   * env document is passed through `yaml.load`. `readWantedLockfile` above has
+   * already succeeded by this point, so failing the whole isolate on the env
+   * document alone would turn a readable workspace into a hard error.
+   */
+  let envLockfile;
+
+  try {
+    envLockfile = await readEnvLockfile_v9(lockfileRootDir);
+  } catch (error) {
+    log.warn(
+      `Could not read the lockfile env document, so the isolated lockfile will not carry one: ${getErrorMessage(error)}`,
+    );
+    return;
+  }
 
   if (!envLockfile) {
     /**
-     * The reader returns null both for a single-document lockfile — the
-     * ordinary pnpm 9 to 11 case — and for a two-document one whose env
-     * document it could not recognize. Only the second is a problem, so log
-     * which of the two this was rather than returning silently.
+     * A null result means either that there is no env document or that the
+     * reader declined the one that is there. Only the second loses something,
+     * so say which it was instead of returning silently.
      */
-    log.debug(
-      (await startsWithEnvDocument(lockfileRootDir))
-        ? "The lockfile starts with an env document but the reader did not recognize it, so the isolated lockfile will not carry one"
-        : "No lockfile env document to copy",
-    );
+    if (await startsWithEnvDocument(lockfileRootDir)) {
+      log.warn(
+        "The lockfile starts with an env document but the reader did not recognize it, so the isolated lockfile will not carry one",
+      );
+    } else {
+      log.debug("No lockfile env document to copy");
+    }
+
     return;
   }
 
@@ -372,9 +391,14 @@ async function startsWithEnvDocument(lockfileRootDir: string) {
     const handle = await fs.open(path.join(lockfileRootDir, "pnpm-lock.yaml"));
 
     try {
-      const { buffer, bytesRead } = await handle.read(Buffer.alloc(4), 0, 4, 0);
+      /**
+       * Five bytes rather than four, so the CRLF spelling is recognized too —
+       * the reader normalizes line endings before it looks for the marker.
+       */
+      const { buffer, bytesRead } = await handle.read(Buffer.alloc(5), 0, 5, 0);
+      const start = buffer.subarray(0, bytesRead).toString("utf8");
 
-      return buffer.subarray(0, bytesRead).toString("utf8") === "---\n";
+      return start.startsWith("---\n") || start.startsWith("---\r\n");
     } finally {
       await handle.close();
     }

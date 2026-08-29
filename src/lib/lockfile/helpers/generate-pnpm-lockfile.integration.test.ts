@@ -50,11 +50,14 @@ function rootImporterOf(document: Record<string, unknown> | undefined) {
 /**
  * Reproduction of https://github.com/0x80/isolate-package/issues/205.
  *
- * The fixture holds a real `pnpm-lock.yaml` written by pnpm 12, which is a
- * stream of two YAML documents: an env document pinning the package manager,
- * followed by the project document. Nothing here is mocked — the point of the
- * test is that the reader actually accepts that stream, which `js-yaml.load()`
- * in `@pnpm/lockfile-file@9` did not.
+ * The `pnpm-two-document` fixture is a `pnpm-lock.yaml` captured from a real
+ * pnpm 12 install: a stream of two YAML documents, an env document pinning the
+ * package manager followed by the project document. The
+ * `pnpm-config-dependencies` fixture is that file hand-edited to add a config
+ * dependency, so its integrity hashes are placeholders rather than real ones —
+ * it reproduces the shape, which is all these assertions read. Nothing is
+ * mocked: the point is that the reader accepts the stream, which
+ * `js-yaml.load()` in `@pnpm/lockfile-file@9` did not.
  *
  * These assert the structure of the emitted lockfile, not that pnpm accepts it:
  * running a real `pnpm install --frozen-lockfile` would need pnpm 12 and the
@@ -77,12 +80,23 @@ describe("generatePnpmLockfile integration", () => {
   async function isolate({
     packageManager,
     fixture = "pnpm-two-document",
+    mutateLockfile,
   }: {
     packageManager: string | undefined;
     fixture?: string;
+    /** Rewrite the workspace lockfile before isolating, to shape its env document */
+    mutateLockfile?: (lockfile: string) => string;
   }) {
     const { tmpBase, workspaceRoot } = await setupFixture(fixture);
     cleanupPaths.push(tmpBase);
+
+    if (mutateLockfile) {
+      const lockfilePath = path.join(workspaceRoot, "pnpm-lock.yaml");
+      await fs.writeFile(
+        lockfilePath,
+        mutateLockfile(await fs.readFile(lockfilePath, "utf8")),
+      );
+    }
 
     const targetPackageDir = path.join(workspaceRoot, "apps/svc");
     const isolateDir = path.join(targetPackageDir, "isolate");
@@ -161,6 +175,36 @@ describe("generatePnpmLockfile integration", () => {
       "my-config": { specifier: "1.0.0", version: "1.0.0" },
     });
     expect(rootImporter).not.toHaveProperty("packageManagerDependencies");
+  });
+
+  /**
+   * The reader returns null for a lockfile with no env document, and declines
+   * one it cannot recognize. Neither may abort the run, and only the second
+   * costs the output anything — so both are exercised against real files.
+   */
+  it("emits a single-document lockfile when the source has no env document", async () => {
+    const { content, documents } = await isolate({
+      packageManager: "pnpm@12.0.0",
+      mutateLockfile: (lockfile) =>
+        lockfile.split("\n---\n").slice(1).join("\n---\n"),
+    });
+
+    expect(documents).toHaveLength(1);
+    expect(content.startsWith("---\n")).toBe(false);
+    expect(rootImporterOf(documents[0])).toBeDefined();
+  });
+
+  it("still emits the project document when the env document is unreadable", async () => {
+    const { documents } = await isolate({
+      packageManager: "pnpm@12.0.0",
+      mutateLockfile: (lockfile) =>
+        `---\n\tthis is not: valid: yaml\n---\n${lockfile.split("\n---\n").slice(1).join("\n---\n")}`,
+    });
+
+    expect(documents).toHaveLength(1);
+    expect(rootImporterOf(documents[0])).toMatchObject({
+      dependencies: { "left-pad": { specifier: "1.3.0", version: "1.3.0" } },
+    });
   });
 
   it("keeps both env pins when packageManager is retained", async () => {

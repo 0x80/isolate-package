@@ -3,14 +3,6 @@ import type { PackageManifest, PnpmSettings } from "#/lib/types";
 import { copyPatches } from "./copy-patches";
 
 /** Mock fs-extra */
-/**
- * Hoisted so the `#/lib/utils` factory below can use it for both
- * `isRushWorkspace` and the `getPnpmLockfileDir` that is derived from it.
- */
-const isRushWorkspaceMock = vi.hoisted(() =>
-  vi.fn((_workspaceRootDir: string) => false),
-);
-
 vi.mock("fs-extra", () => ({
   default: {
     ensureDir: vi.fn(),
@@ -20,7 +12,12 @@ vi.mock("fs-extra", () => ({
 }));
 
 /** Mock the utils */
-vi.mock("#/lib/utils", () => ({
+vi.mock("#/lib/utils", async (importOriginal) => ({
+  /**
+   * Partial mock: `getPnpmLockfileDir` stays real so the Rush path
+   * computation is not re-implemented per test file.
+   */
+  ...(await importOriginal<typeof import("#/lib/utils")>()),
   filterPatchedDependencies: vi.fn(),
   getIsolateRelativeLogPath: vi.fn((p: string) => p),
   getPackageName: vi.fn((spec: string) => {
@@ -31,17 +28,7 @@ vi.mock("#/lib/utils", () => ({
     return spec.split("@")[0] ?? "";
   }),
   getRootRelativeLogPath: vi.fn((p: string) => p),
-  isRushWorkspace: isRushWorkspaceMock,
-  /**
-   * Mirrors the real helper, which is a pure path computation on top of the
-   * mocked `isRushWorkspace` above — so the Rush cases still exercise the
-   * branch rather than a hard-coded answer.
-   */
-  getPnpmLockfileDir: vi.fn((workspaceRootDir: string) =>
-    isRushWorkspaceMock(workspaceRootDir)
-      ? `${workspaceRootDir}/common/config/rush`
-      : workspaceRootDir,
-  ),
+  isRushWorkspace: vi.fn(() => false),
   readTypedJson: vi.fn(),
   readTypedJsonSync: vi.fn(),
   readTypedYamlSync: vi.fn(),

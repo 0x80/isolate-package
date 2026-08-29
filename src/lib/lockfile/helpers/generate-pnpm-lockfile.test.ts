@@ -114,11 +114,13 @@ describe("generatePnpmLockfile", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     /**
-     * `clearAllMocks` resets calls but not implementations, so the Rush default
-     * has to be reapplied here — otherwise the one test that turns it on leaks
-     * into whatever runs next.
+     * `clearAllMocks` resets calls but not implementations, so the defaults
+     * have to be reapplied here — otherwise the one test that turns Rush on
+     * leaks into whatever runs next, and the env reader resolves to undefined
+     * rather than to the "no env document" answer its contract allows.
      */
     isRushWorkspace.mockReturnValue(false);
+    readEnvLockfile_v9.mockResolvedValue(null);
   });
 
   afterEach(() => {
