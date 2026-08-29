@@ -192,21 +192,32 @@ function validateConfig(config: IsolateConfig) {
  * otherwise auto-detected by walking upward from the target package directory.
  */
 export function resolveWorkspacePaths(config: IsolateConfigResolved) {
-  const targetPackageDir = config.targetPackagePath
+  const targetPackageDir = resolveTargetPackageDir(config);
+  const workspaceRootDir = resolveWorkspaceRootDir(config, targetPackageDir);
+
+  return { targetPackageDir, workspaceRootDir };
+}
+
+/** Resolve the package target without requiring a JavaScript workspace. */
+export function resolveTargetPackageDir(config: IsolateConfigResolved) {
+  return config.targetPackagePath
     ? path.isAbsolute(config.targetPackagePath)
       ? config.targetPackagePath
       : path.join(process.cwd(), config.targetPackagePath)
     : process.cwd();
+}
 
+/** Resolve the workspace root for a target that requires isolation. */
+export function resolveWorkspaceRootDir(
+  config: IsolateConfigResolved,
+  targetPackageDir: string,
+) {
   if (config.targetPackagePath && !path.isAbsolute(config.targetPackagePath)) {
-    return { targetPackageDir, workspaceRootDir: process.cwd() };
+    return process.cwd();
   }
 
   if (config.workspaceRoot !== undefined) {
-    return {
-      targetPackageDir,
-      workspaceRootDir: path.join(targetPackageDir, config.workspaceRoot),
-    };
+    return path.join(targetPackageDir, config.workspaceRoot);
   }
 
   const detected = detectMonorepo(targetPackageDir);
@@ -217,7 +228,7 @@ export function resolveWorkspacePaths(config: IsolateConfigResolved) {
     );
   }
 
-  return { targetPackageDir, workspaceRootDir: detected.rootDir };
+  return detected.rootDir;
 }
 
 export function resolveConfig(

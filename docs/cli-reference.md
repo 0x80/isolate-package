@@ -30,3 +30,6 @@ npx isolate --pick-from-scripts build --pick-from-scripts start
 ```
 
 Boolean flags support `--no-` negation, for example: `--no-force-npm`.
+
+Targets without a `package.json` bypass isolation and keep their original
+source directory.
