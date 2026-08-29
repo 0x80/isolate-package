@@ -1,0 +1,4 @@
+packages:
+  - packages/*
+patchedDependencies:
+  left-pad@1.3.0: patches/left-pad@1.3.0.patch

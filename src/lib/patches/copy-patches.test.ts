@@ -728,12 +728,13 @@ describe("copyPatches", () => {
     const targetManifest: PackageManifest = {
       name: "test",
       version: "1.0.0",
-      dependencies: { lodash: "^4.0.0" },
+      dependencies: { lodash: "^4.0.0", underscore: "^1.0.0" },
     };
 
     readTypedYamlSync.mockReturnValue({
       patchedDependencies: {
         "lodash@4.17.21": "patches/lodash.patch",
+        "underscore@1.13.7": "patches/underscore.patch",
       },
     });
     readTypedJson.mockResolvedValue({
@@ -742,6 +743,7 @@ describe("copyPatches", () => {
     } as PackageManifest);
     filterPatchedDependencies.mockReturnValue({
       "lodash@4.17.21": "patches/lodash.patch",
+      "underscore@1.13.7": "patches/underscore.patch",
     });
     fs.existsSync.mockReturnValue(true);
     usePackageManager.mockReturnValue({
@@ -752,6 +754,9 @@ describe("copyPatches", () => {
     });
     readWantedLockfile_v9.mockResolvedValue({
       lockfileVersion: "9.0",
+      patchedDependencies: {
+        "lodash@4.17.21": "sha256-lodash",
+      },
     } as unknown as Awaited<ReturnType<typeof readWantedLockfile_v9>>);
 
     await expect(
@@ -764,8 +769,9 @@ describe("copyPatches", () => {
         packagesRegistry: {},
         includeDevDependencies: false,
       }),
-    ).rejects.toThrow("No hash found for patch lodash@4.17.21 in lockfile");
+    ).rejects.toThrow("No hash found for patch underscore@1.13.7 in lockfile");
 
+    expect(fs.ensureDir).not.toHaveBeenCalled();
     expect(fs.copy).not.toHaveBeenCalled();
   });
 

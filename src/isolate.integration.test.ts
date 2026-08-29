@@ -1,4 +1,5 @@
 import fs from "fs-extra";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { parse } from "yaml";
@@ -7,6 +8,9 @@ import { isolate } from "./isolate";
 
 describe("isolate integration", () => {
   const temporaryDirectories: string[] = [];
+  const leftPadPatchContents = "diff --git a/index.js b/index.js\n";
+  const leftPadPatchHash =
+    "2692094a267de7e28825147fd6cb2ebde098a4e68c25dfa3976ac806f4a1a784";
 
   afterEach(async () => {
     await Promise.all(
@@ -124,18 +128,18 @@ describe("isolate integration", () => {
           "",
           "patchedDependencies:",
           ...(majorVersion >= 11
-            ? ["  left-pad@1.3.0: sha256-patched"]
+            ? [`  left-pad@1.3.0: ${leftPadPatchHash}`]
             : [
                 "  left-pad@1.3.0:",
                 "    path: patches/left-pad@1.3.0.patch",
-                "    hash: sha256-patched",
+                `    hash: ${leftPadPatchHash}`,
               ]),
           "",
         ].join("\n"),
       );
       await fs.writeFile(
         path.join(workspaceRoot, "patches", "left-pad@1.3.0.patch"),
-        "diff --git a/index.js b/index.js\n",
+        leftPadPatchContents,
       );
       await fs.writeJson(path.join(targetPackageDir, "package.json"), {
         name: "functions",
@@ -153,6 +157,10 @@ describe("isolate integration", () => {
         path.join(targetPackageDir, "index.js"),
         "export {};\n",
       );
+
+      expect(
+        createHash("sha256").update(leftPadPatchContents).digest("hex"),
+      ).toBe(leftPadPatchHash);
 
       const isolateDir = await isolate({
         targetPackagePath: targetPackageDir,
@@ -178,11 +186,11 @@ describe("isolate integration", () => {
       });
       expect(lockfile.patchedDependencies).toEqual(
         majorVersion >= 11
-          ? { "left-pad@1.3.0": "sha256-patched" }
+          ? { "left-pad@1.3.0": leftPadPatchHash }
           : {
               "left-pad@1.3.0": {
                 path: "patches/left-pad@1.3.0.patch",
-                hash: "sha256-patched",
+                hash: leftPadPatchHash,
               },
             },
       );
