@@ -18,8 +18,8 @@ importers:
         specifier: ^10.8.1
         version: 10.9.0
       '@pnpm/deps.path':
-        specifier: ^1101.0.0
-        version: 1101.0.0
+        specifier: ^1100.1.0
+        version: 1100.1.0
       '@pnpm/logger':
         specifier: ^1100.0.0
         version: 1100.0.0
@@ -833,10 +833,6 @@ packages:
     resolution: {integrity: sha512-1KbfwG1D5mKg0g1XacgGlw9NsBpO7HspQHdYbMhN6XvQ+10V3v4G9PQCo5Vlems6qolZKNYC0wv/HKOETuAsQA==}
     engines: {node: '>=22.13'}
 
-  '@pnpm/deps.path@1101.0.0':
-    resolution: {integrity: sha512-awgi3rf0/Kes/QTVLx/E34rGrg72hNASNDQVp3dE0sQkNv71D3RAQI3K4kaey2VPSvTPx4O/Kn8nMpEUnxVmvA==}
-    engines: {node: '>=22.13'}
-
   '@pnpm/error@1100.1.2':
     resolution: {integrity: sha512-HzeZOy38srT5glZqrlBcdfHd13tec3wrLiVRB5vQnj+ScOswQ2DzZzMJpqMh39gss6zhiTl/MskqKzoY/qT9ew==}
     engines: {node: '>=22.13'}
@@ -946,10 +942,6 @@ packages:
 
   '@pnpm/types@1101.9.0':
     resolution: {integrity: sha512-lB2aSB2h950UX1GX3JW4AZ86xjXD92YJbV92IBSQqHXXZdiemoVKADLA2cDQ4/wKeS7djY8fkITM6X+6iYF62A==}
-    engines: {node: '>=22.13'}
-
-  '@pnpm/types@1102.0.0':
-    resolution: {integrity: sha512-mgR291P+TGABUzGifQyZyU+EE0lBSTGJ87C5J95Ez2XRFlfcH/9GIN5n2saIgzXQAiyoeFSlEVEiXeEIJy+B3A==}
     engines: {node: '>=22.13'}
 
   '@pnpm/types@9.4.2':
@@ -3548,12 +3540,6 @@ snapshots:
       '@pnpm/types': 1101.9.0
       semver: 7.8.5
 
-  '@pnpm/deps.path@1101.0.0':
-    dependencies:
-      '@pnpm/crypto.hash': 1100.0.2
-      '@pnpm/types': 1102.0.0
-      semver: 7.8.5
-
   '@pnpm/error@1100.1.2':
     dependencies:
       '@pnpm/constants': 1101.0.0
@@ -3715,8 +3701,6 @@ snapshots:
   '@pnpm/types@1001.3.0': {}
 
   '@pnpm/types@1101.9.0': {}
-
-  '@pnpm/types@1102.0.0': {}
 
   '@pnpm/types@9.4.2': {}
 
