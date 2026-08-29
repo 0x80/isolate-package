@@ -143,6 +143,11 @@ describe("isolate integration", () => {
         main: "./index.js",
         files: ["index.js"],
         dependencies: { "left-pad": "1.3.0" },
+        pnpm: {
+          patchedDependencies: {
+            "left-pad@1.3.0": "patches/stale-left-pad.patch",
+          },
+        },
       });
       await fs.writeFile(
         path.join(targetPackageDir, "index.js"),

@@ -28,7 +28,10 @@ import {
 import { detectPackageManager, shouldUsePnpmPack } from "./lib/package-manager";
 import { getVersion } from "./lib/package-manager/helpers/infer-from-files";
 import { copyPatches } from "./lib/patches/copy-patches";
-import { getPnpmPatchedDependenciesOutput } from "./lib/patches/pnpm-patched-dependencies";
+import {
+  getPnpmPatchedDependenciesOutput,
+  usesPnpmWorkspacePatchedDependencies,
+} from "./lib/patches/pnpm-patched-dependencies";
 import {
   writeGeneratedIsolatePnpmWorkspace,
   writeIsolatePnpmWorkspace,
@@ -337,10 +340,22 @@ export function createIsolator(initialConfig?: IsolateConfig) {
       majorVersion: packageManager.majorVersion,
       copiedPatches,
     });
+    const shouldRemoveLegacyPnpmPatchedDependencies =
+      packageManager.name === "pnpm" &&
+      !config.forceNpm &&
+      usesPnpmWorkspacePatchedDependencies(packageManager.majorVersion);
 
-    /** Update the manifest for copied patches when its format carries them or for an npm fallback. */
-    if (hasCopiedPatches || usedFallbackToNpm) {
+    /** Update patch metadata for copied patches, pnpm 11 workspace output, or an npm fallback. */
+    if (
+      hasCopiedPatches ||
+      usedFallbackToNpm ||
+      shouldRemoveLegacyPnpmPatchedDependencies
+    ) {
       const manifest = await readManifest(isolateDir);
+
+      if (shouldRemoveLegacyPnpmPatchedDependencies) {
+        delete manifest.pnpm?.patchedDependencies;
+      }
 
       if (hasCopiedPatches) {
         if (packageManager.name === "bun") {
