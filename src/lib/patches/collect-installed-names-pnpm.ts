@@ -44,7 +44,9 @@ export async function collectInstalledNamesFromPnpmLockfile({
     const isRush = isRushWorkspace(workspaceRootDir);
     const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
-    const lockfile = await readPnpmLockfile(lockfileDir, majorVersion);
+    const lockfile = await readPnpmLockfile(lockfileDir, majorVersion, {
+      onFailure: "return-undefined",
+    });
 
     if (!lockfile) {
       log.debug("No pnpm lockfile available for installed-names walk");

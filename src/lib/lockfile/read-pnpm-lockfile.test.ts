@@ -31,6 +31,11 @@ describe("readPnpmLockfile", () => {
     const result = await readPnpmLockfile("/workspace", 8);
 
     expect(result).toBe(lockfile);
+    expect(readWantedLockfile_v8).toHaveBeenCalledOnce();
+    expect(readWantedLockfile_v8).toHaveBeenCalledWith("/workspace", {
+      ignoreIncompatible: false,
+    });
+    expect(readWantedLockfile_v9).not.toHaveBeenCalled();
   });
 
   it("returns the pnpm 9 lockfile for pnpm 9 and later", async () => {
@@ -43,12 +48,46 @@ describe("readPnpmLockfile", () => {
     const result = await readPnpmLockfile("/workspace", 12);
 
     expect(result).toBe(lockfile);
+    expect(readWantedLockfile_v9).toHaveBeenCalledOnce();
+    expect(readWantedLockfile_v9).toHaveBeenCalledWith("/workspace", {
+      ignoreIncompatible: false,
+    });
+    expect(readWantedLockfile_v8).not.toHaveBeenCalled();
   });
 
-  it("propagates lockfile read failures", async () => {
+  it.each([
+    { majorVersion: 8, reader: readWantedLockfile_v8 },
+    { majorVersion: 9, reader: readWantedLockfile_v9 },
+  ])(
+    "propagates pnpm $majorVersion lockfile read failures by default",
+    async ({ majorVersion, reader }) => {
+      const readError = new Error("invalid lockfile");
+      reader.mockRejectedValue(readError);
+
+      await expect(readPnpmLockfile("/workspace", majorVersion)).rejects.toBe(
+        readError,
+      );
+    },
+  );
+
+  it("returns undefined when the caller selects the fallback policy", async () => {
+    readWantedLockfile_v9.mockRejectedValue(new Error("invalid lockfile"));
+
+    const result = await readPnpmLockfile("/workspace", 11, {
+      onFailure: "return-undefined",
+    });
+
+    expect(result).toBeUndefined();
+  });
+
+  it("returns the read error when the caller needs to report it", async () => {
     const readError = new Error("invalid lockfile");
     readWantedLockfile_v9.mockRejectedValue(readError);
 
-    await expect(readPnpmLockfile("/workspace", 11)).rejects.toBe(readError);
+    const result = await readPnpmLockfile("/workspace", 11, {
+      onFailure: "return-error",
+    });
+
+    expect(result).toEqual({ readError });
   });
 });

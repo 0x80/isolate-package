@@ -6,22 +6,63 @@ import { readWantedLockfile as readWantedLockfile_v8 } from "pnpm_lockfile_file_
  */
 import { readWantedLockfile as readWantedLockfile_v9 } from "pnpm_lockfile_file_v9";
 
+type PnpmLockfile =
+  | Awaited<ReturnType<typeof readWantedLockfile_v8>>
+  | Awaited<ReturnType<typeof readWantedLockfile_v9>>;
+
+type ReadPnpmLockfileOptions =
+  | { onFailure?: "throw" }
+  | { onFailure: "return-undefined" }
+  | { onFailure: "return-error" };
+
+export function readPnpmLockfile(
+  lockfileDirectory: string,
+  majorVersion: number,
+  options?: { onFailure?: "throw" },
+): Promise<PnpmLockfile>;
+
+export function readPnpmLockfile(
+  lockfileDirectory: string,
+  majorVersion: number,
+  options: { onFailure: "return-undefined" },
+): Promise<PnpmLockfile | undefined>;
+
+export function readPnpmLockfile(
+  lockfileDirectory: string,
+  majorVersion: number,
+  options: { onFailure: "return-error" },
+): Promise<PnpmLockfile | { readError: unknown }>;
+
 /**
  * Read a workspace lockfile with the reader for its pnpm major version.
- * A missing lockfile resolves to `null`. Filesystem and parse errors propagate
- * so each consumer can apply its own fallback or reporting policy.
+ * A missing lockfile resolves to `null`. The failure policy is explicit at
+ * this seam: callers can propagate, ignore, or retain filesystem and parse
+ * errors without importing either versioned reader.
  */
 export async function readPnpmLockfile(
   lockfileDirectory: string,
   majorVersion: number,
+  options: ReadPnpmLockfileOptions = {},
 ) {
-  if (majorVersion >= 9) {
-    return readWantedLockfile_v9(lockfileDirectory, {
+  try {
+    if (majorVersion >= 9) {
+      return await readWantedLockfile_v9(lockfileDirectory, {
+        ignoreIncompatible: false,
+      });
+    }
+
+    return await readWantedLockfile_v8(lockfileDirectory, {
       ignoreIncompatible: false,
     });
-  }
+  } catch (error) {
+    if (options.onFailure === "return-undefined") {
+      return void 0;
+    }
 
-  return readWantedLockfile_v8(lockfileDirectory, {
-    ignoreIncompatible: false,
-  });
+    if (options.onFailure === "return-error") {
+      return { readError: error };
+    }
+
+    throw error;
+  }
 }

@@ -248,14 +248,16 @@ async function readLockfilePatchedDependencies(
   patchedDependencies?: Record<string, PatchFile | string>;
   readError?: unknown;
 }> {
-  try {
-    const { majorVersion } = usePackageManager();
-    const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
+  const { majorVersion } = usePackageManager();
+  const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
-    const lockfile = await readPnpmLockfile(lockfileDir, majorVersion);
+  const result = await readPnpmLockfile(lockfileDir, majorVersion, {
+    onFailure: "return-error",
+  });
 
-    return { patchedDependencies: lockfile?.patchedDependencies };
-  } catch (error) {
-    return { readError: error };
+  if (result && "readError" in result) {
+    return result;
   }
+
+  return { patchedDependencies: result?.patchedDependencies };
 }
