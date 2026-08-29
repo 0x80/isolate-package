@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { collectInstalledNamesFromPnpmLockfile } from "./collect-installed-names-pnpm";
 
+const debugMock = vi.hoisted(() => vi.fn());
+
+vi.mock("#/lib/logger", () => ({
+  useLogger: vi.fn(() => ({ debug: debugMock })),
+}));
+
 vi.mock("pnpm_lockfile_file_v8", () => ({
   readWantedLockfile: vi.fn(() => Promise.resolve(null)),
   getLockfileImporterId: vi.fn(
@@ -16,6 +22,9 @@ vi.mock("pnpm_lockfile_file_v9", () => ({
 }));
 
 vi.mock("#/lib/utils", () => ({
+  getErrorMessage: vi.fn((error: unknown) =>
+    error instanceof Error ? error.message : String(error),
+  ),
   getPackageName: vi.fn((spec: string) => {
     if (spec.startsWith("@")) {
       const parts = spec.split("@");
@@ -286,6 +295,9 @@ describe("collectInstalledNamesFromPnpmLockfile", () => {
     });
 
     expect(result).toEqual(new Set());
+    expect(debugMock).toHaveBeenCalledWith(
+      "Failed to read pnpm lockfile for installed names: boom",
+    );
   });
 
   it("normalizes the target importer id before the isTarget check (Windows)", async () => {

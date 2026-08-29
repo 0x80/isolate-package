@@ -84,16 +84,6 @@ describe("readPnpmLockfile", () => {
     },
   );
 
-  it("returns undefined when the caller selects the fallback policy", async () => {
-    readWantedLockfile_v9.mockRejectedValue(new Error("invalid lockfile"));
-
-    const result = await readPnpmLockfile("/workspace", 11, {
-      onFailure: "return-undefined",
-    });
-
-    expect(result).toBeUndefined();
-  });
-
   it("returns the read error when the caller needs to report it", async () => {
     const readError = new Error("invalid lockfile");
     readWantedLockfile_v9.mockRejectedValue(readError);

@@ -538,6 +538,24 @@ describe("generatePnpmLockfile", () => {
     ).rejects.toThrow();
   });
 
+  it("propagates lockfile read failures", async () => {
+    const readError = new Error("invalid lockfile");
+    readWantedLockfile_v9.mockRejectedValue(readError);
+
+    await expect(
+      generatePnpmLockfile({
+        workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/apps/my-app",
+        isolateDir: "/workspace/apps/my-app/isolate",
+        internalDepPackageNames: [],
+        packagesRegistry: {},
+        targetPackageManifest: { name: "my-app", version: "1.0.0" },
+        majorVersion: 9,
+        includeDevDependencies: false,
+      }),
+    ).rejects.toBe(readError);
+  });
+
   it("should use Rush lockfile path when in a Rush workspace", async () => {
     isRushWorkspace.mockReturnValue(true);
     const lockfile = createMockLockfile();

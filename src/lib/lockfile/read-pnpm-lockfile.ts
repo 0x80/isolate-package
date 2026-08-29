@@ -12,7 +12,6 @@ type PnpmLockfile =
 
 type ReadPnpmLockfileOptions =
   | { onFailure?: "throw" }
-  | { onFailure: "return-undefined" }
   | { onFailure: "return-error" };
 
 export function readPnpmLockfile(
@@ -24,21 +23,15 @@ export function readPnpmLockfile(
 export function readPnpmLockfile(
   lockfileDirectory: string,
   majorVersion: number,
-  options: { onFailure: "return-undefined" },
-): Promise<PnpmLockfile | undefined>;
-
-export function readPnpmLockfile(
-  lockfileDirectory: string,
-  majorVersion: number,
   options: { onFailure: "return-error" },
 ): Promise<PnpmLockfile | { readError: unknown }>;
 
 /**
  * Read a workspace lockfile with the reader for its pnpm major version.
  * A missing lockfile always resolves to `null`. Filesystem and parse errors
- * throw by default, resolve to `undefined` with `return-undefined`, or resolve
- * to `{ readError }` with `return-error`. This keeps each consumer's failure
- * policy explicit without exposing either versioned reader.
+ * throw by default or resolve to `{ readError }` with `return-error`. This
+ * keeps each consumer's failure policy explicit without exposing either
+ * versioned `readWantedLockfile` function.
  */
 export async function readPnpmLockfile(
   lockfileDirectory: string,
@@ -56,10 +49,6 @@ export async function readPnpmLockfile(
       ignoreIncompatible: false,
     });
   } catch (error) {
-    if (options.onFailure === "return-undefined") {
-      return void 0;
-    }
-
     if (options.onFailure === "return-error") {
       return { readError: error };
     }
