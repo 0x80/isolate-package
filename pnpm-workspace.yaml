@@ -2,3 +2,9 @@ allowBuilds:
   esbuild: true
 minimumReleaseAge: 10080 # 7 days in minutes
 
+overrides:
+  # pretty-ms@9.3.1 was published 2026-08-28 and is inside the minimumReleaseAge
+  # window above. It arrives transitively via @pnpm/lockfile.fs -> network.git-utils
+  # -> safe-execa -> execa. 9.3.0 satisfies execa's ^9.2.0 range and is a year old.
+  # Drop this override once 9.3.1 has aged past the cutoff.
+  pretty-ms: 9.3.0

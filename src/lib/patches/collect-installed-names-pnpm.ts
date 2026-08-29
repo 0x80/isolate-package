@@ -9,7 +9,11 @@ import {
 } from "pnpm_lockfile_file_v9";
 import { useLogger } from "#/lib/logger";
 import type { PackagesRegistry } from "#/lib/types";
-import { getPackageName, isRushWorkspace } from "#/lib/utils";
+import {
+  getPackageName,
+  getPnpmLockfileDir,
+  isRushWorkspace,
+} from "#/lib/utils";
 
 /**
  * Walk the workspace pnpm lockfile starting from the target package and its
@@ -43,9 +47,7 @@ export async function collectInstalledNamesFromPnpmLockfile({
   try {
     const useVersion9 = majorVersion >= 9;
     const isRush = isRushWorkspace(workspaceRootDir);
-    const lockfileDir = isRush
-      ? path.join(workspaceRootDir, "common/config/rush")
-      : workspaceRootDir;
+    const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
     const lockfile = useVersion9
       ? await readWantedLockfile_v9(lockfileDir, { ignoreIncompatible: false })
@@ -81,10 +83,17 @@ export async function collectInstalledNamesFromPnpmLockfile({
     const packages = (lockfile as { packages?: Record<string, PnpmPackage> })
       .packages;
 
+    /**
+     * The v9 reader keys its importers by the branded `ProjectId` type while
+     * the v8 reader uses plain strings, so widen to a string-keyed record to
+     * look entries up by the ids we assembled above.
+     */
+    const importers = lockfile.importers as Record<string, PnpmImporter>;
+
     if (!packages) {
       log.debug("Lockfile has no packages section to walk");
       return collectImporterDirectNames(
-        lockfile.importers,
+        importers,
         importerIds,
         targetImporterId,
         includeDevDependencies,
@@ -96,7 +105,7 @@ export async function collectInstalledNamesFromPnpmLockfile({
     const queue: string[] = [];
 
     for (const importerId of importerIds) {
-      const importer = lockfile.importers[importerId];
+      const importer = importers[importerId];
       if (!importer) continue;
 
       const isTarget = importerId === targetImporterId;

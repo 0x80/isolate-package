@@ -1,0 +1,4 @@
+packages:
+  - apps/*
+configDependencies:
+  my-config: 1.0.0+sha512-AAAAw5EZlYaNyUuBdcIXwn6VQI+gO0oidJd48rNPdzt3zdOznt6BcbIvzVO+ajU0Lp+smUimjvWN9kiM6Jp+Zw==

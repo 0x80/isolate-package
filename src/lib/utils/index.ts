@@ -3,6 +3,7 @@ export * from "./filter-patched-dependencies";
 export * from "./get-dirname";
 export * from "./get-error-message";
 export * from "./get-package-name";
+export * from "./get-pnpm-lockfile-dir";
 export * from "./inspect-value";
 export * from "./is-present";
 export * from "./is-rush-workspace";
