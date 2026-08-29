@@ -81,10 +81,17 @@ export async function collectInstalledNamesFromPnpmLockfile({
     const packages = (lockfile as { packages?: Record<string, PnpmPackage> })
       .packages;
 
+    /**
+     * The v9 reader keys its importers by the branded `ProjectId` type while
+     * the v8 reader uses plain strings, so widen to a string-keyed record to
+     * look entries up by the ids we assembled above.
+     */
+    const importers = lockfile.importers as Record<string, PnpmImporter>;
+
     if (!packages) {
       log.debug("Lockfile has no packages section to walk");
       return collectImporterDirectNames(
-        lockfile.importers,
+        importers,
         importerIds,
         targetImporterId,
         includeDevDependencies,
@@ -96,7 +103,7 @@ export async function collectInstalledNamesFromPnpmLockfile({
     const queue: string[] = [];
 
     for (const importerId of importerIds) {
-      const importer = lockfile.importers[importerId];
+      const importer = importers[importerId];
       if (!importer) continue;
 
       const isTarget = importerId === targetImporterId;

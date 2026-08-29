@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type { PackageManifest } from "#/lib/types";
 import { generatePnpmLockfile } from "./generate-pnpm-lockfile";
 
 /** Mock utils */
@@ -20,6 +21,8 @@ vi.mock("pnpm_lockfile_file_v8", () => ({
 vi.mock("pnpm_lockfile_file_v9", () => ({
   readWantedLockfile: vi.fn(),
   writeWantedLockfile: vi.fn(),
+  readEnvLockfile: vi.fn(),
+  writeEnvLockfile: vi.fn(),
   getLockfileImporterId: vi.fn((_root: string, pkgDir: string) =>
     pkgDir.replace(/.*\//, "").replace(/\\/g, "/"),
   ),
@@ -47,6 +50,8 @@ const {
 const {
   readWantedLockfile: readWantedLockfile_v9,
   writeWantedLockfile: writeWantedLockfile_v9,
+  readEnvLockfile: readEnvLockfile_v9,
+  writeEnvLockfile: writeEnvLockfile_v9,
   getLockfileImporterId: getLockfileImporterId_v9,
 } = vi.mocked(await import("pnpm_lockfile_file_v9"));
 
@@ -98,7 +103,7 @@ describe("generatePnpmLockfile", () => {
   it("should use v9 API when majorVersion >= 9", async () => {
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
-    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
 
     pruneLockfile_v9.mockReturnValue(lockfile as never);
 
@@ -158,7 +163,7 @@ describe("generatePnpmLockfile", () => {
   it("should remap target importer to root (.)", async () => {
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
-    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
 
     pruneLockfile_v9.mockImplementation((lf) => lf as never);
 
@@ -191,7 +196,7 @@ describe("generatePnpmLockfile", () => {
   it("should filter importers to only relevant packages", async () => {
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
-    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
 
     pruneLockfile_v9.mockImplementation((lf) => lf as never);
 
@@ -231,7 +236,7 @@ describe("generatePnpmLockfile", () => {
       overrides: { lodash: "4.17.21" },
     };
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
-    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
 
     /** Simulate prune removing overrides */
     pruneLockfile_v9.mockImplementation((lf) => {
@@ -270,7 +275,7 @@ describe("generatePnpmLockfile", () => {
       packageExtensionsChecksum: "abc123",
     };
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
-    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
 
     /** Simulate prune removing packageExtensionsChecksum */
     pruneLockfile_v9.mockImplementation((lf) => {
@@ -317,7 +322,7 @@ describe("generatePnpmLockfile", () => {
       catalogs,
     };
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
-    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
 
     /** Simulate prune dropping the catalogs snapshot */
     pruneLockfile_v9.mockImplementation((lf) => {
@@ -359,7 +364,7 @@ describe("generatePnpmLockfile", () => {
   it("should not set catalogs when the source lockfile has none", async () => {
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
-    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
     pruneLockfile_v9.mockImplementation((lf) => lf as never);
 
     await generatePnpmLockfile({
@@ -387,7 +392,7 @@ describe("generatePnpmLockfile", () => {
   it("should include patchedDependencies in written lockfile", async () => {
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
-    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
     pruneLockfile_v9.mockImplementation((lf) => lf as never);
 
     const patchedDependencies = {
@@ -440,7 +445,7 @@ describe("generatePnpmLockfile", () => {
     isRushWorkspace.mockReturnValue(true);
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
-    getLockfileImporterId_v9.mockReturnValue("apps/my-app");
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
     pruneLockfile_v9.mockImplementation((lf) => lf as never);
 
     await generatePnpmLockfile({
@@ -464,5 +469,136 @@ describe("generatePnpmLockfile", () => {
       "/workspace/common/config/rush",
       expect.any(Object),
     );
+  });
+
+  describe("lockfile env document", () => {
+    /**
+     * The env document pnpm 12 writes ahead of the project document, holding
+     * `configDependencies` and `packageManagerDependencies`.
+     */
+    const envLockfile = {
+      lockfileVersion: "9.0",
+      importers: {
+        ".": {
+          configDependencies: {},
+          packageManagerDependencies: {
+            pnpm: { specifier: "12.0.0", version: "12.0.0" },
+          },
+        },
+      },
+      packages: {},
+      snapshots: {},
+    };
+
+    beforeEach(() => {
+      isRushWorkspace.mockReturnValue(false);
+      const lockfile = createMockLockfile();
+      readWantedLockfile_v9.mockResolvedValue(lockfile as never);
+      getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
+      pruneLockfile_v9.mockImplementation((lf) => lf as never);
+    });
+
+    async function generate(targetPackageManifest: PackageManifest) {
+      await generatePnpmLockfile({
+        workspaceRootDir: "/workspace",
+        targetPackageDir: "/workspace/apps/my-app",
+        isolateDir: "/workspace/apps/my-app/isolate",
+        internalDepPackageNames: [],
+        packagesRegistry: {},
+        targetPackageManifest,
+        majorVersion: 12,
+        includeDevDependencies: false,
+      });
+    }
+
+    it("should copy the env document when the output keeps a packageManager", async () => {
+      readEnvLockfile_v9.mockResolvedValue(envLockfile as never);
+
+      await generate({
+        name: "my-app",
+        version: "1.0.0",
+        packageManager: "pnpm@12.0.0",
+      });
+
+      expect(readEnvLockfile_v9).toHaveBeenCalledWith("/workspace");
+      expect(writeEnvLockfile_v9).toHaveBeenCalledWith(
+        "/workspace/apps/my-app/isolate",
+        envLockfile,
+      );
+    });
+
+    it("should write the env document after the project document, since it is appended to the existing file", async () => {
+      readEnvLockfile_v9.mockResolvedValue(envLockfile as never);
+
+      await generate({
+        name: "my-app",
+        version: "1.0.0",
+        packageManager: "pnpm@12.0.0",
+      });
+
+      expect(writeWantedLockfile_v9.mock.invocationCallOrder[0]!).toBeLessThan(
+        writeEnvLockfile_v9.mock.invocationCallOrder[0]!,
+      );
+    });
+
+    it("should skip the env document when the output omits the packageManager", async () => {
+      readEnvLockfile_v9.mockResolvedValue(envLockfile as never);
+
+      await generate({ name: "my-app", version: "1.0.0" });
+
+      expect(writeEnvLockfile_v9).not.toHaveBeenCalled();
+    });
+
+    it("should skip the env document when the workspace lockfile has none", async () => {
+      readEnvLockfile_v9.mockResolvedValue(null as never);
+
+      await generate({
+        name: "my-app",
+        version: "1.0.0",
+        packageManager: "pnpm@12.0.0",
+      });
+
+      expect(writeEnvLockfile_v9).not.toHaveBeenCalled();
+    });
+
+    it("should read the env document from the Rush lockfile directory", async () => {
+      isRushWorkspace.mockReturnValue(true);
+      readEnvLockfile_v9.mockResolvedValue(null as never);
+
+      await generate({
+        name: "my-app",
+        version: "1.0.0",
+        packageManager: "pnpm@12.0.0",
+      });
+
+      expect(readEnvLockfile_v9).toHaveBeenCalledWith(
+        "/workspace/common/config/rush",
+      );
+    });
+  });
+
+  it("should not touch the env document on the v8 path", async () => {
+    const lockfile = createMockLockfile();
+    readWantedLockfile_v8.mockResolvedValue(lockfile as never);
+    getLockfileImporterId_v8.mockReturnValue("apps/my-app");
+    pruneLockfile_v8.mockImplementation((lf) => lf as never);
+
+    await generatePnpmLockfile({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/apps/my-app",
+      isolateDir: "/workspace/apps/my-app/isolate",
+      internalDepPackageNames: [],
+      packagesRegistry: {},
+      targetPackageManifest: {
+        name: "my-app",
+        version: "1.0.0",
+        packageManager: "pnpm@8.15.0",
+      },
+      majorVersion: 8,
+      includeDevDependencies: false,
+    });
+
+    expect(readEnvLockfile_v9).not.toHaveBeenCalled();
+    expect(writeEnvLockfile_v9).not.toHaveBeenCalled();
   });
 });

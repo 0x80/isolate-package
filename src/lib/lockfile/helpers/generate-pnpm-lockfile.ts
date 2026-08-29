@@ -5,9 +5,17 @@ import {
   readWantedLockfile as readWantedLockfile_v8,
   writeWantedLockfile as writeWantedLockfile_v8,
 } from "pnpm_lockfile_file_v8";
+/**
+ * The `_v9` alias names the lockfile format, not the package. It resolves to
+ * `@pnpm/lockfile.fs`, the maintained successor of `@pnpm/lockfile-file`, whose
+ * last release predates the two-document lockfile that pnpm 12 writes (see
+ * issue #205). Both read and write lockfile format v9.
+ */
 import {
   getLockfileImporterId as getLockfileImporterId_v9,
+  readEnvLockfile as readEnvLockfile_v9,
   readWantedLockfile as readWantedLockfile_v9,
+  writeEnvLockfile as writeEnvLockfile_v9,
   writeWantedLockfile as writeWantedLockfile_v9,
 } from "pnpm_lockfile_file_v9";
 import { pruneLockfile as pruneLockfile_v8 } from "pnpm_prune_lockfile_v8";
@@ -21,8 +29,8 @@ import { pnpmMapImporter } from "./pnpm-map-importer";
 /**
  * A pnpm catalog snapshot as stored in the lockfile: a map of catalog name
  * (e.g. "default") to a map of dependency name to its resolved entry. The
- * pinned `@pnpm/lockfile-file` types predate catalogs, so we model the shape
- * locally for the cast below.
+ * lockfile object is a union of the v8 and v9 reader types and the v8 one
+ * predates catalogs, so we model the shape locally for the cast below.
  */
 type CatalogSnapshots = Record<
   string,
@@ -65,23 +73,18 @@ export async function generatePnpmLockfile({
   try {
     const isRush = isRushWorkspace(workspaceRootDir);
 
+    /** In a Rush workspace the lockfile does not live in the workspace root */
+    const lockfileRootDir = isRush
+      ? path.join(workspaceRootDir, "common/config/rush")
+      : workspaceRootDir;
+
     const lockfile = useVersion9
-      ? await readWantedLockfile_v9(
-          isRush
-            ? path.join(workspaceRootDir, "common/config/rush")
-            : workspaceRootDir,
-          {
-            ignoreIncompatible: false,
-          },
-        )
-      : await readWantedLockfile_v8(
-          isRush
-            ? path.join(workspaceRootDir, "common/config/rush")
-            : workspaceRootDir,
-          {
-            ignoreIncompatible: false,
-          },
-        );
+      ? await readWantedLockfile_v9(lockfileRootDir, {
+          ignoreIncompatible: false,
+        })
+      : await readWantedLockfile_v8(lockfileRootDir, {
+          ignoreIncompatible: false,
+        });
 
     assert(lockfile, `No input lockfile found at ${workspaceRootDir}`);
 
@@ -163,9 +166,23 @@ export async function generatePnpmLockfile({
 
     log.debug("Pruning the lockfile");
 
+    /**
+     * The reader and the pruner are separate packages with their own copies of
+     * the lockfile types, and since v9 the reader brands its importer keys with
+     * `ProjectId`. The shapes are structurally the same, so we cast to whatever
+     * the matching pruner declares.
+     */
     const prunedLockfile = useVersion9
-      ? pruneLockfile_v9(lockfile, targetPackageManifest, ".")
-      : pruneLockfile_v8(lockfile, targetPackageManifest, ".");
+      ? pruneLockfile_v9(
+          lockfile as Parameters<typeof pruneLockfile_v9>[0],
+          targetPackageManifest,
+          ".",
+        )
+      : pruneLockfile_v8(
+          lockfile as Parameters<typeof pruneLockfile_v8>[0],
+          targetPackageManifest,
+          ".",
+        );
 
     /** Pruning seems to remove the overrides from the lockfile */
     if (lockfile.overrides) {
@@ -200,9 +217,24 @@ export async function generatePnpmLockfile({
      * structure, preserving the original folder structure (not flattened).
      */
     if (useVersion9) {
+      /**
+       * The pruner and the writer come from separate packages with their own
+       * copies of the lockfile types, which disagree on `lockfileVersion` and on
+       * `patchedDependencies`: the modern writer types the latter as a map of
+       * bare hashes, because pnpm 11 simplified the on-disk format (see issue
+       * #201). We keep writing the `{ path, hash }` form that pnpm 9 and 10
+       * expect — pnpm 11 and up migrate it when reading, and the writer passes
+       * the value through untouched.
+       */
       await writeWantedLockfile_v9(isolateDir, {
         ...prunedLockfile,
         patchedDependencies,
+      } as unknown as Parameters<typeof writeWantedLockfile_v9>[1]);
+
+      await copyEnvLockfile({
+        lockfileRootDir,
+        isolateDir,
+        targetPackageManifest,
       });
     } else {
       await writeWantedLockfile_v8(isolateDir, {
@@ -216,4 +248,47 @@ export async function generatePnpmLockfile({
     log.error(`Failed to generate lockfile: ${getErrorMessage(error)}`);
     throw error;
   }
+}
+
+/**
+ * Since pnpm 12 the lockfile can be a stream of two YAML documents: an "env"
+ * document holding `configDependencies` and `packageManagerDependencies`,
+ * followed by the project document. The env document is what pins the package
+ * manager itself, so an isolated output that keeps the root `packageManager`
+ * field but drops the env document is rejected by
+ * `pnpm install --frozen-lockfile` with
+ * ERR_PNPM_FROZEN_LOCKFILE_WITH_OUTDATED_LOCKFILE.
+ *
+ * The env document describes the environment rather than the workspace graph,
+ * so there is nothing to prune — it is copied verbatim. When the output omits
+ * `packageManager` we skip it, because then pnpm would consider the pinned
+ * package manager dependencies stale for the opposite reason.
+ */
+async function copyEnvLockfile({
+  lockfileRootDir,
+  isolateDir,
+  targetPackageManifest,
+}: {
+  lockfileRootDir: string;
+  isolateDir: string;
+  targetPackageManifest: PackageManifest;
+}) {
+  const log = useLogger();
+
+  const envLockfile = await readEnvLockfile_v9(lockfileRootDir);
+
+  if (!envLockfile) {
+    return;
+  }
+
+  if (!targetPackageManifest.packageManager) {
+    log.debug(
+      "Skipping the lockfile env document because the output manifest has no packageManager field",
+    );
+    return;
+  }
+
+  log.debug("Copying the lockfile env document");
+
+  await writeEnvLockfile_v9(isolateDir, envLockfile);
 }

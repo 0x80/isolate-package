@@ -290,7 +290,7 @@ describe("collectInstalledNamesFromPnpmLockfile", () => {
     const { getLockfileImporterId } = vi.mocked(
       await import("pnpm_lockfile_file_v9"),
     );
-    getLockfileImporterId.mockReturnValueOnce("packages\\consumer");
+    getLockfileImporterId.mockReturnValueOnce("packages\\consumer" as never);
 
     readWantedLockfile_v9.mockResolvedValue({
       lockfileVersion: "9.0",
