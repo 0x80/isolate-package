@@ -95,16 +95,25 @@ Select which scripts to omit from the output manifest `scripts` field. For
 example if the build script interferes with your deployment target, but you want
 to preserve all of the other scripts, set it to `["build"]`.
 
-By default, all scripts are omitted, and the [pickFromScripts](#pickfromscripts)
-configuration overrules this configuration.
+By default, all scripts are omitted. For the target manifest the
+[pickFromScripts](#pickfromscripts) configuration overrules this one, but
+`omitFromScripts` still applies to internal dependencies when both are set.
 
 ::: info Scripts in internal dependencies
-The `pickFromScripts` and `omitFromScripts` options only apply to the target
-package manifest. Internal dependency manifests preserve their scripts by
-default (e.g. for `postinstall` hooks like Prisma client generation), with one
-exception: the `prepare` script is always stripped from internal dependencies
-because it runs during `pnpm install` and typically depends on devDependency
-binaries that are not available in the isolated output.
+Internal dependency manifests preserve their scripts by default (e.g. for
+`postinstall` hooks like Prisma client generation), with one exception. The
+`prepare` script is always stripped from internal dependencies because it runs
+during `pnpm install` and typically depends on devDependency binaries that are
+not available in the isolated output.
+
+`omitFromScripts` applies to internal dependency manifests as well, on top of
+that `prepare` strip. This is the way to remove a script the default cannot
+anticipate. A `preinstall` with `npx only-allow pnpm` in every workspace
+package, for example, fails the install when you deploy the output with npm, so
+`omitFromScripts: ["preinstall"]` removes it everywhere.
+
+`pickFromScripts` is target-only. It does not turn into an allowlist for
+internal dependencies, which would silently drop their `postinstall` hooks.
 :::
 
 ### omitPackageManager

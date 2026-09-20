@@ -17,12 +17,18 @@ export async function adaptInternalPackageManifests({
   packagesRegistry,
   isolateDir,
   forceNpm,
+  omitFromScripts,
   workspaceRootDir,
 }: {
   internalPackageNames: string[];
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
   forceNpm: boolean;
+  /**
+   * Script names from `omitFromScripts` in the config, removed on top of the
+   * `prepare` script that is always stripped.
+   */
+  omitFromScripts?: string[];
   workspaceRootDir: string;
 }) {
   const packageManager = usePackageManager();
@@ -49,9 +55,17 @@ export async function adaptInternalPackageManifests({
        * which are not available in the isolated output. Other lifecycle
        * scripts like `postinstall` are preserved because they handle runtime
        * setup (e.g. Prisma client generation).
+       *
+       * Anything listed in `omitFromScripts` is removed as well, which is the
+       * escape hatch for scripts the default cannot anticipate — a
+       * `preinstall: npx only-allow pnpm` guard, for instance, always fails
+       * the install when the output is deployed with npm (see issue #216).
        */
       if (strippedManifest.scripts) {
-        strippedManifest.scripts = omit(strippedManifest.scripts, ["prepare"]);
+        strippedManifest.scripts = omit(strippedManifest.scripts, [
+          "prepare",
+          ...(omitFromScripts ?? []),
+        ]);
       }
 
       const preparedManifest = isPnpmWorkspaceOutput

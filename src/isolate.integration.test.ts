@@ -71,6 +71,100 @@ describe("isolate integration", () => {
     ).resolves.toMatchObject({ name: "functions-node", version: "1.0.0" });
   });
 
+  it("omits configured scripts from internal package manifests", async () => {
+    const workspaceRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), "isolate-omit-internal-scripts-test-"),
+    );
+    temporaryDirectories.push(workspaceRoot);
+    const targetPackageDir = path.join(workspaceRoot, "packages", "functions");
+    const sharedPackageDir = path.join(workspaceRoot, "packages", "shared");
+    await fs.ensureDir(targetPackageDir);
+    await fs.ensureDir(sharedPackageDir);
+    await fs.writeJson(path.join(workspaceRoot, "package.json"), {
+      name: "workspace",
+      version: "1.0.0",
+      private: true,
+      workspaces: ["packages/*"],
+    });
+    await fs.writeJson(path.join(workspaceRoot, "package-lock.json"), {
+      name: "workspace",
+      version: "1.0.0",
+      lockfileVersion: 3,
+      requires: true,
+      packages: {
+        "": {
+          name: "workspace",
+          version: "1.0.0",
+          workspaces: ["packages/*"],
+        },
+        "node_modules/shared": {
+          resolved: "packages/shared",
+          link: true,
+        },
+        "packages/functions": {
+          name: "functions",
+          version: "1.0.0",
+          dependencies: { shared: "1.0.0" },
+        },
+        "packages/shared": {
+          name: "shared",
+          version: "1.0.0",
+        },
+      },
+    });
+    await fs.writeJson(path.join(targetPackageDir, "package.json"), {
+      name: "functions",
+      version: "1.0.0",
+      main: "./index.js",
+      files: ["index.js"],
+      scripts: {
+        preinstall: "echo target-preinstall",
+        build: "echo target-build",
+      },
+      dependencies: { shared: "1.0.0" },
+    });
+    await fs.writeFile(path.join(targetPackageDir, "index.js"), "export {};\n");
+    await fs.writeJson(path.join(sharedPackageDir, "package.json"), {
+      name: "shared",
+      version: "1.0.0",
+      main: "./index.js",
+      files: ["index.js"],
+      scripts: {
+        preinstall: "echo shared-preinstall",
+        prepare: "echo shared-prepare",
+        postinstall: "echo shared-postinstall",
+        build: "echo shared-build",
+      },
+    });
+    await fs.writeFile(path.join(sharedPackageDir, "index.js"), "export {};\n");
+
+    const isolateDir = await isolate({
+      targetPackagePath: targetPackageDir,
+      buildDirName: ".",
+      workspaceRoot: "../..",
+      omitFromScripts: ["preinstall"],
+    });
+
+    const sharedManifest = await fs.readJson(
+      path.join(isolateDir, "packages", "shared", "package.json"),
+    );
+
+    /**
+     * The target keeps whatever `omitFromScripts` leaves, and the internal
+     * package loses `preinstall` on top of the always-stripped `prepare`.
+     */
+    expect(sharedManifest.scripts).toEqual({
+      postinstall: "echo shared-postinstall",
+      build: "echo shared-build",
+    });
+
+    const targetManifest = await fs.readJson(
+      path.join(isolateDir, "package.json"),
+    );
+
+    expect(targetManifest.scripts).toEqual({ build: "echo target-build" });
+  });
+
   it.each([10, 11])(
     "writes pnpm %i patch settings to the lockfile and workspace configuration",
     async (majorVersion) => {

@@ -277,6 +277,7 @@ export function createIsolator(initialConfig?: IsolateConfig) {
       packagesRegistry,
       isolateDir,
       forceNpm: config.forceNpm,
+      omitFromScripts: config.omitFromScripts,
       workspaceRootDir,
     });
 
