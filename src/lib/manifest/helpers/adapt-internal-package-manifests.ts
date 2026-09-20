@@ -52,11 +52,6 @@ export async function adaptInternalPackageManifests({
        * scripts like `postinstall` are preserved because they handle runtime
        * setup (e.g. Prisma client generation).
        *
-       * Anything listed in `omitFromScripts` is removed as well, which is the
-       * escape hatch for scripts the default cannot anticipate — a
-       * `preinstall: npx only-allow pnpm` guard, for instance, always fails
-       * the install when the output is deployed with npm (see issue #216).
-       *
        * This rewrites the output manifest only. The packing step ran earlier
        * against the original manifest, so `prepare`, `prepack` and `postpack`
        * have already executed by the time we get here and cannot be omitted.

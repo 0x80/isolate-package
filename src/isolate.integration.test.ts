@@ -8,6 +8,8 @@ import { isolate } from "./isolate";
 
 describe("isolate integration", () => {
   const temporaryDirectories: string[] = [];
+  /** Each case shells out to `npm pack`, which outlasts vitest's 5s default */
+  const ISOLATE_TEST_TIMEOUT = 30_000;
   const leftPadPatchContents = "diff --git a/index.js b/index.js\n";
   const leftPadPatchHash =
     "2692094a267de7e28825147fd6cb2ebde098a4e68c25dfa3976ac806f4a1a784";
@@ -71,7 +73,11 @@ describe("isolate integration", () => {
     ).resolves.toMatchObject({ name: "functions-node", version: "1.0.0" });
   });
 
-  it("omits configured scripts from internal package manifests", async () => {
+  /**
+   * An npm workspace whose target and internal package both carry lifecycle
+   * scripts, so a test can assert which ones survive into the output.
+   */
+  async function createScriptsWorkspace() {
     const workspaceRoot = await fs.mkdtemp(
       path.join(os.tmpdir(), "isolate-omit-internal-scripts-test-"),
     );
@@ -139,60 +145,73 @@ describe("isolate integration", () => {
     });
     await fs.writeFile(path.join(sharedPackageDir, "index.js"), "export {};\n");
 
-    const isolateDir = await isolate({
-      targetPackagePath: targetPackageDir,
-      buildDirName: ".",
-      workspaceRoot: "../..",
-      omitFromScripts: ["preinstall"],
-    });
+    return targetPackageDir;
+  }
 
-    const sharedManifest = await fs.readJson(
-      path.join(isolateDir, "packages", "shared", "package.json"),
-    );
+  it(
+    "omits configured scripts from internal package manifests",
+    async () => {
+      const targetPackageDir = await createScriptsWorkspace();
 
-    expect(sharedManifest.scripts).toEqual({
-      postinstall: "echo shared-postinstall",
-      build: "echo shared-build",
-    });
+      const isolateDir = await isolate({
+        targetPackagePath: targetPackageDir,
+        buildDirName: ".",
+        workspaceRoot: "../..",
+        omitFromScripts: ["preinstall"],
+      });
 
-    const targetManifest = await fs.readJson(
-      path.join(isolateDir, "package.json"),
-    );
+      const sharedManifest = await fs.readJson(
+        path.join(isolateDir, "packages", "shared", "package.json"),
+      );
+      const targetManifest = await fs.readJson(
+        path.join(isolateDir, "package.json"),
+      );
 
-    expect(targetManifest.scripts).toEqual({
-      build: "echo target-build",
-      test: "echo target-test",
-    });
+      expect(sharedManifest.scripts).toEqual({
+        postinstall: "echo shared-postinstall",
+        build: "echo shared-build",
+      });
+      expect(targetManifest.scripts).toEqual({
+        build: "echo target-build",
+        test: "echo target-test",
+      });
+    },
+    ISOLATE_TEST_TIMEOUT,
+  );
 
-    /**
-     * The reporter's own configuration in #216 sets both options. The target
-     * follows `pickFromScripts`, which drops `test` that omission alone kept,
-     * while the internal manifest independently applies `omitFromScripts` —
-     * so giving `pickFromScripts` precedence for the target must not stop the
-     * omit list from reaching the internal packages.
-     */
-    const pickIsolateDir = await isolate({
-      targetPackagePath: targetPackageDir,
-      buildDirName: ".",
-      workspaceRoot: "../..",
-      isolateDirName: "isolate-pick",
-      pickFromScripts: ["build"],
-      omitFromScripts: ["preinstall"],
-    });
+  it(
+    "applies omitFromScripts to internal packages when pickFromScripts is also set",
+    async () => {
+      const targetPackageDir = await createScriptsWorkspace();
 
-    const pickTargetManifest = await fs.readJson(
-      path.join(pickIsolateDir, "package.json"),
-    );
-    const pickSharedManifest = await fs.readJson(
-      path.join(pickIsolateDir, "packages", "shared", "package.json"),
-    );
+      const isolateDir = await isolate({
+        targetPackagePath: targetPackageDir,
+        buildDirName: ".",
+        workspaceRoot: "../..",
+        pickFromScripts: ["build"],
+        omitFromScripts: ["preinstall"],
+      });
 
-    expect(pickTargetManifest.scripts).toEqual({ build: "echo target-build" });
-    expect(pickSharedManifest.scripts).toEqual({
-      postinstall: "echo shared-postinstall",
-      build: "echo shared-build",
-    });
-  });
+      const targetManifest = await fs.readJson(
+        path.join(isolateDir, "package.json"),
+      );
+      const sharedManifest = await fs.readJson(
+        path.join(isolateDir, "packages", "shared", "package.json"),
+      );
+
+      /**
+       * `pickFromScripts` is target-only, so it drops the target's `test`
+       * script that omission alone keeps, while `omitFromScripts` still has to
+       * reach the internal package.
+       */
+      expect(targetManifest.scripts).toEqual({ build: "echo target-build" });
+      expect(sharedManifest.scripts).toEqual({
+        postinstall: "echo shared-postinstall",
+        build: "echo shared-build",
+      });
+    },
+    ISOLATE_TEST_TIMEOUT,
+  );
 
   it.each([10, 11])(
     "writes pnpm %i patch settings to the lockfile and workspace configuration",
