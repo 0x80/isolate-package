@@ -24,10 +24,6 @@ export async function adaptInternalPackageManifests({
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
   forceNpm: boolean;
-  /**
-   * Script names from `omitFromScripts` in the config, removed on top of the
-   * `prepare` script that is always stripped.
-   */
   omitFromScripts?: string[];
   workspaceRootDir: string;
 }) {
@@ -60,6 +56,10 @@ export async function adaptInternalPackageManifests({
        * escape hatch for scripts the default cannot anticipate — a
        * `preinstall: npx only-allow pnpm` guard, for instance, always fails
        * the install when the output is deployed with npm (see issue #216).
+       *
+       * This rewrites the output manifest only. The packing step ran earlier
+       * against the original manifest, so `prepare`, `prepack` and `postpack`
+       * have already executed by the time we get here and cannot be omitted.
        */
       if (strippedManifest.scripts) {
         strippedManifest.scripts = omit(strippedManifest.scripts, [

@@ -114,6 +114,12 @@ package, for example, fails the install when you deploy the output with npm, so
 
 `pickFromScripts` is target-only. It does not turn into an allowlist for
 internal dependencies, which would silently drop their `postinstall` hooks.
+
+Both options rewrite the manifests in the output. They do not affect the packing
+step that collects each internal package, and `npm pack` and `pnpm pack` run
+`prepare`, `prepack` and `postpack` from the package's original manifest. Listing
+one of those three names does not stop it running during isolation, so a
+`prepack` that fails still fails the isolate.
 :::
 
 ### omitPackageManager

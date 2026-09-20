@@ -120,6 +120,7 @@ describe("isolate integration", () => {
       scripts: {
         preinstall: "echo target-preinstall",
         build: "echo target-build",
+        test: "echo target-test",
       },
       dependencies: { shared: "1.0.0" },
     });
@@ -149,10 +150,6 @@ describe("isolate integration", () => {
       path.join(isolateDir, "packages", "shared", "package.json"),
     );
 
-    /**
-     * The target keeps whatever `omitFromScripts` leaves, and the internal
-     * package loses `preinstall` on top of the always-stripped `prepare`.
-     */
     expect(sharedManifest.scripts).toEqual({
       postinstall: "echo shared-postinstall",
       build: "echo shared-build",
@@ -162,7 +159,39 @@ describe("isolate integration", () => {
       path.join(isolateDir, "package.json"),
     );
 
-    expect(targetManifest.scripts).toEqual({ build: "echo target-build" });
+    expect(targetManifest.scripts).toEqual({
+      build: "echo target-build",
+      test: "echo target-test",
+    });
+
+    /**
+     * The reporter's own configuration in #216 sets both options. The target
+     * follows `pickFromScripts`, which drops `test` that omission alone kept,
+     * while the internal manifest independently applies `omitFromScripts` —
+     * so giving `pickFromScripts` precedence for the target must not stop the
+     * omit list from reaching the internal packages.
+     */
+    const pickIsolateDir = await isolate({
+      targetPackagePath: targetPackageDir,
+      buildDirName: ".",
+      workspaceRoot: "../..",
+      isolateDirName: "isolate-pick",
+      pickFromScripts: ["build"],
+      omitFromScripts: ["preinstall"],
+    });
+
+    const pickTargetManifest = await fs.readJson(
+      path.join(pickIsolateDir, "package.json"),
+    );
+    const pickSharedManifest = await fs.readJson(
+      path.join(pickIsolateDir, "packages", "shared", "package.json"),
+    );
+
+    expect(pickTargetManifest.scripts).toEqual({ build: "echo target-build" });
+    expect(pickSharedManifest.scripts).toEqual({
+      postinstall: "echo shared-postinstall",
+      build: "echo shared-build",
+    });
   });
 
   it.each([10, 11])(
