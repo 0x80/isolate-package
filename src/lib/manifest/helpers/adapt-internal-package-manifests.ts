@@ -17,12 +17,14 @@ export async function adaptInternalPackageManifests({
   packagesRegistry,
   isolateDir,
   forceNpm,
+  omitFromScripts,
   workspaceRootDir,
 }: {
   internalPackageNames: string[];
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
   forceNpm: boolean;
+  omitFromScripts?: string[];
   workspaceRootDir: string;
 }) {
   const packageManager = usePackageManager();
@@ -49,9 +51,16 @@ export async function adaptInternalPackageManifests({
        * which are not available in the isolated output. Other lifecycle
        * scripts like `postinstall` are preserved because they handle runtime
        * setup (e.g. Prisma client generation).
+       *
+       * This rewrites the output manifest only. The packing step ran earlier
+       * against the original manifest, so `prepare`, `prepack` and `postpack`
+       * have already executed by the time we get here and cannot be omitted.
        */
       if (strippedManifest.scripts) {
-        strippedManifest.scripts = omit(strippedManifest.scripts, ["prepare"]);
+        strippedManifest.scripts = omit(strippedManifest.scripts, [
+          "prepare",
+          ...(omitFromScripts ?? []),
+        ]);
       }
 
       const preparedManifest = isPnpmWorkspaceOutput

@@ -148,6 +148,73 @@ describe("adaptInternalPackageManifests", () => {
     });
   });
 
+  it("should omit the configured scripts alongside prepare", async () => {
+    const manifest: PackageManifest = {
+      name: "@repo/common",
+      version: "1.0.0",
+      scripts: {
+        preinstall: "npx only-allow pnpm",
+        prepare: "tsdown",
+        postinstall: "prisma generate",
+        build: "tsdown",
+      },
+    };
+
+    const packagesRegistry = createRegistry({
+      "@repo/common": {
+        rootRelativeDir: "packages/common",
+        manifest,
+      },
+    });
+
+    await adaptInternalPackageManifests({
+      internalPackageNames: ["@repo/common"],
+      packagesRegistry,
+      isolateDir: "/output",
+      forceNpm: true,
+      omitFromScripts: ["preinstall", "build"],
+      workspaceRootDir: "/workspace",
+    });
+
+    const writtenManifest = writeManifest.mock.calls[0]![1];
+
+    expect(writtenManifest.scripts).toEqual({
+      postinstall: "prisma generate",
+    });
+  });
+
+  it("should leave scripts untouched when omitFromScripts lists an absent name", async () => {
+    const manifest: PackageManifest = {
+      name: "@repo/common",
+      version: "1.0.0",
+      scripts: {
+        postinstall: "prisma generate",
+      },
+    };
+
+    const packagesRegistry = createRegistry({
+      "@repo/common": {
+        rootRelativeDir: "packages/common",
+        manifest,
+      },
+    });
+
+    await adaptInternalPackageManifests({
+      internalPackageNames: ["@repo/common"],
+      packagesRegistry,
+      isolateDir: "/output",
+      forceNpm: false,
+      omitFromScripts: ["preinstall"],
+      workspaceRootDir: "/workspace",
+    });
+
+    const writtenManifest = writeManifest.mock.calls[0]![1];
+
+    expect(writtenManifest.scripts).toEqual({
+      postinstall: "prisma generate",
+    });
+  });
+
   it("should strip devDependencies from internal dependency manifests", async () => {
     const manifest: PackageManifest = {
       name: "@repo/shared",
