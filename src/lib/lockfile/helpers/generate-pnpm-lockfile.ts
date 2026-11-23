@@ -25,18 +25,11 @@ import {
 } from "#/lib/patches/pnpm-patched-dependencies";
 import { readPnpmLockfile } from "../read-pnpm-lockfile";
 import type { ReadablePnpmLockfile } from "../readable-pnpm-lockfile-dir";
+import {
+  type CatalogSnapshots,
+  pickReferencedCatalogs,
+} from "./pick-referenced-catalogs";
 import { pnpmMapImporter } from "./pnpm-map-importer";
-
-/**
- * A pnpm catalog snapshot as stored in the lockfile: a map of catalog name
- * (e.g. "default") to a map of dependency name to its resolved entry. The
- * lockfile object is a union of the v8 and v9 reader types and the v8 one
- * predates catalogs, so we model the shape locally for the cast below.
- */
-type CatalogSnapshots = Record<
-  string,
-  Record<string, { specifier: string; version: string }>
->;
 
 export async function generatePnpmLockfile({
   workspaceRootDir,
@@ -201,17 +194,25 @@ export async function generatePnpmLockfile({
     /**
      * Pruning drops the catalogs snapshot, but the isolated importers keep
      * their "catalog:" specifiers (for pnpm we don't resolve catalog deps in
-     * the manifest, since the output is itself a workspace). Restore it
-     * verbatim — like overrides above — so it stays in sync with the importer
-     * specifiers and the preserved pnpm-workspace.yaml catalog definitions,
-     * which are themselves copied verbatim (see issue #198). pnpm tolerates
-     * catalog entries that no retained importer references, so there is no need
-     * to narrow the snapshot.
+     * the manifest, since the output is itself a workspace, see issue #198).
+     * Restore the entries those importers reference. The workspace's other
+     * entries are left out: pnpm 12 rejects a frozen install whose snapshot
+     * holds unused entries when catalog pruning is enabled (see issue #218).
+     * The pnpm-workspace.yaml copy keeps its full catalog definitions, which
+     * pnpm accepts with or without pruning.
      */
     const catalogs = (lockfile as { catalogs?: CatalogSnapshots }).catalogs;
 
     if (catalogs) {
-      (prunedLockfile as { catalogs?: CatalogSnapshots }).catalogs = catalogs;
+      const referencedCatalogs = pickReferencedCatalogs(
+        catalogs,
+        prunedLockfile.importers,
+      );
+
+      if (referencedCatalogs) {
+        (prunedLockfile as { catalogs?: CatalogSnapshots }).catalogs =
+          referencedCatalogs;
+      }
     }
 
     /**
