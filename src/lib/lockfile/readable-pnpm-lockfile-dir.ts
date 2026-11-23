@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import { exec } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
-import { isSeq, parseAllDocuments } from "yaml";
+import { type Document, isMap, isScalar, parseAllDocuments } from "yaml";
 import { useLogger } from "#/lib/logger";
 import {
   getErrorMessage,
@@ -24,10 +24,10 @@ export type ReadablePnpmLockfile = {
   /** The directory holding the `pnpm-lock.yaml` to read */
   dir: string;
   /**
-   * Whether pnpm converted the workspace lockfile to v9 for this read. The
-   * workspace config then still asks for the newer format.
+   * Whether the workspace config asks for a lockfile format newer than v9.
+   * pnpm then refuses a frozen install of a lockfile without its settings.
    */
-  isConverted: boolean;
+  requestsNewerFormat: boolean;
 };
 
 /**
@@ -37,27 +37,28 @@ export type ReadablePnpmLockfile = {
  * library reads v13, so pnpm itself converts it to v9 in a staged copy of the
  * workspace, which is valid only until `useLockfile` settles and is removed
  * then. The workspace lockfile and config are never written to.
- *
- * `isolateDir` is left out of the staged workspace's projects: the isolate
- * output already holds manifests that a recursive `packages` glob would
- * otherwise turn into projects the lockfile does not know.
  */
 export async function withReadablePnpmLockfileDir<T>(
-  {
-    workspaceRootDir,
-    isolateDir,
-  }: { workspaceRootDir: string; isolateDir: string },
+  workspaceRootDir: string,
   useLockfile: (lockfile: ReadablePnpmLockfile) => Promise<T>,
 ): Promise<T> {
   const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
   const lockfilePath = path.join(lockfileDir, LOCKFILE_NAME);
-  const lockfileMajorVersion = await readLockfileMajorVersion(lockfilePath);
+  const [projectDocument, requestedMajorVersion] = await Promise.all([
+    readProjectDocument(lockfilePath),
+    readRequestedLockfileMajorVersion(workspaceRootDir),
+  ]);
+  const requestsNewerFormat =
+    requestedMajorVersion !== null &&
+    requestedMajorVersion > MAX_READABLE_LOCKFILE_MAJOR_VERSION;
+  const lockfileMajorVersion = readMajorVersion(projectDocument);
 
   if (
+    !projectDocument ||
     lockfileMajorVersion === null ||
     lockfileMajorVersion <= MAX_READABLE_LOCKFILE_MAJOR_VERSION
   ) {
-    return useLockfile({ dir: lockfileDir, isConverted: false });
+    return useLockfile({ dir: lockfileDir, requestsNewerFormat });
   }
 
   /**
@@ -81,24 +82,26 @@ export async function withReadablePnpmLockfileDir<T>(
   );
 
   try {
-    await stageWorkspace({ workspaceRootDir, stagingDir, isolateDir });
+    await stageWorkspace({
+      workspaceRootDir,
+      stagingDir,
+      projectDirs: readProjectDirs(projectDocument),
+    });
     await convertLockfile(stagingDir, lockfilePath);
 
-    return await useLockfile({ dir: stagingDir, isConverted: true });
+    return await useLockfile({ dir: stagingDir, requestsNewerFormat });
   } finally {
     await fs.remove(stagingDir);
   }
 }
 
 /**
- * The major version of the project document, which pnpm 12 writes last, after
- * an optional env document that keeps version 9.0 even in a v13 lockfile.
- * Resolves to null when the file is missing or unparsable, leaving the
- * readers to report that as they already do.
+ * The project document, which pnpm 12 writes last, after an optional env
+ * document that keeps version 9.0 even in a v13 lockfile. Resolves to null
+ * when the file cannot be read or its last document does not parse, leaving
+ * the readers to report that as they already do.
  */
-async function readLockfileMajorVersion(
-  lockfilePath: string,
-): Promise<number | null> {
+async function readProjectDocument(lockfilePath: string) {
   let content: string;
 
   try {
@@ -109,33 +112,52 @@ async function readLockfileMajorVersion(
 
   const projectDocument = parseAllDocuments(content).at(-1);
 
-  if (!projectDocument || projectDocument.errors.length > 0) {
-    return null;
-  }
+  return projectDocument && projectDocument.errors.length === 0
+    ? projectDocument
+    : null;
+}
 
-  const lockfileVersion: unknown = projectDocument.get("lockfileVersion");
+function readMajorVersion(projectDocument: Document | null) {
+  const lockfileVersion: unknown = projectDocument?.get("lockfileVersion");
   const majorVersion = Number.parseInt(String(lockfileVersion), 10);
 
   return Number.isNaN(majorVersion) ? null : majorVersion;
 }
 
 /**
- * Mirror the workspace root in `stagingDir` through symlinks, so pnpm sees the
- * same projects, manifests and settings under the same relative paths. The
- * root files pnpm might write are copied instead, so a write lands in the
- * staging directory: the lockfile, the root manifest, and the workspace config,
- * rewritten to ask for v9 and to skip `isolateDir`. `node_modules` is left out
- * so pnpm cannot touch it.
+ * The root-relative directories of the projects the lockfile locks, keyed
+ * `projects` in v13 and `importers` before it. Null when neither is there.
  */
-async function stageWorkspace({
-  workspaceRootDir,
-  stagingDir,
-  isolateDir,
-}: {
-  workspaceRootDir: string;
-  stagingDir: string;
-  isolateDir: string;
-}) {
+function readProjectDirs(projectDocument: Document) {
+  const projects: unknown =
+    projectDocument.get("projects") ?? projectDocument.get("importers");
+
+  if (!isMap(projects)) {
+    return null;
+  }
+
+  return projects.items.map((item) =>
+    String(isScalar(item.key) ? item.key.value : item.key),
+  );
+}
+
+/**
+ * The major version of the `lockfile.format` the workspace config asks for,
+ * such as 13 for `v13`. Null when the config sets none or cannot be read.
+ */
+async function readRequestedLockfileMajorVersion(workspaceRootDir: string) {
+  try {
+    const configDocument = await readWorkspaceConfig(workspaceRootDir);
+    const format: unknown = configDocument.getIn(["lockfile", "format"]);
+    const majorVersion = Number.parseInt(String(format).replace(/^v/, ""), 10);
+
+    return Number.isNaN(majorVersion) ? null : majorVersion;
+  } catch {
+    return null;
+  }
+}
+
+async function readWorkspaceConfig(workspaceRootDir: string) {
   const configPath = path.join(workspaceRootDir, WORKSPACE_CONFIG_NAME);
   const config = parseAllDocuments(
     (await fs.pathExists(configPath))
@@ -154,20 +176,39 @@ async function stageWorkspace({
     throw configError;
   }
 
+  return configDocument;
+}
+
+/**
+ * Mirror the workspace root in `stagingDir` through symlinks, so pnpm sees the
+ * same projects, manifests and settings under the same relative paths. The
+ * root files pnpm might write are copied instead, so a write lands in the
+ * staging directory: the lockfile, the root manifest, and the workspace config,
+ * rewritten to ask for v9. The root `node_modules` is left out.
+ *
+ * The staged config lists exactly the lockfile's projects in place of the
+ * workspace's `packages` globs. A recursive glob would otherwise also match
+ * isolate output inside a package, from this run or an earlier one, as a
+ * project the lockfile does not know, and the frozen install would refuse it.
+ */
+async function stageWorkspace({
+  workspaceRootDir,
+  stagingDir,
+  projectDirs,
+}: {
+  workspaceRootDir: string;
+  stagingDir: string;
+  projectDirs: string[] | null;
+}) {
+  const configDocument = await readWorkspaceConfig(workspaceRootDir);
+
   configDocument.setIn(["lockfile", "format"], "v9");
 
-  const isolateRelativeDir = path
-    .relative(workspaceRootDir, isolateDir)
-    .split(path.sep)
-    .join("/");
-
-  if (
-    isSeq(configDocument.get("packages")) &&
-    !isolateRelativeDir.startsWith("..") &&
-    !path.isAbsolute(isolateRelativeDir)
-  ) {
-    configDocument.addIn(["packages"], `!${isolateRelativeDir}`);
-    configDocument.addIn(["packages"], `!${isolateRelativeDir}/**`);
+  if (projectDirs) {
+    configDocument.set(
+      "packages",
+      projectDirs.filter((projectDir) => projectDir !== "."),
+    );
   }
 
   const skippedNames = new Set([
@@ -236,8 +277,8 @@ async function convertLockfile(stagingDir: string, sourceLockfilePath: string) {
     );
   }
 
-  const convertedMajorVersion = await readLockfileMajorVersion(
-    path.join(stagingDir, LOCKFILE_NAME),
+  const convertedMajorVersion = readMajorVersion(
+    await readProjectDocument(path.join(stagingDir, LOCKFILE_NAME)),
   );
 
   if (convertedMajorVersion !== MAX_READABLE_LOCKFILE_MAJOR_VERSION) {

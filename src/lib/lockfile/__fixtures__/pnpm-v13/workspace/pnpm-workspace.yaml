@@ -2,3 +2,5 @@ packages:
   - "apps/**"
 lockfile:
   format: v13
+patchedDependencies:
+  scheduler@0.23.2: patches/scheduler@0.23.2.patch

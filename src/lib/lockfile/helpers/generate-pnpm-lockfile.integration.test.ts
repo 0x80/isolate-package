@@ -60,9 +60,9 @@ function rootImporterOf(document: Record<string, unknown> | undefined) {
  * mocked: the point is that the reader accepts the stream, which
  * `js-yaml.load()` in `@pnpm/lockfile-file@9` did not.
  *
- * These assert the structure of the emitted lockfile. That pnpm accepts it is
- * checked end to end in `readable-pnpm-lockfile-dir.integration.test.ts`, which
- * CI runs with pnpm 12.
+ * These assert the structure of the emitted lockfile, not that pnpm accepts it.
+ * `readable-pnpm-lockfile-dir.integration.test.ts` install-checks the output
+ * for a converted v13 lockfile only.
  */
 describe("generatePnpmLockfile integration", () => {
   let cleanupPaths: string[] = [];
@@ -85,7 +85,7 @@ describe("generatePnpmLockfile integration", () => {
     targetPackageName = "svc",
     targetPackageRelativePath = "apps/svc",
     patchedDependencies,
-    isConverted = false,
+    requestsNewerFormat = false,
   }: {
     packageManager: string | undefined;
     fixture?: string;
@@ -95,7 +95,7 @@ describe("generatePnpmLockfile integration", () => {
     targetPackageName?: string;
     targetPackageRelativePath?: string;
     patchedDependencies?: Record<string, PatchFile>;
-    isConverted?: boolean;
+    requestsNewerFormat?: boolean;
   }) {
     const { tmpBase, workspaceRoot } = await setupFixture(fixture);
     cleanupPaths.push(tmpBase);
@@ -117,7 +117,7 @@ describe("generatePnpmLockfile integration", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: workspaceRoot,
-      sourceLockfile: { dir: workspaceRoot, isConverted },
+      sourceLockfile: { dir: workspaceRoot, requestsNewerFormat },
       targetPackageDir,
       isolateDir,
       internalDepPackageNames: [],
@@ -147,10 +147,10 @@ describe("generatePnpmLockfile integration", () => {
     });
   });
 
-  it("keeps the lockfile settings of a converted lockfile", async () => {
+  it("keeps the lockfile settings when the workspace asks for a newer format", async () => {
     const { documents } = await isolate({
       packageManager: "pnpm@12.0.0",
-      isConverted: true,
+      requestsNewerFormat: true,
     });
 
     expect(documents.at(-1)?.settings).toEqual({
@@ -159,7 +159,7 @@ describe("generatePnpmLockfile integration", () => {
     });
   });
 
-  it("leaves out the settings of a lockfile the workspace reads as is", async () => {
+  it("leaves out the lockfile settings when the workspace asks for no newer format", async () => {
     const { documents } = await isolate({ packageManager: "pnpm@12.0.0" });
 
     expect(documents.at(-1)?.settings).toBeUndefined();

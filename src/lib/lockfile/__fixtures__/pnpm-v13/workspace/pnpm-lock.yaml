@@ -212,6 +212,9 @@ snapshots:
 		"dedupePeerDependents": true,
 		"excludeLinksFromLockfile": false,
 		"linkWorkspacePackages": false,
+		"patchedDependencies": {
+			"scheduler@0.23.2": "348b23379a778b5fa321145dd3bd5659dee6a173269c98c098148e966c5349b7",
+		},
 	},
 
 	"projects": {

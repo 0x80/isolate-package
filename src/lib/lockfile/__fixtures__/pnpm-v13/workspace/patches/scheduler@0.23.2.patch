@@ -1,0 +1,12 @@
+diff --git a/index.js b/index.js
+index 77770b0..1c5e5e2 100644
+--- a/index.js
++++ b/index.js
+@@ -1,5 +1,7 @@
+ 'use strict';
+ 
++globalThis.isolatePackageSchedulerPatched = true;
++
+ if (process.env.NODE_ENV === 'production') {
+   module.exports = require('./cjs/scheduler.production.min.js');
+ } else {

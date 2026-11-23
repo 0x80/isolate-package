@@ -185,10 +185,10 @@ export async function generatePnpmLockfile({
      * Pruning drops the settings. pnpm tolerates their absence in a v9
      * lockfile, except when the workspace asks for a newer format such as
      * `lockfile.format: v13`: it then compares every setting and refuses a
-     * frozen install. The isolate keeps that workspace config, so a converted
-     * lockfile has to keep its settings.
+     * frozen install. The isolate keeps that workspace config, so the settings
+     * stay too.
      */
-    if (sourceLockfile.isConverted && lockfile.settings) {
+    if (sourceLockfile.requestsNewerFormat && lockfile.settings) {
       prunedLockfile.settings = lockfile.settings;
     }
 

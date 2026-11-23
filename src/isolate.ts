@@ -354,7 +354,7 @@ export function createIsolator(initialConfig?: IsolateConfig) {
     const { copiedPatches, usedFallbackToNpm } =
       packageManager.name === "pnpm" && !config.forceNpm
         ? await withReadablePnpmLockfileDir(
-            { workspaceRootDir, isolateDir },
+            workspaceRootDir,
             copyPatchesAndProcessLockfile,
           )
         : await copyPatchesAndProcessLockfile();

@@ -30,22 +30,30 @@ describe("withReadablePnpmLockfileDir", () => {
     );
 
     await expect(
-      withReadablePnpmLockfileDir(
-        { workspaceRootDir: workspaceRoot, isolateDir: workspaceRoot },
-        async (lockfile) => lockfile,
-      ),
-    ).resolves.toEqual({ dir: workspaceRoot, isConverted: false });
+      withReadablePnpmLockfileDir(workspaceRoot, async (lockfile) => lockfile),
+    ).resolves.toEqual({ dir: workspaceRoot, requestsNewerFormat: false });
+  });
+
+  it("reports a newer format the workspace config asks for beside a v9 lockfile", async () => {
+    const workspaceRoot = await copyWorkspace(
+      path.join(HELPER_FIXTURES_DIR, "pnpm-two-document/workspace"),
+    );
+    await fs.writeFile(
+      path.join(workspaceRoot, "pnpm-workspace.yaml"),
+      "packages:\n  - apps/*\nlockfile:\n  format: v13\n",
+    );
+
+    await expect(
+      withReadablePnpmLockfileDir(workspaceRoot, async (lockfile) => lockfile),
+    ).resolves.toEqual({ dir: workspaceRoot, requestsNewerFormat: true });
   });
 
   it("hands over the workspace's own directory when there is no lockfile", async () => {
     tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), "isolate-readable-"));
 
     await expect(
-      withReadablePnpmLockfileDir(
-        { workspaceRootDir: tmpBase, isolateDir: tmpBase },
-        async (lockfile) => lockfile,
-      ),
-    ).resolves.toEqual({ dir: tmpBase, isConverted: false });
+      withReadablePnpmLockfileDir(tmpBase, async (lockfile) => lockfile),
+    ).resolves.toEqual({ dir: tmpBase, requestsNewerFormat: false });
   });
 
   it("refuses a v13 lockfile in a Rush workspace", async () => {
@@ -57,10 +65,7 @@ describe("withReadablePnpmLockfileDir", () => {
     );
 
     await expect(
-      withReadablePnpmLockfileDir(
-        { workspaceRootDir: tmpBase, isolateDir: tmpBase },
-        async (lockfile) => lockfile,
-      ),
+      withReadablePnpmLockfileDir(tmpBase, async (lockfile) => lockfile),
     ).rejects.toThrow("lockfile format v13");
   });
 });
