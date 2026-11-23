@@ -92,6 +92,7 @@ describe("processLockfile", () => {
 
     await processLockfile({
       workspaceRootDir: "/workspace",
+      pnpmLockfile: { dir: "/staged", isConverted: true },
       isolateDir: "/workspace/apps/my-app/isolate",
       packagesRegistry: { shared: {} as never },
       internalDepPackageNames: ["shared"],
@@ -103,6 +104,7 @@ describe("processLockfile", () => {
 
     expect(generatePnpmLockfile).toHaveBeenCalledWith({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/staged", isConverted: true },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],

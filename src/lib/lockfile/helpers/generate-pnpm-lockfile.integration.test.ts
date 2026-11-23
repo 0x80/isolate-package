@@ -60,10 +60,9 @@ function rootImporterOf(document: Record<string, unknown> | undefined) {
  * mocked: the point is that the reader accepts the stream, which
  * `js-yaml.load()` in `@pnpm/lockfile-file@9` did not.
  *
- * These assert the structure of the emitted lockfile, not that pnpm accepts it:
- * running a real `pnpm install --frozen-lockfile` would need pnpm 12 and the
- * network in CI. That end of the contract is verified by hand against a real
- * pnpm 12 workspace when this code changes.
+ * These assert the structure of the emitted lockfile. That pnpm accepts it is
+ * checked end to end in `readable-pnpm-lockfile-dir.integration.test.ts`, which
+ * CI runs with pnpm 12.
  */
 describe("generatePnpmLockfile integration", () => {
   let cleanupPaths: string[] = [];
@@ -86,6 +85,7 @@ describe("generatePnpmLockfile integration", () => {
     targetPackageName = "svc",
     targetPackageRelativePath = "apps/svc",
     patchedDependencies,
+    isConverted = false,
   }: {
     packageManager: string | undefined;
     fixture?: string;
@@ -95,6 +95,7 @@ describe("generatePnpmLockfile integration", () => {
     targetPackageName?: string;
     targetPackageRelativePath?: string;
     patchedDependencies?: Record<string, PatchFile>;
+    isConverted?: boolean;
   }) {
     const { tmpBase, workspaceRoot } = await setupFixture(fixture);
     cleanupPaths.push(tmpBase);
@@ -116,6 +117,7 @@ describe("generatePnpmLockfile integration", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: workspaceRoot,
+      sourceLockfile: { dir: workspaceRoot, isConverted },
       targetPackageDir,
       isolateDir,
       internalDepPackageNames: [],
@@ -145,13 +147,22 @@ describe("generatePnpmLockfile integration", () => {
     });
   });
 
-  it("keeps the lockfile settings that pruning drops", async () => {
-    const { documents } = await isolate({ packageManager: "pnpm@12.0.0" });
+  it("keeps the lockfile settings of a converted lockfile", async () => {
+    const { documents } = await isolate({
+      packageManager: "pnpm@12.0.0",
+      isConverted: true,
+    });
 
     expect(documents.at(-1)?.settings).toEqual({
       autoInstallPeers: true,
       excludeLinksFromLockfile: false,
     });
+  });
+
+  it("leaves out the settings of a lockfile the workspace reads as is", async () => {
+    const { documents } = await isolate({ packageManager: "pnpm@12.0.0" });
+
+    expect(documents.at(-1)?.settings).toBeUndefined();
   });
 
   it("writes patched dependencies in pnpm 10's object format", async () => {

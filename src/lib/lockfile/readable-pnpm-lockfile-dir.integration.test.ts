@@ -15,11 +15,9 @@ const FIXTURE_DIR = path.join(
 );
 
 /**
- * The fixture pins pnpm 12.23.0 in `packageManager`, which a pnpm 10 or 11 on
- * PATH switches to on its own, so this runs locally without setup. Corepack
- * cannot install pnpm 12's native binary, so the regular CI test job skips it
- * and a separate step runs it with pnpm 12 on PATH and `REQUIRE_PNPM_V13` set,
- * which turns a missing pnpm 12 into a failure instead of a skip.
+ * Probe pnpm from the fixture directory, so a pnpm 10 or 11 launcher sees the
+ * fixture's `packageManager` pin and switches to pnpm 12.23.0. Where no pnpm 12
+ * is reachable the suite skips, unless `REQUIRE_PNPM_V13` makes that a failure.
  */
 async function readPnpmVersion() {
   try {
@@ -47,8 +45,16 @@ if (process.env.REQUIRE_PNPM_V13 && !supportsV13) {
 /**
  * Reproduction of https://github.com/0x80/isolate-package/issues/219. The
  * fixture lockfile was written by pnpm 12.23.0 with `lockfile.format: v13`.
- * Nothing is mocked: the conversion runs the real pnpm binary.
+ * Nothing is mocked: the conversion runs the real pnpm binary. The fixture's
+ * recursive `apps/**` glob also reaches the isolate output inside `apps/app`.
  */
+
+const STAGING_DIR_PREFIX = "isolate-pnpm-lockfile-";
+
+async function listStagingDirs() {
+  const names = await fs.readdir(os.tmpdir());
+  return names.filter((name) => name.startsWith(STAGING_DIR_PREFIX));
+}
 describe.skipIf(!supportsV13)("isolate with a pnpm v13 lockfile", () => {
   let tmpBase: string | undefined;
 
@@ -83,8 +89,11 @@ describe.skipIf(!supportsV13)("isolate with a pnpm v13 lockfile", () => {
       await setupWorkspace();
     const sourceLockfile = await fs.readFile(lockfilePath, "utf8");
     const sourceConfig = await fs.readFile(workspaceConfigPath, "utf8");
+    const stagingDirsBefore = await listStagingDirs();
 
     const isolateDir = await isolateApp(appDir);
+
+    await expect(listStagingDirs()).resolves.toEqual(stagingDirsBefore);
 
     const documents = parseAllDocuments(
       await fs.readFile(path.join(isolateDir, "pnpm-lock.yaml"), "utf8"),
@@ -123,10 +132,12 @@ describe.skipIf(!supportsV13)("isolate with a pnpm v13 lockfile", () => {
     const manifest = await fs.readJson(manifestPath);
     manifest.dependencies.react = "19.2.0";
     await fs.writeJson(manifestPath, manifest);
+    const stagingDirsBefore = await listStagingDirs();
 
     await expect(isolateApp(appDir)).rejects.toThrow(
       "Failed to convert the pnpm lockfile",
     );
+    await expect(listStagingDirs()).resolves.toEqual(stagingDirsBefore);
     await expect(fs.readFile(lockfilePath, "utf8")).resolves.toBe(
       sourceLockfile,
     );

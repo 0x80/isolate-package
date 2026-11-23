@@ -1,4 +1,4 @@
 packages:
-  - "apps/*"
+  - "apps/**"
 lockfile:
   format: v13

@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import { exec } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
-import { parseAllDocuments } from "yaml";
+import { isSeq, parseAllDocuments } from "yaml";
 import { useLogger } from "#/lib/logger";
 import {
   getErrorMessage,
@@ -20,17 +20,34 @@ const WORKSPACE_CONFIG_NAME = "pnpm-workspace.yaml";
  */
 const MAX_READABLE_LOCKFILE_MAJOR_VERSION = 9;
 
+export type ReadablePnpmLockfile = {
+  /** The directory holding the `pnpm-lock.yaml` to read */
+  dir: string;
+  /**
+   * Whether pnpm converted the workspace lockfile to v9 for this read. The
+   * workspace config then still asks for the newer format.
+   */
+  isConverted: boolean;
+};
+
 /**
- * Call `useLockfileDir` with a directory whose `pnpm-lock.yaml` the bundled
- * readers can parse. That is the workspace's own lockfile directory, unless the
- * lockfile uses a newer format such as the experimental v13 one that pnpm 12.19
- * and later write with `lockfile.format: v13`. No published library reads
- * v13, so pnpm itself converts it to v9 in a staged copy of the workspace,
- * which is removed afterwards. The workspace is never written to.
+ * Call `useLockfile` with the workspace's own lockfile directory, unless the
+ * lockfile declares a format newer than v9, such as the experimental v13 one
+ * that pnpm 12.19 and later write with `lockfile.format: v13`. No published
+ * library reads v13, so pnpm itself converts it to v9 in a staged copy of the
+ * workspace, which is valid only until `useLockfile` settles and is removed
+ * then. The workspace lockfile and config are never written to.
+ *
+ * `isolateDir` is left out of the staged workspace's projects: the isolate
+ * output already holds manifests that a recursive `packages` glob would
+ * otherwise turn into projects the lockfile does not know.
  */
 export async function withReadablePnpmLockfileDir<T>(
-  workspaceRootDir: string,
-  useLockfileDir: (lockfileDir: string) => Promise<T>,
+  {
+    workspaceRootDir,
+    isolateDir,
+  }: { workspaceRootDir: string; isolateDir: string },
+  useLockfile: (lockfile: ReadablePnpmLockfile) => Promise<T>,
 ): Promise<T> {
   const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
   const lockfilePath = path.join(lockfileDir, LOCKFILE_NAME);
@@ -40,7 +57,7 @@ export async function withReadablePnpmLockfileDir<T>(
     lockfileMajorVersion === null ||
     lockfileMajorVersion <= MAX_READABLE_LOCKFILE_MAJOR_VERSION
   ) {
-    return useLockfileDir(lockfileDir);
+    return useLockfile({ dir: lockfileDir, isConverted: false });
   }
 
   /**
@@ -64,10 +81,10 @@ export async function withReadablePnpmLockfileDir<T>(
   );
 
   try {
-    await stageWorkspace(workspaceRootDir, stagingDir);
+    await stageWorkspace({ workspaceRootDir, stagingDir, isolateDir });
     await convertLockfile(stagingDir, lockfilePath);
 
-    return await useLockfileDir(stagingDir);
+    return await useLockfile({ dir: stagingDir, isConverted: true });
   } finally {
     await fs.remove(stagingDir);
   }
@@ -107,9 +124,18 @@ async function readLockfileMajorVersion(
  * same projects, manifests and settings under the same relative paths. The
  * root files pnpm might write are copied instead, so a write lands in the
  * staging directory: the lockfile, the root manifest, and the workspace config,
- * rewritten to ask for v9. `node_modules` is left out so pnpm cannot touch it.
+ * rewritten to ask for v9 and to skip `isolateDir`. `node_modules` is left out
+ * so pnpm cannot touch it.
  */
-async function stageWorkspace(workspaceRootDir: string, stagingDir: string) {
+async function stageWorkspace({
+  workspaceRootDir,
+  stagingDir,
+  isolateDir,
+}: {
+  workspaceRootDir: string;
+  stagingDir: string;
+  isolateDir: string;
+}) {
   const configPath = path.join(workspaceRootDir, WORKSPACE_CONFIG_NAME);
   const config = parseAllDocuments(
     (await fs.pathExists(configPath))
@@ -129,6 +155,20 @@ async function stageWorkspace(workspaceRootDir: string, stagingDir: string) {
   }
 
   configDocument.setIn(["lockfile", "format"], "v9");
+
+  const isolateRelativeDir = path
+    .relative(workspaceRootDir, isolateDir)
+    .split(path.sep)
+    .join("/");
+
+  if (
+    isSeq(configDocument.get("packages")) &&
+    !isolateRelativeDir.startsWith("..") &&
+    !path.isAbsolute(isolateRelativeDir)
+  ) {
+    configDocument.addIn(["packages"], `!${isolateRelativeDir}`);
+    configDocument.addIn(["packages"], `!${isolateRelativeDir}/**`);
+  }
 
   const skippedNames = new Set([
     ".git",

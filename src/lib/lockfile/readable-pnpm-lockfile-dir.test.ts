@@ -30,16 +30,22 @@ describe("withReadablePnpmLockfileDir", () => {
     );
 
     await expect(
-      withReadablePnpmLockfileDir(workspaceRoot, async (dir) => dir),
-    ).resolves.toBe(workspaceRoot);
+      withReadablePnpmLockfileDir(
+        { workspaceRootDir: workspaceRoot, isolateDir: workspaceRoot },
+        async (lockfile) => lockfile,
+      ),
+    ).resolves.toEqual({ dir: workspaceRoot, isConverted: false });
   });
 
   it("hands over the workspace's own directory when there is no lockfile", async () => {
     tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), "isolate-readable-"));
 
     await expect(
-      withReadablePnpmLockfileDir(tmpBase, async (dir) => dir),
-    ).resolves.toBe(tmpBase);
+      withReadablePnpmLockfileDir(
+        { workspaceRootDir: tmpBase, isolateDir: tmpBase },
+        async (lockfile) => lockfile,
+      ),
+    ).resolves.toEqual({ dir: tmpBase, isConverted: false });
   });
 
   it("refuses a v13 lockfile in a Rush workspace", async () => {
@@ -51,7 +57,10 @@ describe("withReadablePnpmLockfileDir", () => {
     );
 
     await expect(
-      withReadablePnpmLockfileDir(tmpBase, async (dir) => dir),
+      withReadablePnpmLockfileDir(
+        { workspaceRootDir: tmpBase, isolateDir: tmpBase },
+        async (lockfile) => lockfile,
+      ),
     ).rejects.toThrow("lockfile format v13");
   });
 });
