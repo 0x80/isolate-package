@@ -9,7 +9,6 @@ export type CatalogSnapshots = Record<
   Record<string, { specifier: string; version: string }>
 >;
 
-/** The parts of a lockfile importer that tell which catalog entries it uses */
 type CatalogImporter = {
   specifiers?: Record<string, string>;
   dependencies?: Record<string, string>;
@@ -49,7 +48,9 @@ export function pickReferencedCatalogs(
         continue;
       }
 
-      const catalogName = specifier.slice(CATALOG_PROTOCOL.length) || "default";
+      /** pnpm trims the name, so "catalog: tools" names the tools catalog */
+      const catalogName =
+        specifier.slice(CATALOG_PROTOCOL.length).trim() || "default";
       const entry = catalogs[catalogName]?.[dependencyName];
 
       if (entry) {

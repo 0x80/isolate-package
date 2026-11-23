@@ -402,6 +402,53 @@ describe("generatePnpmLockfile", () => {
     });
   });
 
+  it("should not set catalogs when no isolated importer references one", async () => {
+    const mockLockfile = createMockLockfile();
+    const lockfile = {
+      ...mockLockfile,
+      importers: {
+        ...mockLockfile.importers,
+        "packages/other": {
+          specifiers: { react: "catalog:" },
+          dependencies: { react: "19.0.0" },
+        },
+      },
+      catalogs: {
+        default: { react: { specifier: "^19.0.0", version: "19.0.0" } },
+      },
+    };
+    readWantedLockfile_v9.mockResolvedValue(lockfile as never);
+    getLockfileImporterId_v9.mockReturnValue("apps/my-app" as never);
+
+    /** Simulate prune dropping the catalogs snapshot */
+    pruneLockfile_v9.mockImplementation((lf) => {
+      const result = { ...(lf as unknown as Record<string, unknown>) };
+      delete result.catalogs;
+      return result as never;
+    });
+
+    await generatePnpmLockfile({
+      workspaceRootDir: "/workspace",
+      targetPackageDir: "/workspace/apps/my-app",
+      isolateDir: "/workspace/apps/my-app/isolate",
+      internalDepPackageNames: ["shared"],
+      packagesRegistry: {
+        shared: {
+          absoluteDir: "/workspace/packages/shared",
+          rootRelativeDir: "packages/shared",
+          manifest: { name: "shared", version: "1.0.0" },
+        },
+      },
+      targetPackageManifest: { name: "my-app", version: "1.0.0" },
+      majorVersion: 9,
+      includeDevDependencies: false,
+    });
+
+    const writeCall = writeWantedLockfile_v9.mock.calls[0]!;
+    const writtenLockfile = writeCall[1] as { catalogs?: unknown };
+    expect(writtenLockfile.catalogs).toBeUndefined();
+  });
+
   it("should not set catalogs when the source lockfile has none", async () => {
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);

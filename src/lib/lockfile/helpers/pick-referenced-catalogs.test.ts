@@ -55,8 +55,9 @@ describe("pickReferencedCatalogs", () => {
   });
 
   /**
-   * The importer mapping drops devDependencies but leaves their specifiers in
-   * place, so a specifier alone does not make an entry referenced.
+   * When dev dependencies are excluded, the importer mapping drops them but
+   * leaves their specifiers in place, so a specifier alone does not make an
+   * entry referenced.
    */
   it("ignores specifiers without a matching dependency", () => {
     const result = pickReferencedCatalogs(catalogs, {
@@ -67,6 +68,20 @@ describe("pickReferencedCatalogs", () => {
     });
 
     expect(result).toEqual({ default: { react: catalogs.default.react } });
+  });
+
+  it("trims whitespace around the catalog name, as pnpm does", () => {
+    const result = pickReferencedCatalogs(catalogs, {
+      ".": {
+        specifiers: { typescript: "catalog: tools ", react: "catalog: " },
+        dependencies: { typescript: "5.9.0", react: "19.0.0" },
+      },
+    });
+
+    expect(result).toEqual({
+      default: { react: catalogs.default.react },
+      tools: { typescript: catalogs.tools.typescript },
+    });
   });
 
   it("returns undefined when no importer references a catalog entry", () => {

@@ -328,7 +328,8 @@ describe("generatePnpmLockfile integration", () => {
     expect(rootImporter?.packageManagerDependencies).toHaveProperty("pnpm");
   });
   /**
-   * Reproduction of https://github.com/0x80/isolate-package/issues/218.
+   * Checks the emitted catalogs snapshot for
+   * https://github.com/0x80/isolate-package/issues/218.
    *
    * The `pnpm-catalogs` fixture lockfile was written by a real pnpm 12.9.1
    * install of a workspace with `cleanupUnusedCatalogs: true`, where `other`
