@@ -60,10 +60,9 @@ function rootImporterOf(document: Record<string, unknown> | undefined) {
  * mocked: the point is that the reader accepts the stream, which
  * `js-yaml.load()` in `@pnpm/lockfile-file@9` did not.
  *
- * These assert the structure of the emitted lockfile, not that pnpm accepts it:
- * running a real `pnpm install --frozen-lockfile` would need pnpm 12 and the
- * network in CI. That end of the contract is verified by hand against a real
- * pnpm 12 workspace when this code changes.
+ * These assert the structure of the emitted lockfile, not that pnpm accepts it.
+ * `readable-pnpm-lockfile-dir.integration.test.ts` install-checks the output
+ * for a converted v13 lockfile only.
  */
 describe("generatePnpmLockfile integration", () => {
   let cleanupPaths: string[] = [];
@@ -87,6 +86,7 @@ describe("generatePnpmLockfile integration", () => {
     targetPackageRelativePath = "apps/svc",
     dependencies = { "left-pad": "1.3.0" },
     patchedDependencies,
+    requestsNewerFormat = false,
   }: {
     packageManager: string | undefined;
     fixture?: string;
@@ -97,6 +97,7 @@ describe("generatePnpmLockfile integration", () => {
     targetPackageRelativePath?: string;
     dependencies?: Record<string, string>;
     patchedDependencies?: Record<string, PatchFile>;
+    requestsNewerFormat?: boolean;
   }) {
     const { tmpBase, workspaceRoot } = await setupFixture(fixture);
     cleanupPaths.push(tmpBase);
@@ -118,6 +119,7 @@ describe("generatePnpmLockfile integration", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: workspaceRoot,
+      sourceLockfile: { dir: workspaceRoot, requestsNewerFormat },
       targetPackageDir,
       isolateDir,
       internalDepPackageNames: [],
@@ -145,6 +147,24 @@ describe("generatePnpmLockfile integration", () => {
     expect(rootImporterOf(projectDocument)).toMatchObject({
       dependencies: { "left-pad": { specifier: "1.3.0", version: "1.3.0" } },
     });
+  });
+
+  it("keeps the lockfile settings when the workspace asks for a newer format", async () => {
+    const { documents } = await isolate({
+      packageManager: "pnpm@12.0.0",
+      requestsNewerFormat: true,
+    });
+
+    expect(documents.at(-1)?.settings).toEqual({
+      autoInstallPeers: true,
+      excludeLinksFromLockfile: false,
+    });
+  });
+
+  it("leaves out the lockfile settings when the workspace asks for no newer format", async () => {
+    const { documents } = await isolate({ packageManager: "pnpm@12.0.0" });
+
+    expect(documents.at(-1)?.settings).toBeUndefined();
   });
 
   it("writes patched dependencies in pnpm 10's object format", async () => {

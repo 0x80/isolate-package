@@ -85,6 +85,15 @@ You can, however, declare multiple workspace packages directories. Personally, I
 prefer to use `["packages/*", "apps/*", "services/*"]`. It is only the structure
 inside them that should be flat.
 
+### pnpm v13 lockfiles
+
+pnpm 12.19 introduced an experimental lockfile format, enabled with
+`lockfile.format: v13` in `pnpm-workspace.yaml`. To isolate a workspace that
+uses it, run with pnpm 12.19 or later on your `PATH` and keep the lockfile up to
+date with your manifests. Isolate has pnpm convert a temporary copy of the
+lockfile to v9 and writes the pruned lockfile in that format. Your workspace
+lockfile is not changed. Rush workspaces with a v13 lockfile are not supported.
+
 ## Installation
 
 Run `pnpm install isolate-package -D` or the equivalent for `npm`, `bun`, or

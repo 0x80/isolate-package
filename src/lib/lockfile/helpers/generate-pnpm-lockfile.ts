@@ -18,16 +18,13 @@ import { pruneLockfile as pruneLockfile_v9 } from "pnpm_prune_lockfile_v9";
 import { pick } from "remeda";
 import { useLogger } from "#/lib/logger";
 import type { PackageManifest, PackagesRegistry, PatchFile } from "#/lib/types";
-import {
-  getErrorMessage,
-  getPnpmLockfileDir,
-  isRushWorkspace,
-} from "#/lib/utils";
+import { getErrorMessage, isRushWorkspace } from "#/lib/utils";
 import {
   getPnpmPatchedDependenciesOutput,
   usesPnpmWorkspacePatchedDependencies,
 } from "#/lib/patches/pnpm-patched-dependencies";
 import { readPnpmLockfile } from "../read-pnpm-lockfile";
+import type { ReadablePnpmLockfile } from "../readable-pnpm-lockfile-dir";
 import {
   type CatalogSnapshots,
   pickReferencedCatalogs,
@@ -36,6 +33,7 @@ import { pnpmMapImporter } from "./pnpm-map-importer";
 
 export async function generatePnpmLockfile({
   workspaceRootDir,
+  sourceLockfile,
   targetPackageDir,
   isolateDir,
   internalDepPackageNames,
@@ -46,6 +44,7 @@ export async function generatePnpmLockfile({
   patchedDependencies,
 }: {
   workspaceRootDir: string;
+  sourceLockfile: ReadablePnpmLockfile;
   targetPackageDir: string;
   isolateDir: string;
   internalDepPackageNames: string[];
@@ -57,11 +56,11 @@ export async function generatePnpmLockfile({
   patchedDependencies?: Record<string, PatchFile>;
 }) {
   /**
-   * For now we will assume that the lockfile format might not change in the
-   * versions after 9, because we might get lucky. If it does change, things
-   * would break either way.
+   * pnpm majors after 9 still write v9 by default, and a newer format such as
+   * v13 arrives here already converted to v9 by `withReadablePnpmLockfileDir`.
    */
   const useVersion9 = majorVersion >= 9;
+  const lockfileRootDir = sourceLockfile.dir;
 
   const log = useLogger();
 
@@ -69,8 +68,6 @@ export async function generatePnpmLockfile({
 
   try {
     const isRush = isRushWorkspace(workspaceRootDir);
-
-    const lockfileRootDir = getPnpmLockfileDir(workspaceRootDir);
 
     const lockfile = await readPnpmLockfile(lockfileRootDir, majorVersion);
 
@@ -175,6 +172,17 @@ export async function generatePnpmLockfile({
     /** Pruning seems to remove the overrides from the lockfile */
     if (lockfile.overrides) {
       prunedLockfile.overrides = lockfile.overrides;
+    }
+
+    /**
+     * Pruning drops the settings. pnpm tolerates their absence in a v9
+     * lockfile, except when the workspace asks for a newer format such as
+     * `lockfile.format: v13`: it then compares every setting and refuses a
+     * frozen install. The isolate keeps that workspace config, so the settings
+     * stay too.
+     */
+    if (sourceLockfile.requestsNewerFormat && lockfile.settings) {
+      prunedLockfile.settings = lockfile.settings;
     }
 
     /** Add packageExtensionsChecksum back to the pruned lockfile if present */

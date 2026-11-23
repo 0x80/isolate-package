@@ -36,14 +36,6 @@ vi.mock("#/lib/utils", () => ({
   }),
   getRootRelativeLogPath: vi.fn((p: string) => p),
   isRushWorkspace: vi.fn(() => false),
-  /**
-   * Neither suite exercises a Rush workspace, so the lockfile directory is the
-   * workspace root. Mocked rather than kept real: the real helper reads
-   * `rush.json` off disk through its own `isRushWorkspace` import, which this
-   * factory cannot intercept, and that would make these tests depend on the
-   * filesystem. `get-pnpm-lockfile-dir.test.ts` covers both of its branches.
-   */
-  getPnpmLockfileDir: vi.fn((workspaceRootDir: string) => workspaceRootDir),
   readTypedJson: vi.fn(),
   readTypedJsonSync: vi.fn(),
   readTypedYamlSync: vi.fn(),
@@ -107,6 +99,7 @@ describe("copyPatches", () => {
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
+      pnpmLockfileDir: "/workspace",
       targetPackageDir: "/workspace/packages/test",
       internalDepPackageNames: [],
       targetPackageManifest: { name: "test", version: "1.0.0" },
@@ -170,6 +163,7 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: { name: "test", version: "1.0.0" },
@@ -192,6 +186,7 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: { name: "test", version: "1.0.0" },
@@ -224,6 +219,7 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
@@ -267,6 +263,7 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
@@ -314,6 +311,7 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
@@ -347,6 +345,7 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
@@ -386,6 +385,7 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
@@ -431,6 +431,7 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
@@ -481,6 +482,7 @@ describe("copyPatches", () => {
 
       const result = await copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
@@ -536,6 +538,7 @@ describe("copyPatches", () => {
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
+      pnpmLockfileDir: "/workspace",
       targetPackageDir: "/workspace/packages/test",
       internalDepPackageNames: [],
       targetPackageManifest: targetManifest,
@@ -551,6 +554,45 @@ describe("copyPatches", () => {
       "/workspace/patches/lodash.patch",
       "/workspace/isolate/patches/lodash.patch",
     );
+  });
+
+  it("should read the pnpm lockfile from the given directory, not the workspace root", async () => {
+    usePackageManager.mockReturnValue({
+      name: "pnpm",
+      majorVersion: 9,
+      version: "9.0.0",
+      packageManagerString: "pnpm@9.0.0",
+    });
+    readTypedYamlSync.mockReturnValue({
+      patchedDependencies: { "lodash@4.17.21": "patches/lodash.patch" },
+    } as never);
+    filterPatchedDependencies.mockReturnValue({
+      "lodash@4.17.21": "patches/lodash.patch",
+    });
+    fs.existsSync.mockReturnValue(true);
+
+    const result = await copyPatches({
+      workspaceRootDir: "/workspace",
+      pnpmLockfileDir: "/staged",
+      targetPackageDir: "/workspace/packages/test",
+      internalDepPackageNames: [],
+      targetPackageManifest: {
+        name: "test",
+        version: "1.0.0",
+        dependencies: { lodash: "^4.0.0" },
+      },
+      isolateDir: "/workspace/isolate",
+      packagesRegistry: {},
+      includeDevDependencies: false,
+    });
+
+    expect(result).toEqual({
+      "lodash@4.17.21": { path: "patches/lodash.patch", hash: "sha256-lodash" },
+    });
+    expect(readWantedLockfile_v9.mock.calls.map(([dir]) => dir)).toEqual([
+      "/staged",
+      "/staged",
+    ]);
   });
 
   it("should pass reachable transitive dep names from internal packages to the filter (regression: issue #167)", async () => {
@@ -591,6 +633,7 @@ describe("copyPatches", () => {
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
+      pnpmLockfileDir: "/workspace",
       targetPackageDir: "/workspace/packages/test",
       internalDepPackageNames: [],
       targetPackageManifest: consumerManifest,
@@ -688,6 +731,7 @@ describe("copyPatches", () => {
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
+      pnpmLockfileDir: "/workspace",
       targetPackageDir: "/workspace/packages/consumer",
       internalDepPackageNames: [],
       targetPackageManifest: targetManifest,
@@ -757,6 +801,7 @@ describe("copyPatches", () => {
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
+      pnpmLockfileDir: "/workspace",
       targetPackageDir: "/workspace/packages/test",
       internalDepPackageNames: [],
       targetPackageManifest: targetManifest,
@@ -829,6 +874,7 @@ describe("copyPatches", () => {
       await expect(
         copyPatches({
           workspaceRootDir: "/workspace",
+          pnpmLockfileDir: "/workspace",
           targetPackageDir: "/workspace/packages/test",
           internalDepPackageNames: [],
           targetPackageManifest: targetManifest,
@@ -890,6 +936,7 @@ describe("copyPatches", () => {
     await expect(
       copyPatches({
         workspaceRootDir: "/workspace",
+        pnpmLockfileDir: "/workspace",
         targetPackageDir: "/workspace/packages/test",
         internalDepPackageNames: [],
         targetPackageManifest: targetManifest,
@@ -939,6 +986,7 @@ describe("copyPatches", () => {
       await expect(
         copyPatches({
           workspaceRootDir: "/workspace",
+          pnpmLockfileDir: "/workspace",
           targetPackageDir: "/workspace/packages/test",
           internalDepPackageNames: [],
           targetPackageManifest: targetManifest,
@@ -997,6 +1045,7 @@ describe("copyPatches", () => {
 
     const result = await copyPatches({
       workspaceRootDir: "/workspace",
+      pnpmLockfileDir: "/workspace",
       targetPackageDir: "/workspace/packages/test",
       internalDepPackageNames: [],
       targetPackageManifest: targetManifest,

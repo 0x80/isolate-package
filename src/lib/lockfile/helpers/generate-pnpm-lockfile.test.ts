@@ -4,27 +4,9 @@ import type { PackageManifest } from "#/lib/types";
 import { generatePnpmLockfile } from "./generate-pnpm-lockfile";
 
 /** Mock utils */
-/**
- * Hoisted so the `#/lib/utils` factory below can use it for both
- * `isRushWorkspace` and the `getPnpmLockfileDir` that is derived from it.
- */
-const isRushWorkspaceMock = vi.hoisted(() =>
-  vi.fn((_workspaceRootDir: string) => false),
-);
-
 vi.mock("#/lib/utils", () => ({
   getErrorMessage: vi.fn((err: Error) => err.message),
-  isRushWorkspace: isRushWorkspaceMock,
-  /**
-   * Mirrors the real helper, which is a pure path computation on top of the
-   * mocked `isRushWorkspace` above — so the Rush cases still exercise the
-   * branch rather than a hard-coded answer.
-   */
-  getPnpmLockfileDir: vi.fn((workspaceRootDir: string) =>
-    isRushWorkspaceMock(workspaceRootDir)
-      ? `${workspaceRootDir}/common/config/rush`
-      : workspaceRootDir,
-  ),
+  isRushWorkspace: vi.fn((_workspaceRootDir: string) => false),
 }));
 
 /** Mock pnpm v8 lockfile functions */
@@ -136,6 +118,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -166,6 +149,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -196,6 +180,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -229,6 +214,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -274,6 +260,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -313,6 +300,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -373,6 +361,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -429,6 +418,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -457,6 +447,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -489,6 +480,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -520,6 +512,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -559,6 +552,7 @@ describe("generatePnpmLockfile", () => {
     await expect(
       generatePnpmLockfile({
         workspaceRootDir: "/workspace",
+        sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
         targetPackageDir: "/workspace/apps/my-app",
         isolateDir: "/workspace/apps/my-app/isolate",
         internalDepPackageNames: ["shared"],
@@ -588,6 +582,7 @@ describe("generatePnpmLockfile", () => {
     await expect(
       generatePnpmLockfile({
         workspaceRootDir: "/workspace",
+        sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
         targetPackageDir: "/workspace/apps/my-app",
         isolateDir: "/workspace/apps/my-app/isolate",
         internalDepPackageNames: [],
@@ -606,6 +601,7 @@ describe("generatePnpmLockfile", () => {
     await expect(
       generatePnpmLockfile({
         workspaceRootDir: "/workspace",
+        sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
         targetPackageDir: "/workspace/apps/my-app",
         isolateDir: "/workspace/apps/my-app/isolate",
         internalDepPackageNames: [],
@@ -617,7 +613,7 @@ describe("generatePnpmLockfile", () => {
     ).rejects.toBe(readError);
   });
 
-  it("should use Rush lockfile path when in a Rush workspace", async () => {
+  it("should read the lockfile from the source lockfile directory in a Rush workspace", async () => {
     isRushWorkspace.mockReturnValue(true);
     const lockfile = createMockLockfile();
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
@@ -626,6 +622,10 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: {
+        dir: "/workspace/common/config/rush",
+        requestsNewerFormat: false,
+      },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: ["shared"],
@@ -716,9 +716,13 @@ describe("generatePnpmLockfile", () => {
       pruneLockfile_v9.mockImplementation((lf) => lf as never);
     });
 
-    async function generate(targetPackageManifest: PackageManifest) {
+    async function generate(
+      targetPackageManifest: PackageManifest,
+      sourceLockfileDir = "/workspace",
+    ) {
       await generatePnpmLockfile({
         workspaceRootDir: "/workspace",
+        sourceLockfile: { dir: sourceLockfileDir, requestsNewerFormat: false },
         targetPackageDir: "/workspace/apps/my-app",
         isolateDir: "/workspace/apps/my-app/isolate",
         internalDepPackageNames: [],
@@ -872,15 +876,17 @@ describe("generatePnpmLockfile", () => {
       expect(writeEnvLockfile_v9).not.toHaveBeenCalled();
     });
 
-    it("should read the env document from the Rush lockfile directory", async () => {
-      isRushWorkspace.mockReturnValue(true);
+    it("should read the env document from the source lockfile directory", async () => {
       readEnvLockfile_v9.mockResolvedValue(null);
 
-      await generate({
-        name: "my-app",
-        version: "1.0.0",
-        packageManager: "pnpm@12.0.0",
-      });
+      await generate(
+        {
+          name: "my-app",
+          version: "1.0.0",
+          packageManager: "pnpm@12.0.0",
+        },
+        "/workspace/common/config/rush",
+      );
 
       expect(readEnvLockfile_v9).toHaveBeenCalledWith(
         "/workspace/common/config/rush",
@@ -896,6 +902,7 @@ describe("generatePnpmLockfile", () => {
 
     await generatePnpmLockfile({
       workspaceRootDir: "/workspace",
+      sourceLockfile: { dir: "/workspace", requestsNewerFormat: false },
       targetPackageDir: "/workspace/apps/my-app",
       isolateDir: "/workspace/apps/my-app/isolate",
       internalDepPackageNames: [],

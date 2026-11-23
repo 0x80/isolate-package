@@ -4,12 +4,7 @@ import { getLockfileImporterId as getLockfileImporterId_v9 } from "pnpm_lockfile
 import { readPnpmLockfile } from "#/lib/lockfile/read-pnpm-lockfile";
 import { useLogger } from "#/lib/logger";
 import type { PackagesRegistry } from "#/lib/types";
-import {
-  getErrorMessage,
-  getPackageName,
-  getPnpmLockfileDir,
-  isRushWorkspace,
-} from "#/lib/utils";
+import { getErrorMessage, getPackageName, isRushWorkspace } from "#/lib/utils";
 
 /**
  * Walk the workspace pnpm lockfile starting from the target package and its
@@ -25,6 +20,7 @@ import {
  */
 export async function collectInstalledNamesFromPnpmLockfile({
   workspaceRootDir,
+  lockfileDir,
   targetPackageDir,
   internalDepPackageNames,
   packagesRegistry,
@@ -32,6 +28,8 @@ export async function collectInstalledNamesFromPnpmLockfile({
   includeDevDependencies,
 }: {
   workspaceRootDir: string;
+  /** Where to read the lockfile: the workspace's own, or a converted copy */
+  lockfileDir: string;
   targetPackageDir: string;
   internalDepPackageNames: string[];
   packagesRegistry: PackagesRegistry;
@@ -43,7 +41,6 @@ export async function collectInstalledNamesFromPnpmLockfile({
   try {
     const useVersion9 = majorVersion >= 9;
     const isRush = isRushWorkspace(workspaceRootDir);
-    const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
     const lockfileResult = await readPnpmLockfile(lockfileDir, majorVersion, {
       onFailure: "return-error",

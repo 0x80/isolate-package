@@ -1,4 +1,5 @@
 import fs from "fs-extra";
+import assert from "node:assert";
 import path from "node:path";
 import { readPnpmLockfile } from "#/lib/lockfile/read-pnpm-lockfile";
 import { useLogger } from "#/lib/logger";
@@ -13,7 +14,6 @@ import type {
 import {
   filterPatchedDependencies,
   getRootRelativeLogPath,
-  getPnpmLockfileDir,
   readTypedJson,
   readTypedYamlSync,
 } from "#/lib/utils";
@@ -22,6 +22,7 @@ import { collectInstalledNamesFromPnpmLockfile } from "./collect-installed-names
 
 export async function copyPatches({
   workspaceRootDir,
+  pnpmLockfileDir,
   targetPackageDir,
   targetPackageManifest,
   packagesRegistry,
@@ -30,6 +31,8 @@ export async function copyPatches({
   includeDevDependencies,
 }: {
   workspaceRootDir: string;
+  /** Required for pnpm: the workspace's own lockfile directory or a converted copy */
+  pnpmLockfileDir?: string;
   targetPackageDir: string;
   targetPackageManifest: PackageManifest;
   packagesRegistry: PackagesRegistry;
@@ -40,6 +43,14 @@ export async function copyPatches({
   const log = useLogger();
 
   const { name: packageManagerName, majorVersion } = usePackageManager();
+
+  const requirePnpmLockfileDir = () => {
+    assert(
+      pnpmLockfileDir,
+      "Copying pnpm patches needs the lockfile directory",
+    );
+    return pnpmLockfileDir;
+  };
 
   let patchedDependencies: Record<string, string> | undefined;
 
@@ -118,6 +129,7 @@ export async function copyPatches({
     packageManagerName === "pnpm"
       ? await collectInstalledNamesFromPnpmLockfile({
           workspaceRootDir,
+          lockfileDir: requirePnpmLockfileDir(),
           targetPackageDir,
           internalDepPackageNames,
           packagesRegistry,
@@ -155,7 +167,7 @@ export async function copyPatches({
    */
   const lockfilePatchResult =
     packageManagerName === "pnpm"
-      ? await readLockfilePatchedDependencies(workspaceRootDir)
+      ? await readLockfilePatchedDependencies(requirePnpmLockfileDir())
       : undefined;
 
   const patchFilesToCopy: {
@@ -223,8 +235,8 @@ export async function copyPatches({
 }
 
 /**
- * Read the patchedDependencies from the original lockfile to get the hashes.
- * Since the file content is the same after copying, the hash remains valid.
+ * Read the patchedDependencies from the lockfile in `lockfileDir` to get the
+ * hashes. Copying a patch keeps its contents, so the hash remains valid.
  *
  * The value type is `PatchFile | string` because pnpm 11 simplified the format
  * to store the bare hash string per selector, while pnpm 8 stored a
@@ -232,14 +244,11 @@ export async function copyPatches({
  * for a second reason as well: `@pnpm/lockfile.fs` migrates the object form to
  * a bare hash while reading, so only the v8 reader still yields an object.
  */
-async function readLockfilePatchedDependencies(
-  workspaceRootDir: string,
-): Promise<{
+async function readLockfilePatchedDependencies(lockfileDir: string): Promise<{
   patchedDependencies?: Record<string, PatchFile | string>;
   readError?: unknown;
 }> {
   const { majorVersion } = usePackageManager();
-  const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
   const result = await readPnpmLockfile(lockfileDir, majorVersion, {
     onFailure: "return-error",

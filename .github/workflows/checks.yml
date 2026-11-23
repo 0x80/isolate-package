@@ -58,3 +58,13 @@ jobs:
 
       - name: Run ${{ matrix.command }}
         run: pnpm ${{ matrix.command }}
+
+      # Corepack cannot install pnpm 12's native binary, so the v13 lockfile
+      # test runs here with pnpm 12 from npm on PATH.
+      - name: Test pnpm v13 lockfiles with pnpm 12
+        if: matrix.command == 'test'
+        env:
+          REQUIRE_PNPM_V13: "1"
+        run:
+          npm exec --yes --package=pnpm@12.23.0 -- node node_modules/vitest/vitest.mjs
+          run src/lib/lockfile/readable-pnpm-lockfile-dir.integration.test.ts

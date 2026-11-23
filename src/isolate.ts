@@ -10,7 +10,11 @@ import {
   resolveTargetPackageDir,
   resolveWorkspaceRootDir,
 } from "./lib/config";
-import { processLockfile } from "./lib/lockfile";
+import {
+  processLockfile,
+  type ReadablePnpmLockfile,
+  withReadablePnpmLockfileDir,
+} from "./lib/lockfile";
 import { setLogLevel, useLogger } from "./lib/logger";
 import {
   adaptInternalPackageManifests,
@@ -310,31 +314,50 @@ export function createIsolator(initialConfig?: IsolateConfig) {
       (packageManager.name === "pnpm" || packageManager.name === "bun") &&
       !config.forceNpm;
 
-    const copiedPatches = shouldCopyPatches
-      ? await copyPatches({
-          workspaceRootDir,
-          targetPackageDir,
-          targetPackageManifest: outputManifest,
-          packagesRegistry,
-          internalDepPackageNames: internalPackageNames,
-          isolateDir,
-          includeDevDependencies: config.includeDevDependencies,
-        })
-      : {};
+    const copyPatchesAndProcessLockfile = async (
+      pnpmLockfile?: ReadablePnpmLockfile,
+    ) => {
+      const copiedPatches = shouldCopyPatches
+        ? await copyPatches({
+            workspaceRootDir,
+            pnpmLockfileDir: pnpmLockfile?.dir,
+            targetPackageDir,
+            targetPackageManifest: outputManifest,
+            packagesRegistry,
+            internalDepPackageNames: internalPackageNames,
+            isolateDir,
+            includeDevDependencies: config.includeDevDependencies,
+          })
+        : {};
 
-    /** Generate an isolated lockfile based on the original one */
-    const usedFallbackToNpm = await processLockfile({
-      workspaceRootDir,
-      isolateDir,
-      packagesRegistry,
-      internalDepPackageNames: internalPackageNames,
-      targetPackageDir,
-      targetPackageName: targetPackageManifest.name,
-      targetPackageManifest: outputManifest,
-      patchedDependencies:
-        Object.keys(copiedPatches).length > 0 ? copiedPatches : undefined,
-      config,
-    });
+      const usedFallbackToNpm = await processLockfile({
+        workspaceRootDir,
+        pnpmLockfile,
+        isolateDir,
+        packagesRegistry,
+        internalDepPackageNames: internalPackageNames,
+        targetPackageDir,
+        targetPackageName: targetPackageManifest.name,
+        targetPackageManifest: outputManifest,
+        patchedDependencies:
+          Object.keys(copiedPatches).length > 0 ? copiedPatches : undefined,
+        config,
+      });
+
+      return { copiedPatches, usedFallbackToNpm };
+    };
+
+    /**
+     * Both steps read the pnpm lockfile, so they share one readable copy of
+     * it, converted once when the workspace uses a format newer than v9.
+     */
+    const { copiedPatches, usedFallbackToNpm } =
+      packageManager.name === "pnpm" && !config.forceNpm
+        ? await withReadablePnpmLockfileDir(
+            workspaceRootDir,
+            copyPatchesAndProcessLockfile,
+          )
+        : await copyPatchesAndProcessLockfile();
 
     const hasCopiedPatches = Object.keys(copiedPatches).length > 0;
     const pnpmPatchOutput = getPnpmPatchedDependenciesOutput({

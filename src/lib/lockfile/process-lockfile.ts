@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import type { IsolateConfigResolved } from "../config";
 import { useLogger } from "../logger";
 import { usePackageManager } from "../package-manager";
@@ -8,6 +9,7 @@ import {
   generatePnpmLockfile,
   generateYarnLockfile,
 } from "./helpers";
+import type { ReadablePnpmLockfile } from "./readable-pnpm-lockfile-dir";
 
 /**
  * Adapt the lockfile and write it to the isolate directory. Because we keep the
@@ -18,6 +20,7 @@ import {
  */
 export async function processLockfile({
   workspaceRootDir,
+  pnpmLockfile,
   packagesRegistry,
   isolateDir,
   internalDepPackageNames,
@@ -28,6 +31,8 @@ export async function processLockfile({
   config,
 }: {
   workspaceRootDir: string;
+  /** Required for pnpm output, which prunes this lockfile */
+  pnpmLockfile?: ReadablePnpmLockfile;
   packagesRegistry: PackagesRegistry;
   isolateDir: string;
   internalDepPackageNames: string[];
@@ -85,8 +90,14 @@ export async function processLockfile({
       break;
     }
     case "pnpm": {
+      assert(
+        pnpmLockfile,
+        "Generating a pnpm lockfile needs the source lockfile",
+      );
+
       await generatePnpmLockfile({
         workspaceRootDir,
+        sourceLockfile: pnpmLockfile,
         targetPackageDir,
         isolateDir,
         internalDepPackageNames,

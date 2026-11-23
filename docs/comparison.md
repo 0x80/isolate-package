@@ -19,8 +19,10 @@ It is tightly coupled to PNPM and only works in PNPM workspaces.
 
 For Node packages, `isolate-package` produces a self-contained source directory
 containing the target package, its internal dependencies as `file:` references,
-and a pruned lockfile. No install is performed — the deployment target is
-expected to run its own `install` step. Targets without a `package.json` bypass
+and a pruned lockfile. No dependencies are installed — the deployment target
+is expected to run its own `install` step. For a pnpm v13 lockfile, isolate runs
+`pnpm install --lockfile-only` in a temporary copy of the workspace to convert
+the lockfile to v9. Targets without a `package.json` bypass
 isolation and keep their original source directory.
 
 It works with PNPM, NPM, Bun, and Yarn.
