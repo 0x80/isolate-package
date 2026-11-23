@@ -1,0 +1,134 @@
+import fs from "fs-extra";
+import { exec } from "node:child_process";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
+import { parseAllDocuments } from "yaml";
+import { afterEach, describe, expect, it } from "vitest";
+import { isolate } from "#/isolate";
+
+const execAsync = promisify(exec);
+
+const FIXTURE_DIR = path.join(
+  import.meta.dirname,
+  "__fixtures__/pnpm-v13/workspace",
+);
+
+/**
+ * The fixture pins pnpm 12.23.0 in `packageManager`, which a pnpm 10 or 11 on
+ * PATH switches to on its own, so this runs locally without setup. Corepack
+ * cannot install pnpm 12's native binary, so the regular CI test job skips it
+ * and a separate step runs it with pnpm 12 on PATH and `REQUIRE_PNPM_V13` set,
+ * which turns a missing pnpm 12 into a failure instead of a skip.
+ */
+async function readPnpmVersion() {
+  try {
+    const { stdout } = await execAsync("pnpm --version", {
+      cwd: FIXTURE_DIR,
+      timeout: 60_000,
+      env: { ...process.env, COREPACK_ENABLE_DOWNLOAD_PROMPT: "0" },
+    });
+    return stdout.trim();
+  } catch {
+    return undefined;
+  }
+}
+
+const pnpmVersion = await readPnpmVersion();
+const [major = 0, minor = 0] = (pnpmVersion ?? "").split(".").map(Number);
+const supportsV13 = major > 12 || (major === 12 && minor >= 19);
+
+if (process.env.REQUIRE_PNPM_V13 && !supportsV13) {
+  throw new Error(
+    `REQUIRE_PNPM_V13 is set but pnpm on PATH is ${pnpmVersion ?? "unavailable"}`,
+  );
+}
+
+/**
+ * Reproduction of https://github.com/0x80/isolate-package/issues/219. The
+ * fixture lockfile was written by pnpm 12.23.0 with `lockfile.format: v13`.
+ * Nothing is mocked: the conversion runs the real pnpm binary.
+ */
+describe.skipIf(!supportsV13)("isolate with a pnpm v13 lockfile", () => {
+  let tmpBase: string | undefined;
+
+  afterEach(async () => {
+    if (tmpBase) await fs.remove(tmpBase);
+  });
+
+  async function setupWorkspace() {
+    tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), "isolate-pnpm-v13-"));
+    const workspaceRoot = path.join(tmpBase, "workspace");
+    await fs.copy(FIXTURE_DIR, workspaceRoot);
+
+    return {
+      workspaceRoot,
+      appDir: path.join(workspaceRoot, "apps/app"),
+      lockfilePath: path.join(workspaceRoot, "pnpm-lock.yaml"),
+      workspaceConfigPath: path.join(workspaceRoot, "pnpm-workspace.yaml"),
+    };
+  }
+
+  function isolateApp(appDir: string) {
+    return isolate({
+      targetPackagePath: appDir,
+      workspaceRoot: "../..",
+      buildDirName: ".",
+      logLevel: "error",
+    });
+  }
+
+  it("writes a pruned v9 lockfile that pnpm accepts, leaving the workspace untouched", async () => {
+    const { appDir, lockfilePath, workspaceConfigPath } =
+      await setupWorkspace();
+    const sourceLockfile = await fs.readFile(lockfilePath, "utf8");
+    const sourceConfig = await fs.readFile(workspaceConfigPath, "utf8");
+
+    const isolateDir = await isolateApp(appDir);
+
+    const documents = parseAllDocuments(
+      await fs.readFile(path.join(isolateDir, "pnpm-lock.yaml"), "utf8"),
+    ).map((document) => document.toJS() as Record<string, any>);
+    const projectDocument = documents.at(-1);
+
+    expect(projectDocument?.lockfileVersion).toBe("9.0");
+    expect(projectDocument?.importers["."].dependencies).toEqual({
+      react: { specifier: "18.3.1", version: "18.3.1" },
+      "react-dom": { specifier: "18.3.1", version: "18.3.1(react@18.3.1)" },
+    });
+    expect(Object.keys(projectDocument?.snapshots ?? {})).not.toContain(
+      "react-dom@19.2.0(react@19.2.0)",
+    );
+
+    await expect(
+      execAsync(
+        "pnpm install --frozen-lockfile --lockfile-only --ignore-scripts",
+        { cwd: isolateDir },
+      ),
+    ).resolves.toBeDefined();
+
+    await expect(fs.readFile(lockfilePath, "utf8")).resolves.toBe(
+      sourceLockfile,
+    );
+    await expect(fs.readFile(workspaceConfigPath, "utf8")).resolves.toBe(
+      sourceConfig,
+    );
+  });
+
+  it("fails clearly when the lockfile is out of date with the manifests", async () => {
+    const { appDir, lockfilePath } = await setupWorkspace();
+    const sourceLockfile = await fs.readFile(lockfilePath, "utf8");
+
+    const manifestPath = path.join(appDir, "package.json");
+    const manifest = await fs.readJson(manifestPath);
+    manifest.dependencies.react = "19.2.0";
+    await fs.writeJson(manifestPath, manifest);
+
+    await expect(isolateApp(appDir)).rejects.toThrow(
+      "Failed to convert the pnpm lockfile",
+    );
+    await expect(fs.readFile(lockfilePath, "utf8")).resolves.toBe(
+      sourceLockfile,
+    );
+  });
+});

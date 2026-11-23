@@ -145,6 +145,15 @@ describe("generatePnpmLockfile integration", () => {
     });
   });
 
+  it("keeps the lockfile settings that pruning drops", async () => {
+    const { documents } = await isolate({ packageManager: "pnpm@12.0.0" });
+
+    expect(documents.at(-1)?.settings).toEqual({
+      autoInstallPeers: true,
+      excludeLinksFromLockfile: false,
+    });
+  });
+
   it("writes patched dependencies in pnpm 10's object format", async () => {
     const { documents } = await isolate({
       packageManager: "pnpm@10.0.0",

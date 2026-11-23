@@ -43,6 +43,7 @@ type CatalogSnapshots = Record<
 
 export async function generatePnpmLockfile({
   workspaceRootDir,
+  lockfileRootDir = getPnpmLockfileDir(workspaceRootDir),
   targetPackageDir,
   isolateDir,
   internalDepPackageNames,
@@ -53,6 +54,8 @@ export async function generatePnpmLockfile({
   patchedDependencies,
 }: {
   workspaceRootDir: string;
+  /** Where to read the lockfile, when not from the workspace itself */
+  lockfileRootDir?: string;
   targetPackageDir: string;
   isolateDir: string;
   internalDepPackageNames: string[];
@@ -76,8 +79,6 @@ export async function generatePnpmLockfile({
 
   try {
     const isRush = isRushWorkspace(workspaceRootDir);
-
-    const lockfileRootDir = getPnpmLockfileDir(workspaceRootDir);
 
     const lockfile = await readPnpmLockfile(lockfileRootDir, majorVersion);
 
@@ -182,6 +183,16 @@ export async function generatePnpmLockfile({
     /** Pruning seems to remove the overrides from the lockfile */
     if (lockfile.overrides) {
       prunedLockfile.overrides = lockfile.overrides;
+    }
+
+    /**
+     * Pruning drops the settings too. pnpm tolerates their absence in a v9
+     * lockfile, except when the workspace asks for `lockfile.format: v13`: it
+     * then compares every setting and refuses a frozen install. The isolate
+     * keeps that workspace config, so the settings have to stay with it.
+     */
+    if (lockfile.settings) {
+      prunedLockfile.settings = lockfile.settings;
     }
 
     /** Add packageExtensionsChecksum back to the pruned lockfile if present */

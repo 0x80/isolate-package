@@ -25,6 +25,7 @@ import {
  */
 export async function collectInstalledNamesFromPnpmLockfile({
   workspaceRootDir,
+  lockfileDir = getPnpmLockfileDir(workspaceRootDir),
   targetPackageDir,
   internalDepPackageNames,
   packagesRegistry,
@@ -32,6 +33,8 @@ export async function collectInstalledNamesFromPnpmLockfile({
   includeDevDependencies,
 }: {
   workspaceRootDir: string;
+  /** Where to read the lockfile, when not from the workspace itself */
+  lockfileDir?: string;
   targetPackageDir: string;
   internalDepPackageNames: string[];
   packagesRegistry: PackagesRegistry;
@@ -43,7 +46,6 @@ export async function collectInstalledNamesFromPnpmLockfile({
   try {
     const useVersion9 = majorVersion >= 9;
     const isRush = isRushWorkspace(workspaceRootDir);
-    const lockfileDir = getPnpmLockfileDir(workspaceRootDir);
 
     const lockfileResult = await readPnpmLockfile(lockfileDir, majorVersion, {
       onFailure: "return-error",
