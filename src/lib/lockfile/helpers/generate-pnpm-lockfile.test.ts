@@ -335,17 +335,30 @@ describe("generatePnpmLockfile", () => {
     expect(writtenLockfile.packageExtensionsChecksum).toBe("abc123");
   });
 
-  it("should restore the catalogs snapshot after pruning (#198)", async () => {
+  it("should restore the referenced catalog entries after pruning (#198, #218)", async () => {
     const catalogs = {
       default: {
         lodash: { specifier: "^4.17.21", version: "4.17.21" },
+        react: { specifier: "^19.0.0", version: "19.0.0" },
       },
       utils: {
         ramda: { specifier: "^0.30.0", version: "0.30.0" },
       },
     };
+    const mockLockfile = createMockLockfile();
     const lockfile = {
-      ...createMockLockfile(),
+      ...mockLockfile,
+      importers: {
+        ...mockLockfile.importers,
+        "packages/shared": {
+          specifiers: { lodash: "catalog:" },
+          dependencies: { lodash: "4.17.21" },
+        },
+        "packages/other": {
+          specifiers: { react: "catalog:", ramda: "catalog:utils" },
+          dependencies: { react: "19.0.0", ramda: "0.30.0" },
+        },
+      },
       catalogs,
     };
     readWantedLockfile_v9.mockResolvedValue(lockfile as never);
@@ -381,11 +394,12 @@ describe("generatePnpmLockfile", () => {
     };
 
     /**
-     * The catalogs snapshot is restored verbatim (like overrides), so it stays
-     * in sync with the importer specifiers and the verbatim pnpm-workspace.yaml
-     * copy.
+     * Only `packages/shared` is isolated alongside the target, so the entries
+     * that only `packages/other` uses are left out.
      */
-    expect(writtenLockfile.catalogs).toEqual(catalogs);
+    expect(writtenLockfile.catalogs).toEqual({
+      default: { lodash: catalogs.default.lodash },
+    });
   });
 
   it("should not set catalogs when the source lockfile has none", async () => {

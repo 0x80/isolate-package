@@ -85,6 +85,7 @@ describe("generatePnpmLockfile integration", () => {
     majorVersion = 12,
     targetPackageName = "svc",
     targetPackageRelativePath = "apps/svc",
+    dependencies = { "left-pad": "1.3.0" },
     patchedDependencies,
   }: {
     packageManager: string | undefined;
@@ -94,6 +95,7 @@ describe("generatePnpmLockfile integration", () => {
     majorVersion?: number;
     targetPackageName?: string;
     targetPackageRelativePath?: string;
+    dependencies?: Record<string, string>;
     patchedDependencies?: Record<string, PatchFile>;
   }) {
     const { tmpBase, workspaceRoot } = await setupFixture(fixture);
@@ -123,7 +125,7 @@ describe("generatePnpmLockfile integration", () => {
       targetPackageManifest: {
         name: targetPackageName,
         version: "1.0.0",
-        dependencies: { "left-pad": "1.3.0" },
+        dependencies,
         ...(packageManager ? { packageManager } : {}),
       },
       majorVersion,
@@ -324,5 +326,34 @@ describe("generatePnpmLockfile integration", () => {
 
     expect(rootImporter?.configDependencies).toHaveProperty("my-config");
     expect(rootImporter?.packageManagerDependencies).toHaveProperty("pnpm");
+  });
+  /**
+   * Reproduction of https://github.com/0x80/isolate-package/issues/218.
+   *
+   * The `pnpm-catalogs` fixture lockfile was written by a real pnpm 12.9.1
+   * install of a workspace with `cleanupUnusedCatalogs: true`, where `other`
+   * uses catalog entries that `svc` does not. With pruning on, pnpm 12.9
+   * rejects a frozen install whose catalogs snapshot holds entries no importer
+   * uses, so isolating `svc` must leave out the entries only `other` uses.
+   */
+  it("keeps only the catalog entries the isolated importers reference", async () => {
+    const { documents } = await isolate({
+      packageManager: undefined,
+      fixture: "pnpm-catalogs",
+      dependencies: { "left-pad": "catalog:", ms: "catalog:tools" },
+    });
+
+    const projectDocument = documents.at(-1);
+
+    expect(projectDocument?.catalogs).toEqual({
+      default: { "left-pad": { specifier: "1.3.0", version: "1.3.0" } },
+      tools: { ms: { specifier: "2.1.3", version: "2.1.3" } },
+    });
+    expect(rootImporterOf(projectDocument)).toMatchObject({
+      dependencies: {
+        "left-pad": { specifier: "catalog:", version: "1.3.0" },
+        ms: { specifier: "catalog:tools", version: "2.1.3" },
+      },
+    });
   });
 });

@@ -1,0 +1,8 @@
+{
+  "name": "other",
+  "version": "1.0.0",
+  "dependencies": {
+    "is-number": "catalog:tools",
+    "is-odd": "catalog:"
+  }
+}
